@@ -76,6 +76,7 @@ func main() {
 	wnd := nucular.NewMasterWindowSize(0, "NoiseUI", image.Point{550, 300}, func(w *nucular.Window) {
 		updatefn(w, &ui)
 	})
+	ui.masterWindow = &wnd
 	style := style.FromTheme(style.DarkTheme, 2.0)
 	style.Font = font.DefaultFont(16, 1)
 	wnd.SetStyle(style)

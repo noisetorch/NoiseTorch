@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 	"log"
+	"time"
 
 	"github.com/aarzilli/nucular"
 	"github.com/lawl/pulseaudio"
@@ -17,9 +18,17 @@ type uistate struct {
 	sourceListColdWidthIndex int
 	useBuiltinRNNoise        bool
 	config                   *config
+	loadingScreen            bool
+	masterWindow             *nucular.MasterWindow
 }
 
 func updatefn(w *nucular.Window, ui *uistate) {
+
+	if ui.loadingScreen {
+		loadingScreen(w, ui)
+		return
+	}
+
 	w.Row(15).Dynamic(2)
 	w.Label("NoiseUI", "LC")
 
@@ -78,9 +87,20 @@ func updatefn(w *nucular.Window, ui *uistate) {
 		w.Row(25).Dynamic(2)
 		if ui.noiseSupressorState != unloaded {
 			if w.ButtonText("Unload Denoised Virtual Microphone") {
-				if err := unloadSupressor(ui.paClient); err != nil {
-					log.Println(err)
-				}
+				ui.loadingScreen = true
+				go func() { // don't block the UI thread, just display a working screen so user can't run multiple loads/unloads
+					if err := unloadSupressor(ui.paClient); err != nil {
+						log.Println(err)
+					}
+					//wait until PA reports it has actually loaded it, timeout at 10s
+					for i := 0; i < 20; i++ {
+						if supressorState(ui.paClient) != unloaded {
+							time.Sleep(time.Millisecond * 500)
+						}
+					}
+					ui.loadingScreen = false
+					(*ui.masterWindow).Changed()
+				}()
 			}
 		} else {
 			w.Spacing(1)
@@ -91,14 +111,26 @@ func updatefn(w *nucular.Window, ui *uistate) {
 		}
 		if inp, ok := inputSelection(ui); ok && ui.noiseSupressorState != inconsistent {
 			if w.ButtonText(txt) {
-				if ui.noiseSupressorState == loaded {
-					if err := unloadSupressor(ui.paClient); err != nil {
+				ui.loadingScreen = true
+				go func() { // don't block the UI thread, just display a working screen so user can't run multiple loads/unloads
+					if ui.noiseSupressorState == loaded {
+						if err := unloadSupressor(ui.paClient); err != nil {
+							log.Println(err)
+						}
+					}
+					if err := loadSupressor(ui.paClient, inp, ui); err != nil {
 						log.Println(err)
 					}
-				}
-				if err := loadSupressor(ui.paClient, inp, ui); err != nil {
-					log.Println(err)
-				}
+
+					//wait until PA reports it has actually loaded it, timeout at 10s
+					for i := 0; i < 20; i++ {
+						if supressorState(ui.paClient) != loaded {
+							time.Sleep(time.Millisecond * 500)
+						}
+					}
+					ui.loadingScreen = false
+					(*ui.masterWindow).Changed()
+				}()
 			}
 		} else {
 			w.Spacing(1)
@@ -125,4 +157,11 @@ func inputSelection(ui *uistate) (input, bool) {
 		}
 	}
 	return input{}, false
+}
+
+func loadingScreen(w *nucular.Window, ui *uistate) {
+	w.Row(50).Dynamic(1)
+	w.Label("Working...", "CB")
+	w.Row(50).Dynamic(1)
+	w.Label("(this may take a few seconds)", "CB")
 }
