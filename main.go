@@ -25,7 +25,7 @@ type input struct {
 
 func main() {
 
-	f, err := os.OpenFile("/tmp/noiseui.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	f, err := os.OpenFile("/tmp/noisetorch.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatalf("error opening file: %v\n", err)
 	}
@@ -73,7 +73,7 @@ func main() {
 
 	ui.inputList = inputs
 
-	wnd := nucular.NewMasterWindowSize(0, "NoiseUI", image.Point{550, 300}, func(w *nucular.Window) {
+	wnd := nucular.NewMasterWindowSize(0, "NoiseTorch", image.Point{550, 300}, func(w *nucular.Window) {
 		updatefn(w, &ui)
 	})
 	ui.masterWindow = &wnd

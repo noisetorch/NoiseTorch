@@ -30,7 +30,7 @@ func updatefn(w *nucular.Window, ui *uistate) {
 	}
 
 	w.Row(15).Dynamic(2)
-	w.Label("NoiseUI", "LC")
+	w.Label("NoiseTorch", "LC")
 
 	if ui.noiseSupressorState == loaded {
 		w.LabelColored("Denoised virtual microphone active", "RC", color.RGBA{0, 255, 0, 255} /*green*/)

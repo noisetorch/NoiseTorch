@@ -15,7 +15,7 @@ type config struct {
 	DisplayMonitorSources bool
 }
 
-const configDir = ".config/noiseui/"
+const configDir = ".config/noisetorch/"
 const configFile = "config.toml"
 
 func initializeConfigIfNot() {

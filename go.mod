@@ -1,4 +1,4 @@
-module noiseui
+module noisetorch
 
 go 1.14
 
