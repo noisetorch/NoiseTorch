@@ -15,7 +15,7 @@ Don't forget to ~~like, comment and subscribe~~ leave a star ⭐ if this sounds 
 * Two click setup of your virtual denoising microphone
 * A single, small, statically linked, self-contained binary
 
-## Download & Usage
+## Download
 
 NoiseTorch offers the following installation methods:
 
@@ -31,6 +31,16 @@ Coming soon™.
 [Download the latest release from GitHub](https://github.com/lawl/NoiseTorch/releases).
 
 Unpack the `tgz` file, and double click the executable.
+
+## Usage
+
+Select the microphone you want to denoise, and click "Load NoiseTorch", NoiseTorch will create a virtual microphone called "NoiseTorch Microphone" that you can select in any application.
+
+When you're done using it, simply click "Unload NoiseTorch" to remove it again, until you need it next time.
+
+The slider "Filter strictness" under settings, allows you to choose how strict NoiseTorch should be. Generally you want this up as high as possible. With a decent microphone, you can turn this to the maximum of 95%. If you cut out during talking, slowly lower this strictness until you find a value that works for you.
+
+Please keep in mind that you will need to reload NoiseTorch for these changes to apply.
 
 ## Troubleshooting
 
