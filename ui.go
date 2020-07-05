@@ -86,7 +86,7 @@ func updatefn(w *nucular.Window, ui *uistate) {
 
 		w.Row(25).Dynamic(2)
 		if ui.noiseSupressorState != unloaded {
-			if w.ButtonText("Unload Denoised Virtual Microphone") {
+			if w.ButtonText("Unload NoiseTorch") {
 				ui.loadingScreen = true
 				go func() { // don't block the UI thread, just display a working screen so user can't run multiple loads/unloads
 					if err := unloadSupressor(ui.paClient); err != nil {
@@ -105,9 +105,9 @@ func updatefn(w *nucular.Window, ui *uistate) {
 		} else {
 			w.Spacing(1)
 		}
-		txt := "Load Denoised Virtual Microphone"
+		txt := "Load NoiseTorch"
 		if ui.noiseSupressorState == loaded {
-			txt = "Reload Denoised Virtual Microphone"
+			txt = "Reload NoiseTorch"
 		}
 		if inp, ok := inputSelection(ui); ok && ui.noiseSupressorState != inconsistent {
 			if w.ButtonText(txt) {

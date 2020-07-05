@@ -88,7 +88,7 @@ func loadSupressor(c *pulseaudio.Client, inp input, ui *uistate) error {
 	time.Sleep(time.Millisecond * 500) // pulseaudio actually crashes if we send these too fast
 
 	idx, err = c.LoadModule("module-remap-source", `master=nui_mic_denoised_out.monitor `+
-		`source_name=nui_mic_remap source_properties="device.description='Denoised Microphone'"`)
+		`source_name=nui_mic_remap source_properties="device.description='NoiseTorch Microphone'"`)
 	if err != nil {
 		return err
 	}
