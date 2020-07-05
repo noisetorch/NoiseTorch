@@ -48,31 +48,21 @@ Unfortunately, sometimes TorchNoise may display a "Working..." screen forever wh
 
 If you have a different problem with NoiseTorch, you can find a log file in `/tmp/noisetorch.log`. Please make sure to attach this when reporting an issue.
 
+## Latency
+
+TorchNoise may introduce a small amount of latency. Lowering this latency [requires a change in PulseAudio](https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/issues/120).
+
 ## Building from source
 
-Install the Go compiler from [golang.org](https://golang.org/).
+Install the Go compiler from [golang.org](https://golang.org/). And make sure you have a working C++ compiler.
 
 ```shell
  git clone https://github.com/lawl/NoiseTorch # Clone the repository
  cd NoiseTorch # cd into the cloned repository
+ git submodule init # Tell git to look at submodules
+ git submodule update # Update submodules
  make # build it
  ```
-
- Make in this case is just a shorthand for
-
- ```shell
-  go generate
- ```
-  To generate the embed file for librnnoise_ladspa.so (You will need to build this separately, see the README file in the `librnnoise_ladspa` folder).
- 
-  Followed by
-
-  ```shell
-  go build
-  ```
-  
-  `go generate` only needs to be ran once, whenever you want to embed a new build of `librnnoise_ladspa.so`.
-
 
 ## Special thanks to
 
