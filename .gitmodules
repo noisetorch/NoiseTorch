@@ -1,3 +1,4 @@
 [submodule "librnnoise_ladspa"]
 	path = librnnoise_ladspa
 	url = https://github.com/werman/noise-suppression-for-voice
+	ignore = dirty
