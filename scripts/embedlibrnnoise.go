@@ -12,7 +12,8 @@ func main() {
 	if err != nil {
 		fmt.Printf("Couldn't read librnnoise_ladspa.so: %v\n", err)
 		fmt.Println("Drop a compiled librnnoise_ladspa.so in at librnnoise_ladspa/librnnoise_ladspa.so,\n" +
-			"it will is required for compilation so we can embed it.")
+			"it will is required for compilation so we can embed it.\n\n" +
+			"You can find out more information in the README in that folder\n\n")
 		os.Exit(1)
 	}
 	out, _ := os.Create("librnnoise.go")
