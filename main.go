@@ -15,6 +15,7 @@ import (
 )
 
 //go:generate go run scripts/embedlibrnnoise.go
+//go:generate go run scripts/embedversion.go
 
 type input struct {
 	ID        string
@@ -31,7 +32,7 @@ func main() {
 	}
 	defer f.Close()
 	log.SetOutput(f)
-	log.Println("Application starting.")
+	log.Printf("Application starting. Version: %s", version)
 
 	initializeConfigIfNot()
 	rnnoisefile := dumpLib()
