@@ -2,6 +2,7 @@ package main
 
 import (
 	"image"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -31,7 +32,9 @@ func main() {
 		log.Fatalf("error opening file: %v\n", err)
 	}
 	defer f.Close()
-	log.SetOutput(f)
+
+	logwriter := io.MultiWriter(os.Stdout, f)
+	log.SetOutput(logwriter)
 	log.Printf("Application starting. Version: %s", version)
 
 	initializeConfigIfNot()
