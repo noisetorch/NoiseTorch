@@ -38,13 +38,15 @@ Select the microphone you want to denoise, and click "Load NoiseTorch", NoiseTor
 
 When you're done using it, simply click "Unload NoiseTorch" to remove it again, until you need it next time.
 
-The slider "Filter strictness" under settings, allows you to choose how strict NoiseTorch should be. Generally you want this up as high as possible. With a decent microphone, you can turn this to the maximum of 95%. If you cut out during talking, slowly lower this strictness until you find a value that works for you.
+The slider "Voice Activation Threshold" under settings, allows you to choose how strict NoiseTorch should be in only allowing your microphone to send sounds when it detects voice.. Generally you want this up as high as possible. With a decent microphone, you can turn this to the maximum of 95%. If you cut out during talking, slowly lower this strictness until you find a value that works for you.
+
+If you set this to 0%, NoiseTorch will still dampen noise, but not deactivate your microphone if it doesn't detect voice.
 
 Please keep in mind that you will need to reload NoiseTorch for these changes to apply.
 
 ## Troubleshooting
 
-Unfortunately, sometimes TorchNoise may display a "Working..." screen forever when loading the virtual microphone. This is usually due to PulseAudio crashing. If that happens, close NoiseTorch and try again, that usually works. I am working to improve this situation.
+Unfortunately, sometimes NoiseTorch may display a "Working..." screen forever when loading the virtual microphone. This is usually due to PulseAudio crashing. If that happens, close NoiseTorch and try again, that usually works. I am working to improve this situation.
 
 If you have a different problem with NoiseTorch, you can find a log file in `/tmp/noisetorch.log`. Please make sure to attach this when reporting an issue.
 
