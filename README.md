@@ -52,7 +52,7 @@ If you have a different problem with NoiseTorch, you can find a log file in `/tm
 
 ## Latency
 
-TorchNoise may introduce a small amount of latency. Lowering this latency [requires a change in PulseAudio](https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/issues/120).
+NoiseTorch may introduce a small amount of latency. The amount of inherent latency introduced by noise supression is 10ms, this is very low and should not be a problem. Additionally PulseAudio currently introduces a variable amount of latency that depends on your system. Lowering this latency [requires a change in PulseAudio](https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/issues/120).
 
 ## Building from source
 
