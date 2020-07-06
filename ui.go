@@ -33,9 +33,9 @@ func updatefn(w *nucular.Window, ui *uistate) {
 	w.Label("NoiseTorch ("+version+")", "LC")
 
 	if ui.noiseSupressorState == loaded {
-		w.LabelColored("Denoised virtual microphone active", "RC", color.RGBA{0, 255, 0, 255} /*green*/)
+		w.LabelColored("NoiseTorch active", "RC", color.RGBA{34, 187, 69, 255} /*green*/)
 	} else if ui.noiseSupressorState == unloaded {
-		w.LabelColored("Denoised virtual microphone inactive", "RC", color.RGBA{255, 0, 0, 255} /*red*/)
+		w.LabelColored("NoiseTorch inactive", "RC", color.RGBA{255, 70, 70, 255} /*red*/)
 	} else if ui.noiseSupressorState == inconsistent {
 		w.LabelColored("Inconsistent state, please unload first.", "RC", color.RGBA{255, 140, 0, 255} /*orange*/)
 	}
@@ -50,7 +50,7 @@ func updatefn(w *nucular.Window, ui *uistate) {
 		w.Spacing(1)
 
 		w.Row(25).Ratio(0.5, 0.45, 0.05)
-		w.Label("Filter strictness", "LC")
+		w.Label("Voice Activation Threshold", "LC")
 		if w.Input().Mouse.HoveringRect(w.LastWidgetBounds) {
 			w.Tooltip("If you have a decent microphone, you can usually turn this all the way up.")
 		}
