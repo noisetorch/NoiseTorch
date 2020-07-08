@@ -42,11 +42,11 @@ func supressorState(c *pulseaudio.Client) int {
 	}
 	_, loopback, err := findModule(c, "module-loopback", "sink=nui_mic_raw_in")
 	if err != nil {
-		log.Printf("Couldn't fetch module list to check for module-nulll-sink: %v\n", err)
+		log.Printf("Couldn't fetch module list to check for module-loopback: %v\n", err)
 	}
 	_, remap, err := findModule(c, "module-remap-source", "master=nui_mic_denoised_out.monitor source_name=nui_mic_remap")
 	if err != nil {
-		log.Printf("Couldn't fetch module list to check for module-nulll-sink: %v\n", err)
+		log.Printf("Couldn't fetch module list to check for module-remap-source: %v\n", err)
 	}
 
 	if nullsink && ladspasink && loopback && remap {
