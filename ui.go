@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"image/color"
 	"log"
+	"os/exec"
 	"time"
 
 	"github.com/aarzilli/nucular"
+	"github.com/aarzilli/nucular/label"
 	"github.com/lawl/pulseaudio"
 )
 
@@ -19,6 +21,9 @@ type uistate struct {
 	useBuiltinRNNoise        bool
 	config                   *config
 	loadingScreen            bool
+	licenseScreen            bool
+	versionScreen            bool
+	licenseTextArea          nucular.TextEditor
 	masterWindow             *nucular.MasterWindow
 }
 
@@ -29,8 +34,35 @@ func updatefn(w *nucular.Window, ui *uistate) {
 		return
 	}
 
-	w.Row(15).Dynamic(2)
-	w.Label("NoiseTorch ("+version+")", "LC")
+	if ui.licenseScreen {
+		licenseScreen(w, ui)
+		return
+	}
+
+	if ui.versionScreen {
+		versionScreen(w, ui)
+		return
+	}
+
+	w.MenubarBegin()
+	w.WindowStyle().Background = color.RGBA{0, 255, 0, 255}
+	w.Row(10).Dynamic(1)
+	if w := w.Menu(label.TA("About", "LC"), 120, nil); w != nil {
+		w.Row(10).Dynamic(1)
+		if w.MenuItem(label.T("Licenses")) {
+			ui.licenseScreen = true
+		}
+		w.Row(10).Dynamic(1)
+		if w.MenuItem(label.T("Source code")) {
+			exec.Command("xdg-open", "https://github.com/lawl/NoiseTorch").Run()
+		}
+		if w.MenuItem(label.T("Version")) {
+			ui.versionScreen = true
+		}
+	}
+	w.MenubarEnd()
+
+	w.Row(15).Dynamic(1)
 
 	if ui.noiseSupressorState == loaded {
 		w.LabelColored("NoiseTorch active", "RC", color.RGBA{34, 187, 69, 255} /*green*/)
@@ -164,4 +196,34 @@ func loadingScreen(w *nucular.Window, ui *uistate) {
 	w.Label("Working...", "CB")
 	w.Row(50).Dynamic(1)
 	w.Label("(this may take a few seconds)", "CB")
+}
+
+func licenseScreen(w *nucular.Window, ui *uistate) {
+	w.Row(255).Dynamic(1)
+	field := &ui.licenseTextArea
+	field.Flags |= nucular.EditMultiline
+	if len(field.Buffer) < 1 {
+		field.Buffer = []rune("foo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\n")
+	}
+	field.Edit(w)
+
+	w.Row(20).Dynamic(2)
+	w.Spacing(1)
+	if w.ButtonText("OK") {
+		ui.licenseScreen = false
+	}
+}
+
+func versionScreen(w *nucular.Window, ui *uistate) {
+	w.Row(50).Dynamic(1)
+	w.Label("Version", "CB")
+	w.Row(50).Dynamic(1)
+	w.Label(version, "CB")
+	w.Row(50).Dynamic(1)
+	w.Spacing(1)
+	w.Row(20).Dynamic(2)
+	w.Spacing(1)
+	if w.ButtonText("OK") {
+		ui.versionScreen = false
+	}
 }
