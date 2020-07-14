@@ -45,7 +45,7 @@ func updatefn(w *nucular.Window, ui *uistate) {
 	}
 
 	w.MenubarBegin()
-	w.WindowStyle().Background = color.RGBA{0, 255, 0, 255}
+
 	w.Row(10).Dynamic(1)
 	if w := w.Menu(label.TA("About", "LC"), 120, nil); w != nil {
 		w.Row(10).Dynamic(1)
@@ -203,7 +203,7 @@ func licenseScreen(w *nucular.Window, ui *uistate) {
 	field := &ui.licenseTextArea
 	field.Flags |= nucular.EditMultiline
 	if len(field.Buffer) < 1 {
-		field.Buffer = []rune("foo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar\n")
+		field.Buffer = []rune(licenseString)
 	}
 	field.Edit(w)
 

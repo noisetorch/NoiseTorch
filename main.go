@@ -17,6 +17,7 @@ import (
 
 //go:generate go run scripts/embedlibrnnoise.go
 //go:generate go run scripts/embedversion.go
+//go:generate go run scripts/embedlicenses.go
 
 type input struct {
 	ID        string
