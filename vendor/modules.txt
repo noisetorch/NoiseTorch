@@ -65,6 +65,10 @@ github.com/hashicorp/golang-lru/simplelru
 # github.com/lawl/pulseaudio v0.0.0-20200704145757-7d4b4b92e7b7
 ## explicit
 github.com/lawl/pulseaudio
+# golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899
+## explicit
+golang.org/x/crypto/ed25519
+golang.org/x/crypto/ed25519/internal/edwards25519
 # golang.org/x/exp v0.0.0-20191224044220-1fea468a75e9
 golang.org/x/exp/shiny/driver
 golang.org/x/exp/shiny/driver/gldriver
