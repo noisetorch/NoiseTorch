@@ -66,7 +66,7 @@ func loadSupressor(c *pulseaudio.Client, inp input, ui *uistate) error {
 	}
 	log.Printf("Loaded null sink as idx: %d\n", idx)
 
-	time.Sleep(time.Millisecond * 500) // pulseaudio actually crashes if we send these too fast
+	time.Sleep(time.Millisecond * 500) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
 
 	idx, err = c.LoadModule("module-ladspa-sink",
 		fmt.Sprintf("sink_name=nui_mic_raw_in sink_master=nui_mic_denoised_out "+
@@ -76,7 +76,7 @@ func loadSupressor(c *pulseaudio.Client, inp input, ui *uistate) error {
 	}
 	log.Printf("Loaded ladspa sink as idx: %d\n", idx)
 
-	time.Sleep(time.Millisecond * 1000) // pulseaudio actually crashes if we send these too fast
+	time.Sleep(time.Millisecond * 1000) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
 
 	idx, err = c.LoadModule("module-loopback",
 		fmt.Sprintf("source=%s sink=nui_mic_raw_in channels=1 latency_msec=1", inp.ID))
@@ -85,7 +85,7 @@ func loadSupressor(c *pulseaudio.Client, inp input, ui *uistate) error {
 	}
 	log.Printf("Loaded loopback as idx: %d\n", idx)
 
-	time.Sleep(time.Millisecond * 500) // pulseaudio actually crashes if we send these too fast
+	time.Sleep(time.Millisecond * 500) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
 
 	idx, err = c.LoadModule("module-remap-source", `master=nui_mic_denoised_out.monitor `+
 		`source_name=nui_mic_remap source_properties="device.description='NoiseTorch Microphone'"`)
