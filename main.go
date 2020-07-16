@@ -28,7 +28,7 @@ type input struct {
 
 func main() {
 
-	f, err := os.OpenFile("/tmp/noisetorch.log", os.O_RDWR|os.O_CREATE, 0644)
+	f, err := os.OpenFile("/tmp/noisetorch.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatalf("error opening file: %v\n", err)
 	}
