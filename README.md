@@ -1,3 +1,5 @@
+ <img src="https://raw.githubusercontent.com/lawl/NoiseTorch/master/assets/icon/noisetorch.png" width="100" height="100">
+
 # NoiseTorch
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
@@ -10,6 +12,10 @@ Don't forget to ~~like, comment and subscribe~~ leave a star ⭐ if this sounds 
 ## Screenshot
 
 ![](https://i.imgur.com/T2wH0bl.png)
+
+Then simply select NoiseTorch as your microphone in any application. OBS, Mumble, Discord, anywhere.
+
+![](https://i.imgur.com/zRi6np5.png)
 
 ## Features
 * Two click setup of your virtual denoising microphone
@@ -24,7 +30,7 @@ Unpack the `tgz` file, into your home directory.
     tar -C $HOME -xzf NoiseTorch_x64.tgz
 
 This will unpack the application, icon and desktop entry to the correct place.  
-Depending on your desktop environment you may need to tell it to rescan for applications, or tell it to do a refresh now.
+Depending on your desktop environment you may need to wait for it to rescan for applications, or tell it to do a refresh now.
 
 With gnome this can be done with:
 
@@ -90,3 +96,4 @@ In `~/.config/noisetorch/config.toml` set `EnableUpdates = false`.
 * [xiph.org](https://xiph.org)/[Mozilla's](https://mozilla.org) excellent [RNNoise](https://jmvalin.ca/demo/rnnoise/).
 * [@werman](https://github.com/werman/)'s [LADSPA/VST wrapper](https://github.com/werman/noise-suppression-for-voice/) allowing us to load RNNoise into PulseAudio.
 * [@aarzilli](https://github.com/aarzilli/)'s [nucular](https://github.com/aarzilli/nucular) GUI toolkit for Go.
+* [Salee Design](www.salleedesign.com) (info@salleedesign.com)'s Microphone Icon under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
