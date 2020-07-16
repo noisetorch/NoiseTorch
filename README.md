@@ -24,7 +24,7 @@ Unpack the `tgz` file, into your home directory.
     tar -C $HOME -xzf NoiseTorch_x64.tgz
 
 This will unpack the application, icon and desktop entry to the correct place.  
-Depending on your desktop environment you may need to tell it to rescan for applications, or tell it to do a refresh now.
+Depending on your desktop environment you may need to wait fo it to rescan for applications, or tell it to do a refresh now.
 
 With gnome this can be done with:
 
