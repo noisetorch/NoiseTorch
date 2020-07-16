@@ -13,6 +13,10 @@ Don't forget to ~~like, comment and subscribe~~ leave a star ⭐ if this sounds 
 
 ![](https://i.imgur.com/T2wH0bl.png)
 
+Then simply select NoiseTorch as your microphone in any application. OBS, Mumble, Discord, anywhere.
+
+![](https://i.imgur.com/pG1GuBK.png)
+
 ## Features
 * Two click setup of your virtual denoising microphone
 * A single, small, statically linked, self-contained binary
