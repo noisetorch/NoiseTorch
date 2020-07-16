@@ -26,6 +26,7 @@ type uistate struct {
 	licenseTextArea          nucular.TextEditor
 	masterWindow             *nucular.MasterWindow
 	update                   updateui
+	reloadRequired           bool
 }
 
 var green = color.RGBA{34, 187, 69, 255}
@@ -108,8 +109,14 @@ func updatefn(w *nucular.Window, ui *uistate) {
 		}
 		if w.SliderInt(0, &ui.config.Threshold, 95, 1) {
 			go writeConfig(ui.config)
+			ui.reloadRequired = true
 		}
 		w.Label(fmt.Sprintf("%d%%", ui.config.Threshold), "RC")
+
+		if ui.reloadRequired {
+			w.Row(20).Dynamic(1)
+			w.LabelColored("Reloading NoiseTorch is required to apply these changes.", "LC", orange)
+		}
 
 		w.TreePop()
 	}
@@ -140,6 +147,7 @@ func updatefn(w *nucular.Window, ui *uistate) {
 		if ui.noiseSupressorState != unloaded {
 			if w.ButtonText("Unload NoiseTorch") {
 				ui.loadingScreen = true
+				ui.reloadRequired = false
 				go func() { // don't block the UI thread, just display a working screen so user can't run multiple loads/unloads
 					if err := unloadSupressor(ui.paClient); err != nil {
 						log.Println(err)
@@ -164,6 +172,7 @@ func updatefn(w *nucular.Window, ui *uistate) {
 		if inp, ok := inputSelection(ui); ok && ui.noiseSupressorState != inconsistent {
 			if w.ButtonText(txt) {
 				ui.loadingScreen = true
+				ui.reloadRequired = false
 				go func() { // don't block the UI thread, just display a working screen so user can't run multiple loads/unloads
 					if ui.noiseSupressorState == loaded {
 						if err := unloadSupressor(ui.paClient); err != nil {
