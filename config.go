@@ -13,6 +13,7 @@ import (
 type config struct {
 	Threshold             int
 	DisplayMonitorSources bool
+	EnableUpdates         bool
 }
 
 const configDir = ".config/noisetorch/"
@@ -20,7 +21,7 @@ const configFile = "config.toml"
 
 func initializeConfigIfNot() {
 	log.Println("Checking if config needs to be initialized")
-	conf := config{Threshold: 95, DisplayMonitorSources: false}
+	conf := config{Threshold: 95, DisplayMonitorSources: false, EnableUpdates: true}
 	configdir := filepath.Join(os.Getenv("HOME"), configDir)
 	ok, err := exists(configdir)
 	if err != nil {

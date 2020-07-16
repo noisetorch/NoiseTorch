@@ -15,7 +15,7 @@ Don't forget to ~~like, comment and subscribe~~ leave a star ⭐ if this sounds 
 * Two click setup of your virtual denoising microphone
 * A single, small, statically linked, self-contained binary
 
-## Download
+## Download & Install
 
 [Download the latest release from GitHub](https://github.com/lawl/NoiseTorch/releases).
 
@@ -31,6 +31,12 @@ With gnome this can be done with:
     gtk-update-icon-cache
 
 You now have a `noisetorch` binary and desktop entry on your system.
+
+#### Uninstall
+
+    rm .local/bin/noisetorch
+    rm .local/share/applications/noisetorch.desktop
+    rm .local/share/icons/hicolor/256x256/apps/noisetorch.png 
 
 ## Usage
 
@@ -65,6 +71,9 @@ Install the Go compiler from [golang.org](https://golang.org/). And make sure yo
  git submodule update # Update submodules
  make # build it
  ```
+
+If you build from source, it's recommended that you disable automatic update checks.  
+In `~/.config/noisetorch/config.toml` set `EnableUpdates = false`.
 
 ## Special thanks to
 

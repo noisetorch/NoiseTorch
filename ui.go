@@ -25,7 +25,12 @@ type uistate struct {
 	versionScreen            bool
 	licenseTextArea          nucular.TextEditor
 	masterWindow             *nucular.MasterWindow
+	update                   updateui
 }
+
+var green = color.RGBA{34, 187, 69, 255}
+var red = color.RGBA{255, 70, 70, 255}
+var orange = color.RGBA{255, 140, 0, 255}
 
 func updatefn(w *nucular.Window, ui *uistate) {
 
@@ -46,7 +51,7 @@ func updatefn(w *nucular.Window, ui *uistate) {
 
 	w.MenubarBegin()
 
-	w.Row(10).Dynamic(1)
+	w.Row(10).Dynamic(2)
 	if w := w.Menu(label.TA("About", "LC"), 120, nil); w != nil {
 		w.Row(10).Dynamic(1)
 		if w.MenuItem(label.T("Licenses")) {
@@ -65,11 +70,26 @@ func updatefn(w *nucular.Window, ui *uistate) {
 	w.Row(15).Dynamic(1)
 
 	if ui.noiseSupressorState == loaded {
-		w.LabelColored("NoiseTorch active", "RC", color.RGBA{34, 187, 69, 255} /*green*/)
+		w.LabelColored("NoiseTorch active", "RC", green)
 	} else if ui.noiseSupressorState == unloaded {
-		w.LabelColored("NoiseTorch inactive", "RC", color.RGBA{255, 70, 70, 255} /*red*/)
+		w.LabelColored("NoiseTorch inactive", "RC", red)
 	} else if ui.noiseSupressorState == inconsistent {
-		w.LabelColored("Inconsistent state, please unload first.", "RC", color.RGBA{255, 140, 0, 255} /*orange*/)
+		w.LabelColored("Inconsistent state, please unload first.", "RC", orange)
+	}
+
+	if ui.update.available && !ui.update.triggered {
+		w.Row(20).Ratio(0.9, 0.1)
+		w.LabelColored("Update available! Click to install version: "+ui.update.serverVersion, "LC", green)
+		if w.ButtonText("Update") {
+			ui.update.triggered = true
+			go update(ui)
+			(*ui.masterWindow).Changed()
+		}
+	}
+
+	if ui.update.triggered {
+		w.Row(20).Dynamic(1)
+		w.Label(ui.update.updatingText, "CC")
 	}
 
 	if w.TreePush(nucular.TreeTab, "Settings", true) {

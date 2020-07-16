@@ -20,6 +20,8 @@ release: rnnoise
 	cd tmp/; \
 	tar cvzf ../bin/NoiseTorch_x64.tgz .
 	rm -rf tmp/
+	go run scripts/signer.go -s
+	git describe --tags > bin/version.txt
 rnnoise:
 	cd librnnoise_ladspa/; \
 	cmake . -DBUILD_VST_PLUGIN=OFF -DBUILD_LV2_PLUGIN=OFF -DBUILD_LADSPA_PLUGIN=ON; \

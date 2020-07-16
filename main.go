@@ -28,7 +28,7 @@ type input struct {
 
 func main() {
 
-	f, err := os.OpenFile("/tmp/noisetorch.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	f, err := os.OpenFile("/tmp/noisetorch.log", os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		log.Fatalf("error opening file: %v\n", err)
 	}
@@ -45,6 +45,10 @@ func main() {
 	ui := uistate{}
 	ui.config = readConfig()
 	ui.librnnoise = rnnoisefile
+
+	if ui.config.EnableUpdates {
+		go updateCheck(&ui)
+	}
 
 	paClient, err := pulseaudio.NewClient()
 	defer paClient.Close()
