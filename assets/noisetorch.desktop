@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=NoiseTorch
 Comment=Create a virtual microphone that suppresses noise, in any application.
-Exec=~/.local/bin/noisetorch
+Exec=noisetorch
 Icon=noisetorch.png
 Terminal=false
 Type=Application
