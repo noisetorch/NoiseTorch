@@ -44,9 +44,9 @@ to your `~/.profile`.
 
 #### Uninstall
 
-    rm .local/bin/noisetorch
-    rm .local/share/applications/noisetorch.desktop
-    rm .local/share/icons/hicolor/256x256/apps/noisetorch.png 
+    rm ~/.local/bin/noisetorch
+    rm ~/.local/share/applications/noisetorch.desktop
+    rm ~/.local/share/icons/hicolor/256x256/apps/noisetorch.png 
 
 ## Usage
 
