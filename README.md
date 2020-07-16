@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/lawl/NoiseTorch/master/assets/icon/noisetorch.png" width="100" height="100">
+
 # NoiseTorch
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
@@ -80,3 +82,4 @@ In `~/.config/noisetorch/config.toml` set `EnableUpdates = false`.
 * [xiph.org](https://xiph.org)/[Mozilla's](https://mozilla.org) excellent [RNNoise](https://jmvalin.ca/demo/rnnoise/).
 * [@werman](https://github.com/werman/)'s [LADSPA/VST wrapper](https://github.com/werman/noise-suppression-for-voice/) allowing us to load RNNoise into PulseAudio.
 * [@aarzilli](https://github.com/aarzilli/)'s [nucular](https://github.com/aarzilli/nucular) GUI toolkit for Go.
+* [Salee Design](www.salleedesign.com) (info@salleedesign.com)'s Microphone Icon under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
