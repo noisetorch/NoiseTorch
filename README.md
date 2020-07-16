@@ -9,7 +9,7 @@ Don't forget to ~~like, comment and subscribe~~ leave a star ⭐ if this sounds 
 
 ## Screenshot
 
-![](https://i.imgur.com/uyLdB9P.png)
+![](https://i.imgur.com/T2wH0bl.png)
 
 ## Features
 * Two click setup of your virtual denoising microphone
