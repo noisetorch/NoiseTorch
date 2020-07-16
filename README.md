@@ -17,20 +17,20 @@ Don't forget to ~~like, comment and subscribe~~ leave a star ⭐ if this sounds 
 
 ## Download
 
-NoiseTorch offers the following installation methods:
-
-#### Snap
-
-Coming soon™.
-
-#### Flatpak
-
-Coming soon™.
-
-#### Manual (no automatic updates)
 [Download the latest release from GitHub](https://github.com/lawl/NoiseTorch/releases).
 
-Unpack the `tgz` file, and double click the executable.
+Unpack the `tgz` file, into your home directory.
+
+    tar -C $HOME -xzf NoiseTorch_x64.tgz
+
+This will unpack the application, icon and desktop entry to the correct place.  
+Depending on your desktop environment you may need to tell it to rescan for applications, or tell it to do a refresh now.
+
+With gnome this can be done with:
+
+    gtk-update-icon-cache
+
+You now have a `noisetorch` binary and desktop entry on your system.
 
 ## Usage
 
