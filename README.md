@@ -40,9 +40,9 @@ You now have a `noisetorch` binary and desktop entry on your system.
 
 #### Uninstall
 
-    rm .local/bin/noisetorch
-    rm .local/share/applications/noisetorch.desktop
-    rm .local/share/icons/hicolor/256x256/apps/noisetorch.png 
+    rm ~/.local/bin/noisetorch
+    rm ~/.local/share/applications/noisetorch.desktop
+    rm ~/.local/share/icons/hicolor/256x256/apps/noisetorch.png 
 
 ## Usage
 
