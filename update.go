@@ -32,7 +32,9 @@ func updateCheck(ui *uistate) {
 	body := strings.TrimSpace(string(bodybuf))
 
 	ui.update.serverVersion = body
-	ui.update.available = true
+	if ui.update.serverVersion != version {
+		ui.update.available = true
+	}
 
 }
 
