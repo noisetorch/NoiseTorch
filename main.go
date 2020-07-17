@@ -1,11 +1,13 @@
 package main
 
 import (
+	"flag"
 	"image"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"syscall"
 
 	"github.com/aarzilli/nucular/font"
 
@@ -27,6 +29,19 @@ type input struct {
 }
 
 func main() {
+
+	var pulsepid int
+	flag.IntVar(&pulsepid, "removerlimit", -1, "for internal use only")
+	flag.Parse()
+	if pulsepid > 0 {
+		const MaxUint = ^uint64(0)
+		new := syscall.Rlimit{Cur: MaxUint, Max: MaxUint}
+		err := setRlimit(pulsepid, &new)
+		if err != nil {
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
 
 	f, err := os.OpenFile("/tmp/noisetorch.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {

@@ -59,6 +59,29 @@ func supressorState(c *pulseaudio.Client) int {
 }
 
 func loadSupressor(c *pulseaudio.Client, inp input, ui *uistate) error {
+
+	log.Printf("Querying pulse rlimit\n")
+
+	pid, err := getPulsePid()
+	if err != nil {
+		return err
+	}
+
+	lim, err := getRlimit(pid)
+	if err != nil {
+		return err
+	}
+	log.Printf("Rlimit: %+v. Trying to remove.\n", lim)
+	removeRlimitAsRoot(pid)
+	defer setRlimit(pid, &lim) // lowering RLIMIT doesn't require root
+
+	newLim, err := getRlimit(pid)
+	if err != nil {
+		return err
+	}
+	log.Printf("Rlimit: %+v\n", newLim)
+
+	time.Sleep(time.Millisecond * 1000) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
 	log.Printf("Loading supressor\n")
 	idx, err := c.LoadModule("module-null-sink", "sink_name=nui_mic_denoised_out")
 	if err != nil {
@@ -108,6 +131,7 @@ func unloadSupressor(c *pulseaudio.Client) error {
 		log.Printf("Found null-sink at id [%d], sending unload command\n", m.Index)
 		c.UnloadModule(m.Index)
 	}
+	time.Sleep(time.Millisecond * 500) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
 	log.Printf("Searching for ladspa-sink\n")
 	m, found, err = findModule(c, "module-ladspa-sink", "sink_name=nui_mic_raw_in sink_master=nui_mic_denoised_out")
 	if err != nil {
@@ -117,6 +141,7 @@ func unloadSupressor(c *pulseaudio.Client) error {
 		log.Printf("Found ladspa-sink at id [%d], sending unload command\n", m.Index)
 		c.UnloadModule(m.Index)
 	}
+	time.Sleep(time.Millisecond * 500) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
 	log.Printf("Searching for loopback\n")
 	m, found, err = findModule(c, "module-loopback", "sink=nui_mic_raw_in")
 	if err != nil {
@@ -126,7 +151,7 @@ func unloadSupressor(c *pulseaudio.Client) error {
 		log.Printf("Found loopback at id [%d], sending unload command\n", m.Index)
 		c.UnloadModule(m.Index)
 	}
-
+	time.Sleep(time.Millisecond * 500) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
 	log.Printf("Searching for remap-source\n")
 	m, found, err = findModule(c, "module-remap-source", "master=nui_mic_denoised_out.monitor source_name=nui_mic_remap")
 	if err != nil {
