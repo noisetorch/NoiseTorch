@@ -68,10 +68,6 @@ Please keep in mind that you will need to reload NoiseTorch for these changes to
 
 ## Troubleshooting
 
-Unfortunately, sometimes NoiseTorch may display a "Working..." screen forever when loading the virtual microphone. This is usually due to PulseAudio crashing. If that happens, close NoiseTorch and try again, that usually works. I am working to improve this situation.
-
-If retrying a few times does not solve the issue, please consult [this issue](https://github.com/lawl/NoiseTorch/issues/11) for a possible work-around until I can find a better solution.
-
 If you have a different problem with NoiseTorch, you can find a log file in `/tmp/noisetorch.log`. Please make sure to attach this when reporting an issue.
 
 ## Latency
