@@ -86,6 +86,8 @@ func main() {
 			continue
 		}
 
+		log.Printf("Input %s, %+v\n", sources[i].Name, sources[i])
+
 		var inp input
 
 		inp.ID = sources[i].Name
