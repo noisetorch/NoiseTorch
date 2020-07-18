@@ -83,7 +83,7 @@ func loadSupressor(c *pulseaudio.Client, inp input, ui *uistate) error {
 
 	time.Sleep(time.Millisecond * 1000) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
 	log.Printf("Loading supressor\n")
-	idx, err := c.LoadModule("module-null-sink", "sink_name=nui_mic_denoised_out")
+	idx, err := c.LoadModule("module-null-sink", "sink_name=nui_mic_denoised_out rate=48000")
 	if err != nil {
 		return err
 	}
