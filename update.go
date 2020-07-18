@@ -69,7 +69,7 @@ func update(ui *uistate) {
 	untar(bytes.NewReader(tgz), os.Getenv("HOME"))
 
 	log.Printf("Update installed!\n")
-	ui.update.updatingText = "Update installed!"
+	ui.update.updatingText = "Update installed! (Restart NoiseTorch to apply)"
 	(*ui.masterWindow).Changed()
 }
 
