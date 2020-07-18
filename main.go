@@ -70,7 +70,7 @@ func main() {
 
 	ui.paClient = paClient
 	if err != nil {
-		log.Fatalf("Couldn't create pulseaudio client\n")
+		log.Fatalf("Couldn't create pulseaudio client: %v\n", err)
 	}
 
 	go updateNoiseSupressorLoaded(paClient, &ui.noiseSupressorState)
