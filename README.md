@@ -68,7 +68,7 @@ Please keep in mind that you will need to reload NoiseTorch for these changes to
 
 ## Troubleshooting
 
-If you have a different problem with NoiseTorch, you can find a log file in `/tmp/noisetorch.log`. Please make sure to attach this when reporting an issue.
+Please see the [Troubleshooting](https://github.com/lawl/NoiseTorch/wiki/Troubleshooting) section in the wiki.
 
 ## Latency
 
