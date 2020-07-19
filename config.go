@@ -16,13 +16,12 @@ type config struct {
 	EnableUpdates         bool
 }
 
-const configDir = ".config/noisetorch/"
 const configFile = "config.toml"
 
 func initializeConfigIfNot() {
 	log.Println("Checking if config needs to be initialized")
 	conf := config{Threshold: 95, DisplayMonitorSources: false, EnableUpdates: true}
-	configdir := filepath.Join(os.Getenv("HOME"), configDir)
+	configdir := configDir()
 	ok, err := exists(configdir)
 	if err != nil {
 		log.Fatalf("Couldn't check if config directory exists: %v\n", err)
@@ -45,7 +44,7 @@ func initializeConfigIfNot() {
 }
 
 func readConfig() *config {
-	f := filepath.Join(os.Getenv("HOME"), configDir, configFile)
+	f := filepath.Join(configDir(), configFile)
 	config := config{}
 	if _, err := toml.DecodeFile(f, &config); err != nil {
 		log.Fatalf("Couldn't read config file: %v\n", err)
@@ -55,12 +54,16 @@ func readConfig() *config {
 }
 
 func writeConfig(conf *config) {
-	f := filepath.Join(os.Getenv("HOME"), configDir, configFile)
+	f := filepath.Join(configDir(), configFile)
 	var buffer bytes.Buffer
 	if err := toml.NewEncoder(&buffer).Encode(&conf); err != nil {
 		log.Fatalf("Couldn't write config file: %v\n", err)
 	}
 	ioutil.WriteFile(f, []byte(buffer.String()), 0644)
+}
+
+func configDir() string {
+	return filepath.Join(xdgOrFallback("XDG_CONFIG_HOME", filepath.Join(os.Getenv("HOME"), ".config")), "noisetorch")
 }
 
 func exists(path string) (bool, error) {
@@ -72,4 +75,18 @@ func exists(path string) (bool, error) {
 		return false, nil
 	}
 	return false, err
+}
+
+func xdgOrFallback(xdg string, fallback string) string {
+	dir := os.Getenv(xdg)
+	if dir != "" {
+		if ok, err := exists(dir); ok && err == nil {
+			log.Printf("Resolved $%s to '%s'\n", xdg, dir)
+			return dir
+		}
+
+	}
+
+	log.Printf("Couldn't resolve $%s falling back to '%s'\n", xdg, fallback)
+	return fallback
 }
