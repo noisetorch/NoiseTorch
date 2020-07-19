@@ -1,24 +1,12 @@
 // Package pulseaudio is a pure-Go (no libpulse) implementation of the PulseAudio native protocol.
 //
-// Rather than exposing the PulseAudio protocol directly this library attempts to hide
-// the PulseAudio complexity behind a Go interface.
-// Some of the things which are deliberately not exposed in the API are:
-//
-// → backwards compatibility for old PulseAudio servers
-//
-// → transport mechanism used for the connection (Unix sockets / memfd / shm)
-//
-// → encoding used in the pulseaudio-native protocol
-//
-// Working features
-//
-// Querying and setting the volume.
-//
-// Listing audio outputs.
-//
-// Changing the default audio output.
-//
-// Notifications on config updates.
+// Package pulseaudio is a pure-Go (no libpulse) implementation of the PulseAudio native protocol.
+
+// This library is a fork of https://github.com/mafik/pulseaudio
+// The original library deliberately tries to hide pulseaudio internals and doesn't expose them.
+
+// For my usecase I needed the exact opposite, access to pulseaudio internals.
+
 package pulseaudio
 
 import (
@@ -27,10 +15,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"os/user"
 	"path"
+	"path/filepath"
 )
 
 const version = 32
@@ -67,7 +57,7 @@ type Client struct {
 // NewClient establishes a connection to the PulseAudio server.
 func NewClient(addressArr ...string) (*Client, error) {
 	if len(addressArr) < 1 {
-		addressArr = []string{defaultAddr}
+		addressArr = []string{filepath.Join(xdgOrFallback("XDG_RUNTIME_DIR", fmt.Sprintf("/run/user/%d", os.Getuid())), "pulse/native")}
 	}
 
 	conn, err := net.Dial("unix", addressArr[0])
@@ -264,7 +254,7 @@ func (c *Client) addPacket(data packet) (err error) {
 
 func (c *Client) auth() error {
 	const protocolVersionMask = 0x0000FFFF
-	cookiePath := os.Getenv("HOME") + "/.config/pulse/cookie"
+	cookiePath := filepath.Join(xdgOrFallback("XDG_CONFIG_HOME", filepath.Join(os.Getenv("HOME"), "/.config")), "pulse/cookie")
 	cookie, err := ioutil.ReadFile(cookiePath)
 	if err != nil {
 		return err
@@ -323,4 +313,29 @@ func (c *Client) setName() error {
 func (c *Client) Close() {
 	close(c.packets)
 	c.conn.Close()
+}
+
+func exists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
+func xdgOrFallback(xdg string, fallback string) string {
+	dir := os.Getenv(xdg)
+	if dir != "" {
+		if ok, err := exists(dir); ok && err == nil {
+			log.Printf("Resolved $%s to '%s'\n", xdg, dir)
+			return dir
+		}
+
+	}
+
+	log.Printf("Couldn't resolve $%s falling back to '%s'\n", xdg, fallback)
+	return fallback
 }

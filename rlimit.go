@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -15,8 +16,7 @@ import (
 const rlimitRTTime = 15
 
 func getPulsePid() (int, error) {
-	runtimeDir := os.Getenv("XDG_RUNTIME_DIR")
-	pulsepidfile := filepath.Join(runtimeDir, "pulse/pid")
+	pulsepidfile := filepath.Join(xdgOrFallback("XDG_RUNTIME_DIR", fmt.Sprintf("/run/user/%d", os.Getuid())), "pulse/pid")
 	pidbuf, err := ioutil.ReadFile(pulsepidfile)
 	if err != nil {
 		return 0, err
