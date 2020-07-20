@@ -137,7 +137,11 @@ func updatefn(w *nucular.Window, ui *uistate) {
 			}
 
 			w.LayoutFitWidth(ui.sourceListColdWidthIndex, 0)
-			w.Label(el.Name, "LC")
+			if el.dynamicLatency {
+				w.Label(el.Name, "LC")
+			} else {
+				w.LabelColored("(incompatible?) "+el.Name, "LC", orange)
+			}
 		}
 
 		w.Row(30).Dynamic(1)
