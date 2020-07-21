@@ -362,7 +362,7 @@ func cookiePath() (string, error) {
 	}
 
 	if confHome := os.Getenv("XDG_CONFIG_HOME"); confHome != "" {
-		cookie := filepath.Join(os.Getenv("HOME"), "/pulse/cookie")
+		cookie := filepath.Join(confHome, "/pulse/cookie")
 		if exists(cookie) {
 			return cookie, nil
 		}
