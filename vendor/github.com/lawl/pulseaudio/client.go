@@ -15,7 +15,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"os/user"
@@ -24,8 +23,6 @@ import (
 )
 
 const version = 32
-
-var defaultAddr = fmt.Sprintf("/run/user/%d/pulse/native", os.Getuid())
 
 type packetResponse struct {
 	buff *bytes.Buffer
@@ -57,7 +54,11 @@ type Client struct {
 // NewClient establishes a connection to the PulseAudio server.
 func NewClient(addressArr ...string) (*Client, error) {
 	if len(addressArr) < 1 {
-		addressArr = []string{filepath.Join(xdgOrFallback("XDG_RUNTIME_DIR", fmt.Sprintf("/run/user/%d", os.Getuid())), "pulse/native")}
+		rtp, err := RuntimePath("native")
+		if err != nil {
+			return nil, err
+		}
+		addressArr = []string{rtp}
 	}
 
 	conn, err := net.Dial("unix", addressArr[0])
@@ -254,7 +255,10 @@ func (c *Client) addPacket(data packet) (err error) {
 
 func (c *Client) auth() error {
 	const protocolVersionMask = 0x0000FFFF
-	cookiePath := filepath.Join(xdgOrFallback("XDG_CONFIG_HOME", filepath.Join(os.Getenv("HOME"), "/.config")), "pulse/cookie")
+	cookiePath, err := cookiePath()
+	if err != nil {
+		return err
+	}
 	cookie, err := ioutil.ReadFile(cookiePath)
 	if err != nil {
 		return err
@@ -315,27 +319,64 @@ func (c *Client) Close() {
 	c.conn.Close()
 }
 
-func exists(path string) (bool, error) {
+func exists(path string) bool {
 	_, err := os.Stat(path)
 	if err == nil {
-		return true, nil
+		return true
 	}
 	if os.IsNotExist(err) {
-		return false, nil
+		return false
 	}
-	return false, err
+	return false
 }
 
-func xdgOrFallback(xdg string, fallback string) string {
-	dir := os.Getenv(xdg)
-	if dir != "" {
-		if ok, err := exists(dir); ok && err == nil {
-			log.Printf("Resolved $%s to '%s'\n", xdg, dir)
-			return dir
-		}
+// RuntimePath resolves a file in the pulse runtime path
+// E.g. pass "native" to get the address for pulse' native socket
+// Original implementation: https://github.com/pulseaudio/pulseaudio/blob/6c58c69bb6b937c1e758410d3114fc3bc0606fbe/src/pulsecore/core-util.c
+// Except we do not support legacy $HOME paths
+func RuntimePath(fn string) (string, error) {
 
+	if rtp := os.Getenv("PULSE_RUNTIME_PATH"); rtp != "" {
+		return filepath.Join(rtp, fn), nil
 	}
 
-	log.Printf("Couldn't resolve $%s falling back to '%s'\n", xdg, fallback)
-	return fallback
+	if xdgdir := os.Getenv("XDG_RUNTIME_DIR"); xdgdir != "" {
+		if exists(xdgdir) {
+			return filepath.Join(xdgdir, "/pulse/", fn), nil
+		}
+	}
+
+	defaultxdg := fmt.Sprintf("/run/user/%d", os.Getuid())
+	if exists(defaultxdg) {
+		return filepath.Join(defaultxdg, "/pulse/", fn), nil
+	}
+
+	return "", fmt.Errorf("No valid directory for Pulse RuntimePath found")
+}
+
+func cookiePath() (string, error) {
+
+	p := filepath.Join(os.Getenv("PULSE_COOKIE"))
+	if exists(p) {
+		return p, nil
+	}
+
+	if confHome := os.Getenv("XDG_CONFIG_HOME"); confHome != "" {
+		cookie := filepath.Join(os.Getenv("HOME"), "/pulse/cookie")
+		if exists(cookie) {
+			return cookie, nil
+		}
+	}
+
+	p = filepath.Join(os.Getenv("HOME"), "/.config/pulse/cookie")
+	if exists(p) {
+		return p, nil
+	}
+
+	p = filepath.Join(os.Getenv("HOME"), "/.pulse_cookie")
+	if exists(p) {
+		return p, nil
+	}
+
+	return "", fmt.Errorf("No valid path for Pulse cookie found")
 }

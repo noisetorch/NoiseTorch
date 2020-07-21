@@ -62,7 +62,7 @@ github.com/golang/freetype/truetype
 # github.com/hashicorp/golang-lru v0.0.0-20160813221303-0a025b7e63ad
 github.com/hashicorp/golang-lru
 github.com/hashicorp/golang-lru/simplelru
-# github.com/lawl/pulseaudio v0.0.0-20200719094555-c019d8a2304f
+# github.com/lawl/pulseaudio v0.0.0-20200721164730-42f022e1b3ee
 ## explicit
 github.com/lawl/pulseaudio
 # golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899

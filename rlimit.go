@@ -1,22 +1,25 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
 	"unsafe"
+
+	"github.com/lawl/pulseaudio"
 )
 
 const rlimitRTTime = 15
 
 func getPulsePid() (int, error) {
-	pulsepidfile := filepath.Join(xdgOrFallback("XDG_RUNTIME_DIR", fmt.Sprintf("/run/user/%d", os.Getuid())), "pulse/pid")
+	pulsepidfile, err := pulseaudio.RuntimePath("pid")
+	if err != nil {
+		return 0, err
+	}
 	pidbuf, err := ioutil.ReadFile(pulsepidfile)
 	if err != nil {
 		return 0, err
