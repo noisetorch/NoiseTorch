@@ -66,6 +66,8 @@ If you set this to 0%, NoiseTorch will still dampen noise, but not deactivate yo
 
 Please keep in mind that you will need to reload NoiseTorch for these changes to apply.
 
+Once NoiseTorch has been loaded, feel free to close the window, the virtual microphone will continue working until you explicitly unload it. The NoiseTorch process is not required anymore once it has been loaded.
+
 ## Troubleshooting
 
 Please see the [Troubleshooting](https://github.com/lawl/NoiseTorch/wiki/Troubleshooting) section in the wiki.
