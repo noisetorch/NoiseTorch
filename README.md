@@ -54,6 +54,12 @@ to your `~/.profile`.
     rm ~/.local/share/applications/noisetorch.desktop
     rm ~/.local/share/icons/hicolor/256x256/apps/noisetorch.png 
 
+## Third party packages (like AUR)
+
+Please do not use them. Some are known to mess with configuration files and will break things even if you did install a NoiseTorch package from an official source later on. If you had ever installed NoiseTorch from a non-official source, make sure to *completely* remove every trace, including deleting your `~/.config/noisetorch` directory, before reporting an issue.
+
+If you have been maintaining a third party package for a while and would like it to be blessed as supported, please send me an e-mail.
+
 ## Usage
 
 Select the microphone you want to denoise, and click "Load NoiseTorch", NoiseTorch will create a virtual microphone called "NoiseTorch Microphone" that you can select in any application.
