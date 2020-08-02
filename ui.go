@@ -50,6 +50,11 @@ func updatefn(w *nucular.Window, ui *uistate) {
 		return
 	}
 
+	if !ui.paClient.Connected() {
+		connectScreen(w, ui)
+		return
+	}
+
 	w.MenubarBegin()
 
 	w.Row(10).Dynamic(2)
@@ -259,4 +264,9 @@ func versionScreen(w *nucular.Window, ui *uistate) {
 	if w.ButtonText("OK") {
 		ui.versionScreen = false
 	}
+}
+
+func connectScreen(w *nucular.Window, ui *uistate) {
+	w.Row(50).Dynamic(1)
+	w.Label("Connecting to pulseaudio...", "CB")
 }

@@ -26,6 +26,11 @@ func updateNoiseSupressorLoaded(c *pulseaudio.Client, b *int) {
 
 	for {
 		*b = supressorState(c)
+
+		if !c.Connected() {
+			break
+		}
+
 		<-upd
 	}
 }

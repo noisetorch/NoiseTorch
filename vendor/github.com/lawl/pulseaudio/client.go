@@ -49,6 +49,7 @@ type Client struct {
 	clientIndex int
 	packets     chan packet
 	updates     chan struct{}
+	connected   bool
 }
 
 // NewClient establishes a connection to the PulseAudio server.
@@ -67,9 +68,10 @@ func NewClient(addressArr ...string) (*Client, error) {
 	}
 
 	c := &Client{
-		conn:    conn,
-		packets: make(chan packet),
-		updates: make(chan struct{}, 1),
+		conn:      conn,
+		packets:   make(chan packet),
+		updates:   make(chan struct{}, 1),
+		connected: true,
 	}
 
 	go c.processPackets()
@@ -205,7 +207,10 @@ loop:
 			}
 		}
 	}
+	// end of packet processing loop, e.g. disconnected
+	c.connected = false
 	for _, p := range pending {
+
 		p.responseChan <- packetResponse{
 			buff: nil,
 			err:  fmt.Errorf("PulseAudio client was closed"),
@@ -328,6 +333,11 @@ func exists(path string) bool {
 		return false
 	}
 	return false
+}
+
+// Connected returns a bool specifying if the connection to pulse is alive
+func (c *Client) Connected() bool {
+	return c != nil && c.connected
 }
 
 // RuntimePath resolves a file in the pulse runtime path
