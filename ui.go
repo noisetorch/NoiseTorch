@@ -35,6 +35,11 @@ var orange = color.RGBA{255, 140, 0, 255}
 
 func updatefn(w *nucular.Window, ui *uistate) {
 
+	if !ui.paClient.Connected() {
+		connectScreen(w, ui)
+		return
+	}
+
 	if ui.loadingScreen {
 		loadingScreen(w, ui)
 		return
@@ -47,11 +52,6 @@ func updatefn(w *nucular.Window, ui *uistate) {
 
 	if ui.versionScreen {
 		versionScreen(w, ui)
-		return
-	}
-
-	if !ui.paClient.Connected() {
-		connectScreen(w, ui)
 		return
 	}
 
@@ -269,4 +269,12 @@ func versionScreen(w *nucular.Window, ui *uistate) {
 func connectScreen(w *nucular.Window, ui *uistate) {
 	w.Row(50).Dynamic(1)
 	w.Label("Connecting to pulseaudio...", "CB")
+}
+
+func resetUI(ui *uistate) {
+	ui.loadingScreen = false
+
+	if ui.masterWindow != nil {
+		(*ui.masterWindow).Changed()
+	}
 }

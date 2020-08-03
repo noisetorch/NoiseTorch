@@ -101,6 +101,7 @@ func removeLib(file string) {
 func paConnectionWatchdog(ui *uistate) {
 	for {
 		if ui.paClient.Connected() {
+			time.Sleep(500 * time.Millisecond)
 			continue
 		}
 
@@ -138,6 +139,8 @@ func paConnectionWatchdog(ui *uistate) {
 		}
 
 		ui.inputList = inputs
+
+		resetUI(ui)
 
 		time.Sleep(500 * time.Millisecond)
 	}
