@@ -98,6 +98,35 @@ func removeLib(file string) {
 	log.Printf("Deleted temp librnnoise: %s\n", file)
 }
 
+func getSources(client *pulseaudio.Client) []input {
+	sources, err := client.Sources()
+	if err != nil {
+		log.Printf("Couldn't fetch sources from pulseaudio\n")
+	}
+
+	inputs := make([]input, 0)
+	for i := range sources {
+		if sources[i].Name == "nui_mic_remap" {
+			continue
+		}
+
+		log.Printf("Input %s, %+v\n", sources[i].Name, sources[i])
+
+		var inp input
+
+		inp.ID = sources[i].Name
+		inp.Name = sources[i].PropList["device.description"]
+		inp.isMonitor = (sources[i].MonitorSourceIndex != 0xffffffff)
+
+		//PA_SOURCE_DYNAMIC_LATENCY = 0x0040U
+		inp.dynamicLatency = sources[i].Flags&uint32(0x0040) != 0
+
+		inputs = append(inputs, inp)
+	}
+
+	return inputs
+}
+
 func paConnectionWatchdog(ui *uistate) {
 	for {
 		if ui.paClient.Connected() {
@@ -113,32 +142,7 @@ func paConnectionWatchdog(ui *uistate) {
 		ui.paClient = paClient
 		go updateNoiseSupressorLoaded(paClient, &ui.noiseSupressorState)
 
-		sources, err := ui.paClient.Sources()
-		if err != nil {
-			log.Printf("Couldn't fetch sources from pulseaudio\n")
-		}
-
-		inputs := make([]input, 0)
-		for i := range sources {
-			if sources[i].Name == "nui_mic_remap" {
-				continue
-			}
-
-			log.Printf("Input %s, %+v\n", sources[i].Name, sources[i])
-
-			var inp input
-
-			inp.ID = sources[i].Name
-			inp.Name = sources[i].PropList["device.description"]
-			inp.isMonitor = (sources[i].MonitorSourceIndex != 0xffffffff)
-
-			//PA_SOURCE_DYNAMIC_LATENCY = 0x0040U
-			inp.dynamicLatency = sources[i].Flags&uint32(0x0040) != 0
-
-			inputs = append(inputs, inp)
-		}
-
-		ui.inputList = inputs
+		ui.inputList = getSources(paClient)
 
 		resetUI(ui)
 
