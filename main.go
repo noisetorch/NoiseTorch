@@ -33,8 +33,14 @@ type input struct {
 func main() {
 
 	var pulsepid int
+	var sourceName string
+	var unload bool
+
 	flag.IntVar(&pulsepid, "removerlimit", -1, "for internal use only")
+	flag.StringVar(&sourceName, "s", "", "Load PulseAudio source by name")
+	flag.BoolVar(&unload, "u", false, "Unload supressor")
 	flag.Parse()
+
 	if pulsepid > 0 {
 		const MaxUint = ^uint64(0)
 		new := syscall.Rlimit{Cur: MaxUint, Max: MaxUint}
@@ -62,6 +68,43 @@ func main() {
 	ui := uistate{}
 	ui.config = readConfig()
 	ui.librnnoise = rnnoisefile
+
+	if unload {
+		paClient, err := pulseaudio.NewClient()
+		if err != nil {
+			log.Printf("Couldn't create pulseaudio client: %v\n", err)
+			return
+		}
+
+		unloadSupressor(paClient)
+		log.Printf("supressor unloaded")
+		os.Exit(0)
+	}
+
+	if sourceName != "" {
+		paClient, err := pulseaudio.NewClient()
+		if err != nil {
+			log.Printf("Couldn't create pulseaudio client: %v\n", err)
+			os.Exit(1)
+		}
+
+		if supressorState(paClient) != unloaded {
+			log.Printf("supressor is already loaded")
+			os.Exit(1)
+		}
+
+		sources := getSources(paClient)
+		for i := range sources {
+			if sources[i].ID == sourceName {
+				loadSupressor(paClient, sources[i], &ui)
+				log.Printf("loaded supressor")
+				os.Exit(0)
+			}
+		}
+
+		log.Printf("PulseAudio source not found: %s", sourceName)
+		os.Exit(1)
+	}
 
 	if ui.config.EnableUpdates {
 		go updateCheck(&ui)
