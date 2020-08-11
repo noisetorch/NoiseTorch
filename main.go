@@ -35,10 +35,12 @@ func main() {
 	var pulsepid int
 	var sourceName string
 	var unload bool
+	var threshold int
 
 	flag.IntVar(&pulsepid, "removerlimit", -1, "for internal use only")
 	flag.StringVar(&sourceName, "s", "", "Load PulseAudio source by name")
 	flag.BoolVar(&unload, "u", false, "Unload supressor")
+	flag.IntVar(&threshold, "t", -1, "voice activation threshold")
 	flag.Parse()
 
 	if pulsepid > 0 {
@@ -68,6 +70,10 @@ func main() {
 	ui := uistate{}
 	ui.config = readConfig()
 	ui.librnnoise = rnnoisefile
+
+	if threshold > 0 {
+		ui.config.Threshold = threshold
+	}
 
 	if unload {
 		paClient, err := pulseaudio.NewClient()
