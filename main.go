@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"image"
 	"io"
 	"io/ioutil"
@@ -36,11 +37,13 @@ func main() {
 	var sourceName string
 	var unload bool
 	var threshold int
+	var list bool
 
 	flag.IntVar(&pulsepid, "removerlimit", -1, "for internal use only")
 	flag.StringVar(&sourceName, "s", "", "Load PulseAudio source by name")
 	flag.BoolVar(&unload, "u", false, "Unload supressor")
-	flag.IntVar(&threshold, "t", -1, "voice activation threshold")
+	flag.IntVar(&threshold, "t", -1, "Voice activation threshold")
+	flag.BoolVar(&list, "l", false, "List available PulseAudio sources")
 	flag.Parse()
 
 	if pulsepid > 0 {
@@ -71,29 +74,32 @@ func main() {
 	ui.config = readConfig()
 	ui.librnnoise = rnnoisefile
 
+	paClient, err := pulseaudio.NewClient()
+	if err != nil {
+		log.Printf("Couldn't create pulseaudio client: %v\n", err)
+		os.Exit(1)
+	}
+
+	if list {
+		sources := getSources(paClient)
+		for i := range sources {
+			fmt.Printf("%s: %s\n", sources[i].ID, sources[i].Name)
+		}
+
+		os.Exit(0)
+	}
+
 	if threshold > 0 {
 		ui.config.Threshold = threshold
 	}
 
 	if unload {
-		paClient, err := pulseaudio.NewClient()
-		if err != nil {
-			log.Printf("Couldn't create pulseaudio client: %v\n", err)
-			return
-		}
-
 		unloadSupressor(paClient)
 		log.Printf("supressor unloaded")
 		os.Exit(0)
 	}
 
 	if sourceName != "" {
-		paClient, err := pulseaudio.NewClient()
-		if err != nil {
-			log.Printf("Couldn't create pulseaudio client: %v\n", err)
-			os.Exit(1)
-		}
-
 		if supressorState(paClient) != unloaded {
 			log.Printf("supressor is already loaded\n")
 			os.Exit(1)
