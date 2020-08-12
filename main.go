@@ -61,7 +61,7 @@ func main() {
 
 	logwriter := io.MultiWriter(os.Stdout, f)
 	log.SetOutput(logwriter)
-	log.Printf("Application starting. Version: %s", version)
+	log.Printf("Application starting. Version: %s\n", version)
 
 	initializeConfigIfNot()
 	rnnoisefile := dumpLib()
@@ -95,7 +95,7 @@ func main() {
 		}
 
 		if supressorState(paClient) != unloaded {
-			log.Printf("supressor is already loaded")
+			log.Printf("supressor is already loaded\n")
 			os.Exit(1)
 		}
 
@@ -103,12 +103,12 @@ func main() {
 		for i := range sources {
 			if sources[i].ID == sourceName {
 				loadSupressor(paClient, sources[i], &ui)
-				log.Printf("loaded supressor")
+				log.Printf("loaded supressor\n")
 				os.Exit(0)
 			}
 		}
 
-		log.Printf("PulseAudio source not found: %s", sourceName)
+		log.Printf("PulseAudio source not found: %s\n", sourceName)
 		os.Exit(1)
 	}
 
