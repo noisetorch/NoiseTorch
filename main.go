@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"image"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -62,8 +61,7 @@ func main() {
 	}
 	defer f.Close()
 
-	logwriter := io.MultiWriter(os.Stdout, f)
-	log.SetOutput(logwriter)
+	log.SetOutput(f)
 	log.Printf("Application starting. Version: %s\n", version)
 
 	initializeConfigIfNot()
@@ -95,13 +93,13 @@ func main() {
 
 	if unload {
 		unloadSupressor(paClient)
-		log.Printf("supressor unloaded\n")
+		fmt.Printf("supressor unloaded\n")
 		os.Exit(0)
 	}
 
 	if sourceName != "" {
 		if supressorState(paClient) != unloaded {
-			log.Printf("supressor is already loaded\n")
+			fmt.Fprintf(os.Stderr, "supressor is already loaded\n")
 			os.Exit(1)
 		}
 
@@ -109,7 +107,7 @@ func main() {
 		for i := range sources {
 			if sources[i].ID == sourceName {
 				loadSupressor(paClient, sources[i], &ui)
-				log.Printf("loaded supressor\n")
+				fmt.Printf("loaded supressor\n")
 				os.Exit(0)
 			}
 		}
