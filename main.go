@@ -95,7 +95,7 @@ func main() {
 
 	if unload {
 		unloadSupressor(paClient)
-		log.Printf("supressor unloaded")
+		log.Printf("supressor unloaded\n")
 		os.Exit(0)
 	}
 
