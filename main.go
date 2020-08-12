@@ -112,7 +112,7 @@ func main() {
 			}
 		}
 
-		log.Printf("PulseAudio source not found: %s\n", sourceName)
+		fmt.Fprintf(os.Stderr, "PulseAudio source not found: %s\n", sourceName)
 		os.Exit(1)
 	}
 
@@ -190,6 +190,7 @@ func paConnectionWatchdog(ui *uistate) {
 		paClient, err := pulseaudio.NewClient()
 		if err != nil {
 			log.Printf("Couldn't create pulseaudio client: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Couldn't create pulseaudio client: %v\n", err)
 		}
 
 		ui.paClient = paClient
