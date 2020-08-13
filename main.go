@@ -35,11 +35,13 @@ func main() {
 	var pulsepid int
 	var sourceName string
 	var unload bool
+	var load bool
 	var threshold int
 	var list bool
 
 	flag.IntVar(&pulsepid, "removerlimit", -1, "for internal use only")
-	flag.StringVar(&sourceName, "s", "", "Load PulseAudio source by name")
+	flag.StringVar(&sourceName, "s", "", "Use the specified source device ID")
+	flag.BoolVar(&load, "i", false, "Load supressor for input")
 	flag.BoolVar(&unload, "u", false, "Unload supressor")
 	flag.IntVar(&threshold, "t", -1, "Voice activation threshold")
 	flag.BoolVar(&list, "l", false, "List available PulseAudio sources")
@@ -81,25 +83,34 @@ func main() {
 	if list {
 		sources := getSources(paClient)
 		for i := range sources {
-			fmt.Printf("%s: %s\n", sources[i].ID, sources[i].Name)
+			fmt.Printf("Device Name:%s\nDevice ID: %s\n\n", sources[i].Name, sources[i].ID)
 		}
 
 		os.Exit(0)
 	}
 
 	if threshold > 0 {
-		ui.config.Threshold = threshold
+		if threshold > 95 {
+			fmt.Fprintf(os.Stderr, "Threshold of '%d' too high, setting to maximum of 95.\n", threshold)
+			ui.config.Threshold = 95
+		} else {
+			ui.config.Threshold = threshold
+		}
 	}
 
 	if unload {
 		unloadSupressor(paClient)
-		fmt.Printf("supressor unloaded\n")
 		os.Exit(0)
 	}
 
-	if sourceName != "" {
+	if load {
+		if sourceName == "" {
+			fmt.Fprintf(os.Stderr, "No source specified to load.\n")
+			os.Exit(1)
+		}
+
 		if supressorState(paClient) != unloaded {
-			fmt.Fprintf(os.Stderr, "supressor is already loaded\n")
+			fmt.Fprintf(os.Stderr, "Supressor is already loaded.\n")
 			os.Exit(1)
 		}
 
@@ -107,13 +118,13 @@ func main() {
 		for i := range sources {
 			if sources[i].ID == sourceName {
 				loadSupressor(paClient, sources[i], &ui)
-				fmt.Printf("loaded supressor\n")
 				os.Exit(0)
 			}
 		}
 
 		fmt.Fprintf(os.Stderr, "PulseAudio source not found: %s\n", sourceName)
 		os.Exit(1)
+
 	}
 
 	if ui.config.EnableUpdates {
