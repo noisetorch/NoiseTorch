@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"image"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -33,8 +33,20 @@ type input struct {
 func main() {
 
 	var pulsepid int
+	var sourceName string
+	var unload bool
+	var load bool
+	var threshold int
+	var list bool
+
 	flag.IntVar(&pulsepid, "removerlimit", -1, "for internal use only")
+	flag.StringVar(&sourceName, "s", "", "Use the specified source device ID")
+	flag.BoolVar(&load, "i", false, "Load supressor for input")
+	flag.BoolVar(&unload, "u", false, "Unload supressor")
+	flag.IntVar(&threshold, "t", -1, "Voice activation threshold")
+	flag.BoolVar(&list, "l", false, "List available PulseAudio sources")
 	flag.Parse()
+
 	if pulsepid > 0 {
 		const MaxUint = ^uint64(0)
 		new := syscall.Rlimit{Cur: MaxUint, Max: MaxUint}
@@ -51,9 +63,8 @@ func main() {
 	}
 	defer f.Close()
 
-	logwriter := io.MultiWriter(os.Stdout, f)
-	log.SetOutput(logwriter)
-	log.Printf("Application starting. Version: %s", version)
+	log.SetOutput(f)
+	log.Printf("Application starting. Version: %s\n", version)
 
 	initializeConfigIfNot()
 	rnnoisefile := dumpLib()
@@ -62,6 +73,59 @@ func main() {
 	ui := uistate{}
 	ui.config = readConfig()
 	ui.librnnoise = rnnoisefile
+
+	paClient, err := pulseaudio.NewClient()
+	if err != nil {
+		log.Printf("Couldn't create pulseaudio client: %v\n", err)
+		os.Exit(1)
+	}
+
+	if list {
+		sources := getSources(paClient)
+		for i := range sources {
+			fmt.Printf("Device Name:%s\nDevice ID: %s\n\n", sources[i].Name, sources[i].ID)
+		}
+
+		os.Exit(0)
+	}
+
+	if threshold > 0 {
+		if threshold > 95 {
+			fmt.Fprintf(os.Stderr, "Threshold of '%d' too high, setting to maximum of 95.\n", threshold)
+			ui.config.Threshold = 95
+		} else {
+			ui.config.Threshold = threshold
+		}
+	}
+
+	if unload {
+		unloadSupressor(paClient)
+		os.Exit(0)
+	}
+
+	if load {
+		if sourceName == "" {
+			fmt.Fprintf(os.Stderr, "No source specified to load.\n")
+			os.Exit(1)
+		}
+
+		if supressorState(paClient) != unloaded {
+			fmt.Fprintf(os.Stderr, "Supressor is already loaded.\n")
+			os.Exit(1)
+		}
+
+		sources := getSources(paClient)
+		for i := range sources {
+			if sources[i].ID == sourceName {
+				loadSupressor(paClient, sources[i], &ui)
+				os.Exit(0)
+			}
+		}
+
+		fmt.Fprintf(os.Stderr, "PulseAudio source not found: %s\n", sourceName)
+		os.Exit(1)
+
+	}
 
 	if ui.config.EnableUpdates {
 		go updateCheck(&ui)
@@ -98,6 +162,35 @@ func removeLib(file string) {
 	log.Printf("Deleted temp librnnoise: %s\n", file)
 }
 
+func getSources(client *pulseaudio.Client) []input {
+	sources, err := client.Sources()
+	if err != nil {
+		log.Printf("Couldn't fetch sources from pulseaudio\n")
+	}
+
+	inputs := make([]input, 0)
+	for i := range sources {
+		if sources[i].Name == "nui_mic_remap" {
+			continue
+		}
+
+		log.Printf("Input %s, %+v\n", sources[i].Name, sources[i])
+
+		var inp input
+
+		inp.ID = sources[i].Name
+		inp.Name = sources[i].PropList["device.description"]
+		inp.isMonitor = (sources[i].MonitorSourceIndex != 0xffffffff)
+
+		//PA_SOURCE_DYNAMIC_LATENCY = 0x0040U
+		inp.dynamicLatency = sources[i].Flags&uint32(0x0040) != 0
+
+		inputs = append(inputs, inp)
+	}
+
+	return inputs
+}
+
 func paConnectionWatchdog(ui *uistate) {
 	for {
 		if ui.paClient.Connected() {
@@ -108,37 +201,13 @@ func paConnectionWatchdog(ui *uistate) {
 		paClient, err := pulseaudio.NewClient()
 		if err != nil {
 			log.Printf("Couldn't create pulseaudio client: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Couldn't create pulseaudio client: %v\n", err)
 		}
 
 		ui.paClient = paClient
 		go updateNoiseSupressorLoaded(paClient, &ui.noiseSupressorState)
 
-		sources, err := ui.paClient.Sources()
-		if err != nil {
-			log.Printf("Couldn't fetch sources from pulseaudio\n")
-		}
-
-		inputs := make([]input, 0)
-		for i := range sources {
-			if sources[i].Name == "nui_mic_remap" {
-				continue
-			}
-
-			log.Printf("Input %s, %+v\n", sources[i].Name, sources[i])
-
-			var inp input
-
-			inp.ID = sources[i].Name
-			inp.Name = sources[i].PropList["device.description"]
-			inp.isMonitor = (sources[i].MonitorSourceIndex != 0xffffffff)
-
-			//PA_SOURCE_DYNAMIC_LATENCY = 0x0040U
-			inp.dynamicLatency = sources[i].Flags&uint32(0x0040) != 0
-
-			inputs = append(inputs, inp)
-		}
-
-		ui.inputList = inputs
+		ui.inputList = getSources(paClient)
 
 		resetUI(ui)
 
