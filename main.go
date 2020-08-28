@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -58,7 +59,8 @@ func main() {
 	}
 
 	date := time.Now().Format("2006_01_02_03_04_05")
-	f, err := os.OpenFile(fmt.Sprintf("/tmp/noisetorch-%s.log", date), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	tmpdir := os.TempDir()
+	f, err := os.OpenFile(filepath.Join(tmpdir, fmt.Sprintf("noisetorch-%s.log", date)), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatalf("error opening file: %v\n", err)
 	}
