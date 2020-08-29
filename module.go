@@ -63,7 +63,7 @@ func supressorState(c *pulseaudio.Client) int {
 	return unloaded
 }
 
-func loadSupressor(c *pulseaudio.Client, inp input, ui *uistate) error {
+func loadSupressor(c *pulseaudio.Client, inp input, ui *uistate, usesudo bool) error {
 
 	log.Printf("Querying pulse rlimit\n")
 
@@ -77,7 +77,7 @@ func loadSupressor(c *pulseaudio.Client, inp input, ui *uistate) error {
 		return err
 	}
 	log.Printf("Rlimit: %+v. Trying to remove.\n", lim)
-	removeRlimitAsRoot(pid)
+	removeRlimitAsRoot(pid, usesudo)
 	defer setRlimit(pid, &lim) // lowering RLIMIT doesn't require root
 
 	newLim, err := getRlimit(pid)

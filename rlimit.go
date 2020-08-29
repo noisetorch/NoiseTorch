@@ -43,14 +43,20 @@ func setRlimit(pid int, new *syscall.Rlimit) error {
 	return err
 }
 
-func removeRlimitAsRoot(pid int) {
+func removeRlimitAsRoot(pid int, usesudo bool) {
 	self, err := os.Executable()
 	if err != nil {
 		log.Printf("Couldn't find path to own binary, trying PATH\n")
 		self = "noisetorch" //try PATH and hope for the best
 	}
 
-	cmd := exec.Command("pkexec", self, "-removerlimit", strconv.Itoa(pid))
+	var sudocommand string
+	if usesudo { // use sudo for CLI
+		sudocommand = "sudo"
+	} else { // use pkexec for gui
+		sudocommand = "pkexec"
+	}
+	cmd := exec.Command(sudocommand, self, "-removerlimit", strconv.Itoa(pid))
 	log.Printf("Calling: %s\n", cmd.String())
 	err = cmd.Run()
 	if err != nil {

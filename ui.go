@@ -188,7 +188,7 @@ func updatefn(w *nucular.Window, ui *uistate) {
 							log.Println(err)
 						}
 					}
-					if err := loadSupressor(ui.paClient, inp, ui); err != nil {
+					if err := loadSupressor(ui.paClient, inp, ui, false); err != nil {
 						log.Println(err)
 					}
 

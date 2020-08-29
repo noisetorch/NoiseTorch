@@ -120,7 +120,7 @@ func main() {
 		sources := getSources(paClient)
 		for i := range sources {
 			if sources[i].ID == sourceName {
-				loadSupressor(paClient, sources[i], &ui)
+				loadSupressor(paClient, sources[i], &ui, true)
 				os.Exit(0)
 			}
 		}
