@@ -6,3 +6,4 @@ Icon=noisetorch.png
 Terminal=false
 Type=Application
 Categories=Audio;AudioVideo;Utility;
+StartupWMClass=NoiseTorch
