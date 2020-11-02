@@ -86,7 +86,7 @@ func main() {
 	if list {
 		sources := getSources(paClient)
 		for i := range sources {
-			fmt.Printf("Device Name:%s\nDevice ID: %s\n\n", sources[i].Name, sources[i].ID)
+			fmt.Printf("Device Name: %s\nDevice ID: %s\n\n", sources[i].Name, sources[i].ID)
 		}
 
 		os.Exit(0)
