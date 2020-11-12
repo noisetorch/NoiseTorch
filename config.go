@@ -20,7 +20,10 @@ const configFile = "config.toml"
 
 func initializeConfigIfNot() {
 	log.Println("Checking if config needs to be initialized")
-	conf := config{Threshold: 95, DisplayMonitorSources: false, EnableUpdates: true}
+	conf := config{Threshold: 95, DisplayMonitorSources: false, EnableUpdates: true} // if you're a package maintainer and you mess with this, we have a problem.
+	// Unless you set -tags release on the build the updater is *not* compiled in any. DO NOT MESS WITH THIS!
+	// This isn't and never was the proper location to disable the updater.
+
 	configdir := configDir()
 	ok, err := exists(configdir)
 	if err != nil {

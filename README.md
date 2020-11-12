@@ -94,9 +94,6 @@ Install the Go compiler from [golang.org](https://golang.org/). And make sure yo
  make # build it
  ```
 
-If you build from source, it's recommended that you disable automatic update checks.  
-In `~/.config/noisetorch/config.toml` set `EnableUpdates = false`.
-
 ## Special thanks to
 
 * [xiph.org](https://xiph.org)/[Mozilla's](https://mozilla.org) excellent [RNNoise](https://jmvalin.ca/demo/rnnoise/).
