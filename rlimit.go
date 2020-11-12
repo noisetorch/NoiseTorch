@@ -43,11 +43,19 @@ func setRlimit(pid int, new *syscall.Rlimit) error {
 	return err
 }
 
+func removeRlimit(pid int) {
+	const MaxUint = ^uint64(0)
+	new := syscall.Rlimit{Cur: MaxUint, Max: MaxUint}
+	err := setRlimit(pid, &new)
+	if err != nil {
+		log.Printf("Couldn't set rlimit with caps\n")
+	}
+}
+
 func removeRlimitAsRoot(pid int) {
 	self, err := os.Executable()
 	if err != nil {
-		log.Printf("Couldn't find path to own binary, trying PATH\n")
-		self = "noisetorch" //try PATH and hope for the best
+		log.Fatalf("Couldn't find path to own binary\n")
 	}
 
 	cmd := exec.Command("pkexec", self, "-removerlimit", strconv.Itoa(pid))

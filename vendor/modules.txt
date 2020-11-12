@@ -65,6 +65,9 @@ github.com/hashicorp/golang-lru/simplelru
 # github.com/lawl/pulseaudio v0.0.0-20200802093727-ab0735955fd0
 ## explicit
 github.com/lawl/pulseaudio
+# github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635
+## explicit
+github.com/syndtr/gocapability/capability
 # golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899
 ## explicit
 golang.org/x/crypto/ed25519

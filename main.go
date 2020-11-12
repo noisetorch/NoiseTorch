@@ -34,6 +34,7 @@ type input struct {
 func main() {
 
 	var pulsepid int
+	var setcap bool
 	var sourceName string
 	var unload bool
 	var load bool
@@ -41,12 +42,25 @@ func main() {
 	var list bool
 
 	flag.IntVar(&pulsepid, "removerlimit", -1, "for internal use only")
+	flag.BoolVar(&setcap, "setcap", false, "for internal use only")
 	flag.StringVar(&sourceName, "s", "", "Use the specified source device ID")
 	flag.BoolVar(&load, "i", false, "Load supressor for input")
 	flag.BoolVar(&unload, "u", false, "Unload supressor")
 	flag.IntVar(&threshold, "t", -1, "Voice activation threshold")
 	flag.BoolVar(&list, "l", false, "List available PulseAudio sources")
 	flag.Parse()
+
+	// we also execute this opportunistically on pulsepid since that's also called as root, but need to do so silently, so no os.Exit()'s
+	if setcap || pulsepid > 0 {
+		err := makeBinarySetcapped()
+		if err != nil && !(pulsepid > 0) {
+			os.Exit(1)
+		}
+
+		if !(pulsepid > 0) {
+			os.Exit(0)
+		}
+	}
 
 	if pulsepid > 0 {
 		const MaxUint = ^uint64(0)
@@ -68,6 +82,7 @@ func main() {
 
 	log.SetOutput(f)
 	log.Printf("Application starting. Version: %s\n", version)
+	log.Printf("CAP_SYS_RESOURCE: %t\n", hasCapSysResource(getCurrentCaps()))
 
 	initializeConfigIfNot()
 	rnnoisefile := dumpLib()

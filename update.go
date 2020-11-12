@@ -67,6 +67,7 @@ func update(ctx *ntcontext) {
 	}
 
 	untar(bytes.NewReader(tgz), os.Getenv("HOME"))
+	pkexecSetcapSelf()
 
 	log.Printf("Update installed!\n")
 	ctx.update.updatingText = "Update installed! (Restart NoiseTorch to apply)"

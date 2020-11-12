@@ -78,7 +78,13 @@ func loadSupressor(ctx *ntcontext, inp input) error {
 		return err
 	}
 	log.Printf("Rlimit: %+v. Trying to remove.\n", lim)
-	removeRlimitAsRoot(pid)
+	if hasCapSysResource(getCurrentCaps()) {
+		log.Printf("Have capabilities\n")
+		removeRlimit(pid)
+	} else {
+		log.Printf("Capabilities missing, removing via pkexec\n")
+		removeRlimitAsRoot(pid)
+	}
 	defer setRlimit(pid, &lim) // lowering RLIMIT doesn't require root
 
 	newLim, err := getRlimit(pid)
@@ -87,7 +93,6 @@ func loadSupressor(ctx *ntcontext, inp input) error {
 	}
 	log.Printf("Rlimit: %+v\n", newLim)
 
-	time.Sleep(time.Millisecond * 1000) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
 	log.Printf("Loading supressor\n")
 	idx, err := c.LoadModule("module-null-sink", "sink_name=nui_mic_denoised_out rate=48000")
 	if err != nil {
@@ -128,6 +133,18 @@ func loadSupressor(ctx *ntcontext, inp input) error {
 
 func unloadSupressor(c *pulseaudio.Client) error {
 	log.Printf("Unloading pulseaudio modules\n")
+
+	// we ignore errors here on purpose, since NT didn't use to do this for unloading anyways
+	// and we don't want to prompt for root again
+	// so this only suceeds with CAP_SYS_RESOURCE, which we want to make the new default anyways.
+	if pid, err := getPulsePid(); err == nil {
+		if lim, err := getRlimit(pid); err == nil {
+			removeRlimit(pid)
+			defer setRlimit(pid, &lim)
+		}
+
+	}
+
 	log.Printf("Searching for null-sink\n")
 	m, found, err := findModule(c, "module-null-sink", "sink_name=nui_mic_denoised_out")
 	if err != nil {
