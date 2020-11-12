@@ -71,6 +71,10 @@ func updatefn(ctx *ntcontext, w *nucular.Window) {
 			ctx.versionScreen = true
 		}
 	}
+	if w := w.Menu(label.TA("Support NoiseTorch on PATREON", "RC"), 120, nil); w != nil {
+		exec.Command("xdg-open", "https://patreon.com/lawl").Run()
+		w.Close()
+	}
 	w.MenubarEnd()
 
 	w.Row(15).Dynamic(1)
