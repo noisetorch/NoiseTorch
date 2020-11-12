@@ -93,6 +93,8 @@ func main() {
 	ctx.librnnoise = rnnoisefile
 
 	paClient, err := pulseaudio.NewClient()
+	ctx.paClient = paClient
+
 	if err != nil {
 		log.Printf("Couldn't create pulseaudio client: %v\n", err)
 		os.Exit(1)
@@ -135,7 +137,11 @@ func main() {
 		sources := getSources(paClient)
 		for i := range sources {
 			if sources[i].ID == sourceName {
-				loadSupressor(&ctx, sources[i])
+				err := loadSupressor(&ctx, sources[i])
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error loading PulseAudio Module: %+v\n", err)
+					os.Exit(1)
+				}
 				os.Exit(0)
 			}
 		}
