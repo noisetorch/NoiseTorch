@@ -22,7 +22,7 @@ type updateui struct {
 	updatingText  string
 }
 
-func updateCheck(ui *uistate) {
+func updateCheck(ctx *ntcontext) {
 	log.Println("Checking for updates")
 	bodybuf, err := fetchFile("version.txt")
 	if err != nil {
@@ -31,27 +31,27 @@ func updateCheck(ui *uistate) {
 	}
 	body := strings.TrimSpace(string(bodybuf))
 
-	ui.update.serverVersion = body
-	if ui.update.serverVersion != version {
-		ui.update.available = true
+	ctx.update.serverVersion = body
+	if ctx.update.serverVersion != version {
+		ctx.update.available = true
 	}
 
 }
 
-func update(ui *uistate) {
+func update(ctx *ntcontext) {
 	sig, err := fetchFile("NoiseTorch_x64.tgz.sig")
 	if err != nil {
 		log.Println("Couldn't fetch signature", err)
-		ui.update.updatingText = "Update failed!"
-		(*ui.masterWindow).Changed()
+		ctx.update.updatingText = "Update failed!"
+		(*ctx.masterWindow).Changed()
 		return
 	}
 
 	tgz, err := fetchFile("NoiseTorch_x64.tgz")
 	if err != nil {
 		log.Println("Couldn't fetch tgz", err)
-		ui.update.updatingText = "Update failed!"
-		(*ui.masterWindow).Changed()
+		ctx.update.updatingText = "Update failed!"
+		(*ctx.masterWindow).Changed()
 		return
 	}
 
@@ -61,16 +61,16 @@ func update(ui *uistate) {
 
 	if !verified {
 		log.Printf("SIGNATURE VERIFICATION FAILED, ABORTING UPDATE!\n")
-		ui.update.updatingText = "Update failed!"
-		(*ui.masterWindow).Changed()
+		ctx.update.updatingText = "Update failed!"
+		(*ctx.masterWindow).Changed()
 		return
 	}
 
 	untar(bytes.NewReader(tgz), os.Getenv("HOME"))
 
 	log.Printf("Update installed!\n")
-	ui.update.updatingText = "Update installed! (Restart NoiseTorch to apply)"
-	(*ui.masterWindow).Changed()
+	ctx.update.updatingText = "Update installed! (Restart NoiseTorch to apply)"
+	(*ctx.masterWindow).Changed()
 }
 
 func fetchFile(file string) ([]byte, error) {

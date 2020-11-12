@@ -73,9 +73,9 @@ func main() {
 	rnnoisefile := dumpLib()
 	defer removeLib(rnnoisefile)
 
-	ui := uistate{}
-	ui.config = readConfig()
-	ui.librnnoise = rnnoisefile
+	ctx := ntcontext{}
+	ctx.config = readConfig()
+	ctx.librnnoise = rnnoisefile
 
 	paClient, err := pulseaudio.NewClient()
 	if err != nil {
@@ -95,9 +95,9 @@ func main() {
 	if threshold > 0 {
 		if threshold > 95 {
 			fmt.Fprintf(os.Stderr, "Threshold of '%d' too high, setting to maximum of 95.\n", threshold)
-			ui.config.Threshold = 95
+			ctx.config.Threshold = 95
 		} else {
-			ui.config.Threshold = threshold
+			ctx.config.Threshold = threshold
 		}
 	}
 
@@ -120,7 +120,7 @@ func main() {
 		sources := getSources(paClient)
 		for i := range sources {
 			if sources[i].ID == sourceName {
-				loadSupressor(paClient, sources[i], &ui)
+				loadSupressor(&ctx, sources[i])
 				os.Exit(0)
 			}
 		}
@@ -130,16 +130,16 @@ func main() {
 
 	}
 
-	if ui.config.EnableUpdates {
-		go updateCheck(&ui)
+	if ctx.config.EnableUpdates {
+		go updateCheck(&ctx)
 	}
 
-	go paConnectionWatchdog(&ui)
+	go paConnectionWatchdog(&ctx)
 
 	wnd := nucular.NewMasterWindowSize(0, "NoiseTorch", image.Point{550, 300}, func(w *nucular.Window) {
-		updatefn(w, &ui)
+		updatefn(&ctx, w)
 	})
-	ui.masterWindow = &wnd
+	ctx.masterWindow = &wnd
 	style := style.FromTheme(style.DarkTheme, 2.0)
 	style.Font = font.DefaultFont(16, 1)
 	wnd.SetStyle(style)
@@ -194,9 +194,9 @@ func getSources(client *pulseaudio.Client) []input {
 	return inputs
 }
 
-func paConnectionWatchdog(ui *uistate) {
+func paConnectionWatchdog(ctx *ntcontext) {
 	for {
-		if ui.paClient.Connected() {
+		if ctx.paClient.Connected() {
 			time.Sleep(500 * time.Millisecond)
 			continue
 		}
@@ -207,12 +207,12 @@ func paConnectionWatchdog(ui *uistate) {
 			fmt.Fprintf(os.Stderr, "Couldn't create pulseaudio client: %v\n", err)
 		}
 
-		ui.paClient = paClient
-		go updateNoiseSupressorLoaded(paClient, &ui.noiseSupressorState)
+		ctx.paClient = paClient
+		go updateNoiseSupressorLoaded(paClient, &ctx.noiseSupressorState)
 
-		ui.inputList = getSources(paClient)
+		ctx.inputList = getSources(paClient)
 
-		resetUI(ui)
+		resetUI(ctx)
 
 		time.Sleep(500 * time.Millisecond)
 	}

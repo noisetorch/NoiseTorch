@@ -63,7 +63,8 @@ func supressorState(c *pulseaudio.Client) int {
 	return unloaded
 }
 
-func loadSupressor(c *pulseaudio.Client, inp input, ui *uistate) error {
+func loadSupressor(ctx *ntcontext, inp input) error {
+	c := ctx.paClient
 
 	log.Printf("Querying pulse rlimit\n")
 
@@ -98,7 +99,7 @@ func loadSupressor(c *pulseaudio.Client, inp input, ui *uistate) error {
 
 	idx, err = c.LoadModule("module-ladspa-sink",
 		fmt.Sprintf("sink_name=nui_mic_raw_in sink_master=nui_mic_denoised_out "+
-			"label=noise_suppressor_mono plugin=%s control=%d", ui.librnnoise, ui.config.Threshold))
+			"label=noise_suppressor_mono plugin=%s control=%d", ctx.librnnoise, ctx.config.Threshold))
 	if err != nil {
 		return err
 	}
