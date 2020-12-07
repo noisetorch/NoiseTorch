@@ -124,17 +124,22 @@ func main() {
 
 	if load {
 		ctx.paClient = paClient
-		if sourceName == "" {
-			fmt.Fprintf(os.Stderr, "No source specified to load.\n")
-			os.Exit(1)
-		}
+		sources := getSources(paClient)
 
 		if supressorState(paClient) != unloaded {
 			fmt.Fprintf(os.Stderr, "Supressor is already loaded.\n")
 			os.Exit(1)
 		}
 
-		sources := getSources(paClient)
+		if sourceName == "" {
+			defaultSource, err := getDefaultSourceID(paClient)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "No source specified to load and failed to load default source: %+v\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("No source specified to load, loading default source with Device ID %s\n\n", defaultSource)
+			sourceName = defaultSource
+		}
 		for i := range sources {
 			if sources[i].ID == sourceName {
 				err := loadSupressor(&ctx, sources[i])
@@ -145,7 +150,6 @@ func main() {
 				os.Exit(0)
 			}
 		}
-
 		fmt.Fprintf(os.Stderr, "PulseAudio source not found: %s\n", sourceName)
 		os.Exit(1)
 
