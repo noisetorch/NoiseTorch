@@ -202,6 +202,8 @@ func updatefn(ctx *ntcontext, w *nucular.Window) {
 							time.Sleep(time.Millisecond * 500)
 						}
 					}
+					ctx.config.LastUsedInput = &inp.ID
+					go writeConfig(ctx.config)
 					ctx.loadingScreen = false
 					(*ctx.masterWindow).Changed()
 				}()
