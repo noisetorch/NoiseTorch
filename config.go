@@ -14,6 +14,7 @@ type config struct {
 	Threshold             int
 	DisplayMonitorSources bool
 	EnableUpdates         bool
+	LastUsedInput         *string
 }
 
 const configFile = "config.toml"

@@ -231,10 +231,43 @@ func paConnectionWatchdog(ctx *ntcontext) {
 		ctx.paClient = paClient
 		go updateNoiseSupressorLoaded(paClient, &ctx.noiseSupressorState)
 
-		ctx.inputList = getSources(paClient)
+		ctx.inputList = getSourcesWithPreSelectedInput(paClient, ctx.config)
 
 		resetUI(ctx)
 
 		time.Sleep(500 * time.Millisecond)
 	}
+}
+
+func getSourcesWithPreSelectedInput(client *pulseaudio.Client, config *config) []input {
+	inputs := getSources(client)
+	preselectedInputId := config.LastUsedInput
+	inputExists := false
+	for _, input := range inputs {
+		inputExists = inputExists || input.ID == *preselectedInputId
+	}
+	if !inputExists {
+		defaultSource, err := getDefaultSourceID(client)
+		if err != nil {
+			log.Printf("Failed to load default source\n")
+		} else {
+			preselectedInputId = &defaultSource
+		}
+	}
+	if preselectedInputId != nil {
+		for i := range inputs {
+			if inputs[i].ID == *preselectedInputId {
+				inputs[i].checked = true
+			}
+		}
+	}
+	return inputs
+}
+
+func getDefaultSourceID(client *pulseaudio.Client) (string, error) {
+	server, err := client.ServerInfo()
+	if err != nil {
+		return "", err
+	}
+	return server.DefaultSource, nil
 }
