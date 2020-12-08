@@ -137,7 +137,6 @@ func main() {
 				fmt.Fprintf(os.Stderr, "No source specified to load and failed to load default source: %+v\n", err)
 				os.Exit(1)
 			}
-			fmt.Printf("No source specified to load, loading default source with Device ID %s\n\n", defaultSource)
 			sourceName = defaultSource
 		}
 		for i := range sources {
@@ -235,7 +234,7 @@ func paConnectionWatchdog(ctx *ntcontext) {
 		ctx.paClient = paClient
 		go updateNoiseSupressorLoaded(paClient, &ctx.noiseSupressorState)
 
-		ctx.inputList = getSourcesWithPreSelectedInput(paClient, ctx.config)
+		ctx.inputList = getSourcesWithPreSelectedInput(ctx)
 
 		resetUI(ctx)
 
@@ -243,17 +242,17 @@ func paConnectionWatchdog(ctx *ntcontext) {
 	}
 }
 
-func getSourcesWithPreSelectedInput(client *pulseaudio.Client, config *config) []input {
-	inputs := getSources(client)
-	preselectedInputId := config.LastUsedInput
+func getSourcesWithPreSelectedInput(ctx *ntcontext) []input {
+	inputs := getSources(ctx.paClient)
+	preselectedInputId := ctx.config.LastUsedInput
 	inputExists := false
 	for _, input := range inputs {
 		inputExists = inputExists || input.ID == *preselectedInputId
 	}
 	if !inputExists {
-		defaultSource, err := getDefaultSourceID(client)
+		defaultSource, err := getDefaultSourceID(ctx.paClient)
 		if err != nil {
-			log.Printf("Failed to load default source\n")
+			log.Printf("Failed to load default source: %+v\n", err)
 		} else {
 			preselectedInputId = &defaultSource
 		}
