@@ -246,9 +246,12 @@ func getSourcesWithPreSelectedInput(ctx *ntcontext) []input {
 	inputs := getSources(ctx.paClient)
 	preselectedInputId := ctx.config.LastUsedInput
 	inputExists := false
-	for _, input := range inputs {
-		inputExists = inputExists || input.ID == *preselectedInputId
+	if preselectedInputId != nil {
+		for _, input := range inputs {
+			inputExists = inputExists || input.ID == *preselectedInputId
+		}
 	}
+
 	if !inputExists {
 		defaultSource, err := getDefaultSourceID(ctx.paClient)
 		if err != nil {
