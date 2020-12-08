@@ -44,7 +44,7 @@ func main() {
 	flag.IntVar(&pulsepid, "removerlimit", -1, "for internal use only")
 	flag.BoolVar(&setcap, "setcap", false, "for internal use only")
 	flag.StringVar(&sourceName, "s", "", "Use the specified source device ID")
-	flag.BoolVar(&load, "i", false, "Load supressor for input")
+	flag.BoolVar(&load, "i", false, "Load supressor for input. If no source device ID is specified the default pulse audio source is used.")
 	flag.BoolVar(&unload, "u", false, "Unload supressor")
 	flag.IntVar(&threshold, "t", -1, "Voice activation threshold")
 	flag.BoolVar(&list, "l", false, "List available PulseAudio sources")
