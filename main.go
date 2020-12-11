@@ -44,7 +44,7 @@ func main() {
 	flag.IntVar(&pulsepid, "removerlimit", -1, "for internal use only")
 	flag.BoolVar(&setcap, "setcap", false, "for internal use only")
 	flag.StringVar(&sourceName, "s", "", "Use the specified source device ID")
-	flag.BoolVar(&load, "i", false, "Load supressor for input")
+	flag.BoolVar(&load, "i", false, "Load supressor for input. If no source device ID is specified the default pulse audio source is used.")
 	flag.BoolVar(&unload, "u", false, "Unload supressor")
 	flag.IntVar(&threshold, "t", -1, "Voice activation threshold")
 	flag.BoolVar(&list, "l", false, "List available PulseAudio sources")
@@ -124,17 +124,21 @@ func main() {
 
 	if load {
 		ctx.paClient = paClient
-		if sourceName == "" {
-			fmt.Fprintf(os.Stderr, "No source specified to load.\n")
-			os.Exit(1)
-		}
+		sources := getSources(paClient)
 
 		if supressorState(paClient) != unloaded {
 			fmt.Fprintf(os.Stderr, "Supressor is already loaded.\n")
 			os.Exit(1)
 		}
 
-		sources := getSources(paClient)
+		if sourceName == "" {
+			defaultSource, err := getDefaultSourceID(paClient)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "No source specified to load and failed to load default source: %+v\n", err)
+				os.Exit(1)
+			}
+			sourceName = defaultSource
+		}
 		for i := range sources {
 			if sources[i].ID == sourceName {
 				err := loadSupressor(&ctx, sources[i])
@@ -145,7 +149,6 @@ func main() {
 				os.Exit(0)
 			}
 		}
-
 		fmt.Fprintf(os.Stderr, "PulseAudio source not found: %s\n", sourceName)
 		os.Exit(1)
 
@@ -231,10 +234,46 @@ func paConnectionWatchdog(ctx *ntcontext) {
 		ctx.paClient = paClient
 		go updateNoiseSupressorLoaded(paClient, &ctx.noiseSupressorState)
 
-		ctx.inputList = getSources(paClient)
+		ctx.inputList = getSourcesWithPreSelectedInput(ctx)
 
 		resetUI(ctx)
 
 		time.Sleep(500 * time.Millisecond)
 	}
+}
+
+func getSourcesWithPreSelectedInput(ctx *ntcontext) []input {
+	inputs := getSources(ctx.paClient)
+	preselectedInputID := &ctx.config.LastUsedInput
+	inputExists := false
+	if preselectedInputID != nil {
+		for _, input := range inputs {
+			inputExists = inputExists || input.ID == *preselectedInputID
+		}
+	}
+
+	if !inputExists {
+		defaultSource, err := getDefaultSourceID(ctx.paClient)
+		if err != nil {
+			log.Printf("Failed to load default source: %+v\n", err)
+		} else {
+			preselectedInputID = &defaultSource
+		}
+	}
+	if preselectedInputID != nil {
+		for i := range inputs {
+			if inputs[i].ID == *preselectedInputID {
+				inputs[i].checked = true
+			}
+		}
+	}
+	return inputs
+}
+
+func getDefaultSourceID(client *pulseaudio.Client) (string, error) {
+	server, err := client.ServerInfo()
+	if err != nil {
+		return "", err
+	}
+	return server.DefaultSource, nil
 }
