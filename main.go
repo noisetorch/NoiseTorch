@@ -244,11 +244,11 @@ func paConnectionWatchdog(ctx *ntcontext) {
 
 func getSourcesWithPreSelectedInput(ctx *ntcontext) []input {
 	inputs := getSources(ctx.paClient)
-	preselectedInputId := ctx.config.LastUsedInput
+	preselectedInputID := &ctx.config.LastUsedInput
 	inputExists := false
-	if preselectedInputId != nil {
+	if preselectedInputID != nil {
 		for _, input := range inputs {
-			inputExists = inputExists || input.ID == *preselectedInputId
+			inputExists = inputExists || input.ID == *preselectedInputID
 		}
 	}
 
@@ -257,12 +257,12 @@ func getSourcesWithPreSelectedInput(ctx *ntcontext) []input {
 		if err != nil {
 			log.Printf("Failed to load default source: %+v\n", err)
 		} else {
-			preselectedInputId = &defaultSource
+			preselectedInputID = &defaultSource
 		}
 	}
-	if preselectedInputId != nil {
+	if preselectedInputID != nil {
 		for i := range inputs {
-			if inputs[i].ID == *preselectedInputId {
+			if inputs[i].ID == *preselectedInputID {
 				inputs[i].checked = true
 			}
 		}
