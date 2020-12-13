@@ -62,7 +62,7 @@ If you have been maintaining a third party package for a while and would like it
 
 ## Usage
 
-Select the microphone you want to denoise, and click "Load NoiseTorch", NoiseTorch will create a virtual microphone called "NoiseTorch Microphone" that you can select in any application.
+Select the microphone you want to denoise, and click "Load NoiseTorch", NoiseTorch will create a virtual microphone called "NoiseTorch Microphone" that you can select in any application. Output filtering works the same way, simply output the applications you want to filter to "NoiseTorch Headphones".
 
 When you're done using it, simply click "Unload NoiseTorch" to remove it again, until you need it next time.
 
@@ -80,7 +80,9 @@ Please see the [Troubleshooting](https://github.com/lawl/NoiseTorch/wiki/Trouble
 
 ## Latency
 
-NoiseTorch may introduce a small amount of latency. The amount of inherent latency introduced by noise supression is 10ms, this is very low and should not be a problem. Additionally PulseAudio currently introduces a variable amount of latency that depends on your system. Lowering this latency [requires a change in PulseAudio](https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/issues/120).
+NoiseTorch may introduce a small amount of latency for microphone filtering. The amount of inherent latency introduced by noise supression is 10ms, this is very low and should not be a problem. Additionally PulseAudio currently introduces a variable amount of latency that depends on your system. Lowering this latency [requires a change in PulseAudio](https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/issues/120).
+
+Output filtering currently introduces something on the order of ~100ms with pulseaudio. This should still be fine for regular conferences, VOIPing and gaming. Maybe not for competitive gaming teams.
 
 ## Building from source
 

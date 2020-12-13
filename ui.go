@@ -17,12 +17,12 @@ import (
 )
 
 type ntcontext struct {
-	inputList                []input
+	inputList                []device
+	outputList               []device
 	noiseSupressorState      int
 	paClient                 *pulseaudio.Client
 	librnnoise               string
 	sourceListColdWidthIndex int
-	useBuiltinRNNoise        bool
 	config                   *config
 	loadingScreen            bool
 	licenseScreen            bool
@@ -137,9 +137,22 @@ func updatefn(ctx *ntcontext, w *nucular.Window) {
 			w.LabelColored("Reloading NoiseTorch is required to apply these changes.", "LC", orange)
 		}
 
+		w.Row(15).Dynamic(2)
+		if w.CheckboxText("Filter Microphone", &ctx.config.FilterInput) {
+			ctx.sourceListColdWidthIndex++ //recompute the with because of new elements
+			go writeConfig(ctx.config)
+			go (func() { ctx.noiseSupressorState = supressorState(ctx) })()
+		}
+
+		if w.CheckboxText("Filter Headphones", &ctx.config.FilterOutput) {
+			ctx.sourceListColdWidthIndex++ //recompute the with because of new elements
+			go writeConfig(ctx.config)
+			go (func() { ctx.noiseSupressorState = supressorState(ctx) })()
+		}
+
 		w.TreePop()
 	}
-	if w.TreePush(nucular.TreeTab, "Select Device", true) {
+	if ctx.config.FilterInput && w.TreePush(nucular.TreeTab, "Select Microphone", true) {
 		w.Row(15).Dynamic(1)
 		w.Label("Select an input device below:", "LC")
 
@@ -163,69 +176,125 @@ func updatefn(ctx *ntcontext, w *nucular.Window) {
 			}
 		}
 
-		w.Row(30).Dynamic(1)
-		w.Spacing(1)
-
-		w.Row(25).Dynamic(2)
-		if ctx.noiseSupressorState != unloaded {
-			if w.ButtonText("Unload NoiseTorch") {
-				ctx.loadingScreen = true
-				ctx.reloadRequired = false
-				go func() { // don't block the UI thread, just display a working screen so user can't run multiple loads/unloads
-					if err := unloadSupressor(ctx.paClient); err != nil {
-						log.Println(err)
-					}
-					//wait until PA reports it has actually loaded it, timeout at 10s
-					for i := 0; i < 20; i++ {
-						if supressorState(ctx.paClient) != unloaded {
-							time.Sleep(time.Millisecond * 500)
-						}
-					}
-					ctx.loadingScreen = false
-					(*ctx.masterWindow).Changed()
-				}()
-			}
-		} else {
-			w.Spacing(1)
-		}
-		txt := "Load NoiseTorch"
-		if ctx.noiseSupressorState == loaded {
-			txt = "Reload NoiseTorch"
-		}
-		if inp, ok := inputSelection(ctx); ok && ctx.noiseSupressorState != inconsistent {
-			if w.ButtonText(txt) {
-				ctx.loadingScreen = true
-				ctx.reloadRequired = false
-				go func() { // don't block the UI thread, just display a working screen so user can't run multiple loads/unloads
-					if ctx.noiseSupressorState == loaded {
-						if err := unloadSupressor(ctx.paClient); err != nil {
-							log.Println(err)
-						}
-					}
-					if err := loadSupressor(ctx, inp); err != nil {
-						log.Println(err)
-					}
-
-					//wait until PA reports it has actually loaded it, timeout at 10s
-					for i := 0; i < 20; i++ {
-						if supressorState(ctx.paClient) != loaded {
-							time.Sleep(time.Millisecond * 500)
-						}
-					}
-					ctx.config.LastUsedInput = inp.ID
-					go writeConfig(ctx.config)
-					ctx.loadingScreen = false
-					(*ctx.masterWindow).Changed()
-				}()
-			}
-		} else {
-			w.Spacing(1)
-		}
 		w.TreePop()
 	}
+
+	if ctx.config.FilterOutput && w.TreePush(nucular.TreeTab, "Select Headphones", true) {
+		if ctx.config.GuiltTripped {
+			w.Row(15).Dynamic(1)
+			w.Label("Select an output device below:", "LC")
+
+			for i := range ctx.outputList {
+				el := &ctx.outputList[i]
+
+				if el.isMonitor && !ctx.config.DisplayMonitorSources {
+					continue
+				}
+				w.Row(15).Static()
+				w.LayoutFitWidth(0, 0)
+				if w.CheckboxText("", &el.checked) {
+					ensureOnlyOneInputSelected(&ctx.outputList, el)
+				}
+
+				w.LayoutFitWidth(ctx.sourceListColdWidthIndex, 0)
+				if el.dynamicLatency {
+					w.Label(el.Name, "LC")
+				} else {
+					w.LabelColored("(incompatible?) "+el.Name, "LC", orange)
+				}
+
+			}
+		} else {
+			w.Row(15).Dynamic(1)
+			w.Label("This feature is only for patrons.", "LC")
+			w.Row(15).Dynamic(1)
+			w.Label("You can still use it eitherway, but you are legally required to feel bad.", "LC")
+			w.Row(25).Dynamic(2)
+			if w.ButtonText("Become a patron") {
+				exec.Command("xdg-open", "https://patreon.com/lawl").Run()
+				ctx.config.GuiltTripped = true
+				go writeConfig(ctx.config)
+			}
+
+			if w.ButtonText("Feel bad") {
+				ctx.config.GuiltTripped = true
+				go writeConfig(ctx.config)
+			}
+		}
+
+		w.TreePop()
+	}
+
+	w.Row(15).Dynamic(1)
+	w.Spacing(1)
+
+	w.Row(25).Dynamic(2)
+	if ctx.noiseSupressorState != unloaded {
+		if w.ButtonText("Unload NoiseTorch") {
+			ctx.loadingScreen = true
+			ctx.reloadRequired = false
+			go func() { // don't block the UI thread, just display a working screen so user can't run multiple loads/unloads
+				if err := unloadSupressor(ctx); err != nil {
+					log.Println(err)
+				}
+				//wait until PA reports it has actually loaded it, timeout at 10s
+				for i := 0; i < 20; i++ {
+					if supressorState(ctx) != unloaded {
+						time.Sleep(time.Millisecond * 500)
+					}
+				}
+				ctx.loadingScreen = false
+				(*ctx.masterWindow).Changed()
+			}()
+		}
+	} else {
+		w.Spacing(1)
+	}
+	txt := "Load NoiseTorch"
+	if ctx.noiseSupressorState == loaded {
+		txt = "Reload NoiseTorch"
+	}
+
+	inp, inpOk := inputSelection(ctx)
+	out, outOk := outputSelection(ctx)
+	if (!ctx.config.FilterInput || (ctx.config.FilterInput && inpOk)) &&
+		(!ctx.config.FilterOutput || (ctx.config.FilterOutput && outOk)) &&
+		(ctx.config.FilterInput || ctx.config.FilterOutput) &&
+		((ctx.config.FilterOutput && ctx.config.GuiltTripped) || !ctx.config.FilterOutput) &&
+		ctx.noiseSupressorState != inconsistent {
+		if w.ButtonText(txt) {
+			ctx.loadingScreen = true
+			ctx.reloadRequired = false
+			go func() { // don't block the UI thread, just display a working screen so user can't run multiple loads/unloads
+				if ctx.noiseSupressorState == loaded {
+					if err := unloadSupressor(ctx); err != nil {
+						log.Println(err)
+					}
+				}
+				if err := loadSupressor(ctx, &inp, &out); err != nil {
+					log.Println(err)
+				}
+
+				//wait until PA reports it has actually loaded it, timeout at 10s
+				for i := 0; i < 20; i++ {
+					if supressorState(ctx) != loaded {
+						time.Sleep(time.Millisecond * 500)
+					}
+				}
+				ctx.config.LastUsedInput = inp.ID
+				ctx.config.LastUsedOutput = out.ID
+				go writeConfig(ctx.config)
+				ctx.loadingScreen = false
+				(*ctx.masterWindow).Changed()
+			}()
+		}
+	} else {
+		w.Spacing(1)
+	}
+
 }
 
-func ensureOnlyOneInputSelected(inps *[]input, current *input) {
+func ensureOnlyOneInputSelected(inps *[]device, current *device) {
 	if current.checked != true {
 		return
 	}
@@ -236,13 +305,30 @@ func ensureOnlyOneInputSelected(inps *[]input, current *input) {
 	current.checked = true
 }
 
-func inputSelection(ctx *ntcontext) (input, bool) {
+func inputSelection(ctx *ntcontext) (device, bool) {
+	if !ctx.config.FilterInput {
+		return device{}, false
+	}
+
 	for _, in := range ctx.inputList {
 		if in.checked {
 			return in, true
 		}
 	}
-	return input{}, false
+	return device{}, false
+}
+
+func outputSelection(ctx *ntcontext) (device, bool) {
+	if !ctx.config.FilterOutput {
+		return device{}, false
+	}
+
+	for _, out := range ctx.outputList {
+		if out.checked {
+			return out, true
+		}
+	}
+	return device{}, false
 }
 
 func loadingScreen(ctx *ntcontext, w *nucular.Window) {

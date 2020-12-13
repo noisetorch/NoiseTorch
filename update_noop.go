@@ -1,8 +1,4 @@
-// +build !release
-
 package main
-
-import "errors"
 
 type updateui struct {
 	serverVersion string
@@ -12,17 +8,9 @@ type updateui struct {
 }
 
 func updateCheck(ctx *ntcontext) {
-
+	// noop for non-release versions
 }
 
 func update(ctx *ntcontext) {
-
-}
-
-func fetchFile(file string) ([]byte, error) {
-	return make([]byte, 0), errors.New("Disabled by build flags")
-}
-
-func publickey() []byte {
-	return make([]byte, 0)
+	// noop for non-release versions
 }

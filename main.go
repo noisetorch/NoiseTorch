@@ -8,9 +8,13 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
+	"github.com/BurntSushi/xgbutil"
+	"github.com/BurntSushi/xgbutil/ewmh"
+	"github.com/BurntSushi/xgbutil/icccm"
 	"github.com/aarzilli/nucular/font"
 
 	"github.com/lawl/pulseaudio"
@@ -24,31 +28,36 @@ import (
 //go:generate go run scripts/embedversion.go
 //go:generate go run scripts/embedlicenses.go
 
-type input struct {
+type device struct {
 	ID             string
 	Name           string
 	isMonitor      bool
 	checked        bool
 	dynamicLatency bool
+	rate           uint32
 }
+
+const appName = "NoiseTorch"
 
 func main() {
 
 	var pulsepid int
 	var setcap bool
-	var sourceName string
+	var sinkName string
 	var unload bool
-	var load bool
+	var loadInput bool
+	var loadOutput bool
 	var threshold int
 	var list bool
 
 	flag.IntVar(&pulsepid, "removerlimit", -1, "for internal use only")
 	flag.BoolVar(&setcap, "setcap", false, "for internal use only")
-	flag.StringVar(&sourceName, "s", "", "Use the specified source device ID")
-	flag.BoolVar(&load, "i", false, "Load supressor for input. If no source device ID is specified the default pulse audio source is used.")
+	flag.StringVar(&sinkName, "s", "", "Use the specified source/sink device ID")
+	flag.BoolVar(&loadInput, "i", false, "Load supressor for input. If no source device ID is specified the default pulse audio source is used.")
+	flag.BoolVar(&loadOutput, "o", false, "Load supressor for output. If no source device ID is specified the default pulse audio source is used.")
 	flag.BoolVar(&unload, "u", false, "Unload supressor")
 	flag.IntVar(&threshold, "t", -1, "Voice activation threshold")
-	flag.BoolVar(&list, "l", false, "List available PulseAudio sources")
+	flag.BoolVar(&list, "l", false, "List available PulseAudio devices")
 	flag.Parse()
 
 	// we also execute this opportunistically on pulsepid since that's also called as root, but need to do so silently, so no os.Exit()'s
@@ -101,9 +110,16 @@ func main() {
 	}
 
 	if list {
+		fmt.Println("Sources:")
 		sources := getSources(paClient)
 		for i := range sources {
-			fmt.Printf("Device Name: %s\nDevice ID: %s\n\n", sources[i].Name, sources[i].ID)
+			fmt.Printf("\tDevice Name: %s\n\tDevice ID: %s\n\n", sources[i].Name, sources[i].ID)
+		}
+
+		fmt.Println("Sinks:")
+		sinks := getSinks(paClient)
+		for i := range sinks {
+			fmt.Printf("\tDevice Name: %s\n\tDevice ID: %s\n\n", sinks[i].Name, sinks[i].ID)
 		}
 
 		os.Exit(0)
@@ -119,30 +135,26 @@ func main() {
 	}
 
 	if unload {
-		unloadSupressor(paClient)
+		unloadSupressor(&ctx)
 		os.Exit(0)
 	}
 
-	if load {
+	if loadInput {
 		ctx.paClient = paClient
 		sources := getSources(paClient)
 
-		if supressorState(paClient) != unloaded {
-			fmt.Fprintf(os.Stderr, "Supressor is already loaded.\n")
-			os.Exit(1)
-		}
-
-		if sourceName == "" {
+		if sinkName == "" {
 			defaultSource, err := getDefaultSourceID(paClient)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "No source specified to load and failed to load default source: %+v\n", err)
 				os.Exit(1)
 			}
-			sourceName = defaultSource
+			sinkName = defaultSource
 		}
 		for i := range sources {
-			if sources[i].ID == sourceName {
-				err := loadSupressor(&ctx, sources[i])
+			if sources[i].ID == sinkName {
+				sources[i].checked = true
+				err := loadSupressor(&ctx, &sources[i], &device{})
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Error loading PulseAudio Module: %+v\n", err)
 					os.Exit(1)
@@ -150,7 +162,34 @@ func main() {
 				os.Exit(0)
 			}
 		}
-		fmt.Fprintf(os.Stderr, "PulseAudio source not found: %s\n", sourceName)
+		fmt.Fprintf(os.Stderr, "PulseAudio source not found: %s\n", sinkName)
+		os.Exit(1)
+
+	}
+	if loadOutput {
+		ctx.paClient = paClient
+		sinks := getSinks(paClient)
+
+		if sinkName == "" {
+			defaultSink, err := getDefaultSinkID(paClient)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "No sink specified to load and failed to load default sink: %+v\n", err)
+				os.Exit(1)
+			}
+			sinkName = defaultSink
+		}
+		for i := range sinks {
+			if sinks[i].ID == sinkName {
+				sinks[i].checked = true
+				err := loadSupressor(&ctx, &device{}, &sinks[i])
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error loading PulseAudio Module: %+v\n", err)
+					os.Exit(1)
+				}
+				os.Exit(0)
+			}
+		}
+		fmt.Fprintf(os.Stderr, "PulseAudio sink not found: %s\n", sinkName)
 		os.Exit(1)
 
 	}
@@ -161,13 +200,19 @@ func main() {
 
 	go paConnectionWatchdog(&ctx)
 
-	wnd := nucular.NewMasterWindowSize(0, "NoiseTorch", image.Point{550, 300}, func(w *nucular.Window) {
+	wnd := nucular.NewMasterWindowSize(0, appName, image.Point{600, 400}, func(w *nucular.Window) {
 		updatefn(&ctx, w)
 	})
+
 	ctx.masterWindow = &wnd
 	style := style.FromTheme(style.DarkTheme, 2.0)
 	style.Font = font.DefaultFont(16, 1)
 	wnd.SetStyle(style)
+
+	//this is a disgusting hack that searches for the noisetorch window
+	//and then fixes up the WM_CLASS attribute so it displays
+	//properly in the taskbar
+	go fixWindowClass()
 	wnd.Main()
 
 }
@@ -190,28 +235,58 @@ func removeLib(file string) {
 	log.Printf("Deleted temp librnnoise: %s\n", file)
 }
 
-func getSources(client *pulseaudio.Client) []input {
+func getSources(client *pulseaudio.Client) []device {
 	sources, err := client.Sources()
 	if err != nil {
 		log.Printf("Couldn't fetch sources from pulseaudio\n")
 	}
 
-	inputs := make([]input, 0)
+	outputs := make([]device, 0)
 	for i := range sources {
-		if sources[i].Name == "nui_mic_remap" {
+		if strings.Contains(sources[i].Name, "nui_") {
 			continue
 		}
 
 		log.Printf("Input %s, %+v\n", sources[i].Name, sources[i])
 
-		var inp input
+		var inp device
 
 		inp.ID = sources[i].Name
 		inp.Name = sources[i].PropList["device.description"]
 		inp.isMonitor = (sources[i].MonitorSourceIndex != 0xffffffff)
+		inp.rate = sources[i].SampleSpec.Rate
 
 		//PA_SOURCE_DYNAMIC_LATENCY = 0x0040U
 		inp.dynamicLatency = sources[i].Flags&uint32(0x0040) != 0
+
+		outputs = append(outputs, inp)
+	}
+
+	return outputs
+}
+
+func getSinks(client *pulseaudio.Client) []device {
+	sources, err := client.Sinks()
+	if err != nil {
+		log.Printf("Couldn't fetch sources from pulseaudio\n")
+	}
+
+	inputs := make([]device, 0)
+	for i := range sources {
+		if strings.Contains(sources[i].Name, "nui_") {
+			continue
+		}
+
+		log.Printf("Output %s, %+v\n", sources[i].Name, sources[i])
+
+		var inp device
+
+		inp.ID = sources[i].Name
+		inp.Name = sources[i].PropList["device.description"]
+		inp.rate = sources[i].SampleSpec.Rate
+
+		// PA_SINK_DYNAMIC_LATENCY = 0x0080U
+		inp.dynamicLatency = sources[i].Flags&uint32(0x0080) != 0
 
 		inputs = append(inputs, inp)
 	}
@@ -233,9 +308,10 @@ func paConnectionWatchdog(ctx *ntcontext) {
 		}
 
 		ctx.paClient = paClient
-		go updateNoiseSupressorLoaded(paClient, &ctx.noiseSupressorState)
+		go updateNoiseSupressorLoaded(ctx)
 
-		ctx.inputList = getSourcesWithPreSelectedInput(ctx)
+		ctx.inputList = preselectDevice(ctx, getSources(ctx.paClient), ctx.config.LastUsedInput, getDefaultSourceID)
+		ctx.outputList = preselectDevice(ctx, getSinks(paClient), ctx.config.LastUsedOutput, getDefaultSinkID)
 
 		resetUI(ctx)
 
@@ -243,32 +319,28 @@ func paConnectionWatchdog(ctx *ntcontext) {
 	}
 }
 
-func getSourcesWithPreSelectedInput(ctx *ntcontext) []input {
-	inputs := getSources(ctx.paClient)
-	preselectedInputID := &ctx.config.LastUsedInput
-	inputExists := false
-	if preselectedInputID != nil {
-		for _, input := range inputs {
-			inputExists = inputExists || input.ID == *preselectedInputID
-		}
+func preselectDevice(ctx *ntcontext, devices []device, preselectID string,
+	fallbackFunc func(client *pulseaudio.Client) (string, error)) []device {
+
+	deviceExists := false
+	for _, input := range devices {
+		deviceExists = deviceExists || input.ID == preselectID
 	}
 
-	if !inputExists {
-		defaultSource, err := getDefaultSourceID(ctx.paClient)
+	if !deviceExists {
+		defaultDevice, err := fallbackFunc(ctx.paClient)
 		if err != nil {
-			log.Printf("Failed to load default source: %+v\n", err)
+			log.Printf("Failed to load default device: %+v\n", err)
 		} else {
-			preselectedInputID = &defaultSource
+			preselectID = defaultDevice
 		}
 	}
-	if preselectedInputID != nil {
-		for i := range inputs {
-			if inputs[i].ID == *preselectedInputID {
-				inputs[i].checked = true
-			}
+	for i := range devices {
+		if devices[i].ID == preselectID {
+			devices[i].checked = true
 		}
 	}
-	return inputs
+	return devices
 }
 
 func getDefaultSourceID(client *pulseaudio.Client) (string, error) {
@@ -277,4 +349,44 @@ func getDefaultSourceID(client *pulseaudio.Client) (string, error) {
 		return "", err
 	}
 	return server.DefaultSource, nil
+}
+
+func getDefaultSinkID(client *pulseaudio.Client) (string, error) {
+	server, err := client.ServerInfo()
+	if err != nil {
+		return "", err
+	}
+	return server.DefaultSink, nil
+}
+
+//this is disgusting
+func fixWindowClass() {
+	xu, err := xgbutil.NewConn()
+	defer xu.Conn().Close()
+	if err != nil {
+		log.Printf("Couldn't create XU xdg conn: %+v\n", err)
+		return
+	}
+	for i := 0; i < 100; i++ {
+		wnds, _ := ewmh.ClientListGet(xu)
+		for _, w := range wnds {
+			n, _ := ewmh.WmNameGet(xu, w)
+			if n == appName {
+				_, err := icccm.WmClassGet(xu, w)
+				//if we have *NO* WM_CLASS, then the above call errors. We *want* to make sure this errors
+				if err == nil {
+					continue
+				}
+
+				class := icccm.WmClass{}
+				class.Class = appName
+				class.Instance = appName
+				icccm.WmClassSet(xu, w, &class)
+				return
+			}
+
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
 }

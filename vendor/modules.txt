@@ -41,8 +41,17 @@ github.com/BurntSushi/toml
 # github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802
 github.com/BurntSushi/xgb
 github.com/BurntSushi/xgb/render
+github.com/BurntSushi/xgb/shape
 github.com/BurntSushi/xgb/shm
+github.com/BurntSushi/xgb/xinerama
 github.com/BurntSushi/xgb/xproto
+# github.com/BurntSushi/xgbutil v0.0.0-20190907113008-ad855c713046
+## explicit
+github.com/BurntSushi/xgbutil
+github.com/BurntSushi/xgbutil/ewmh
+github.com/BurntSushi/xgbutil/icccm
+github.com/BurntSushi/xgbutil/xevent
+github.com/BurntSushi/xgbutil/xprop
 # github.com/aarzilli/nucular v0.0.0-20200615134801-81910c722bba
 ## explicit
 github.com/aarzilli/nucular
