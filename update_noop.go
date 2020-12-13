@@ -1,3 +1,5 @@
+// +build !release
+
 package main
 
 type updateui struct {
