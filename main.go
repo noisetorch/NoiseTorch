@@ -19,7 +19,8 @@ import (
 	"github.com/aarzilli/nucular/style"
 )
 
-//go:generate go run scripts/embedlibrnnoise.go
+//go:generate go run scripts/embedbinary.go librnnoise_ladspa/bin/ladspa/librnnoise_ladspa.so librnnoise.go libRNNoise
+//go:generate go run scripts/embedbinary.go assets/patreon.png patreon.go patreonPNG
 //go:generate go run scripts/embedversion.go
 //go:generate go run scripts/embedlicenses.go
 

@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"image"
 	"image/color"
+	"image/draw"
+	"image/png"
 	"log"
 	"os/exec"
 	"time"
@@ -33,6 +37,8 @@ var green = color.RGBA{34, 187, 69, 255}
 var red = color.RGBA{255, 70, 70, 255}
 var orange = color.RGBA{255, 140, 0, 255}
 
+var patreonImg *image.RGBA
+
 func updatefn(ctx *ntcontext, w *nucular.Window) {
 
 	if !ctx.paClient.Connected() {
@@ -57,7 +63,7 @@ func updatefn(ctx *ntcontext, w *nucular.Window) {
 
 	w.MenubarBegin()
 
-	w.Row(10).Dynamic(2)
+	w.Row(10).Dynamic(1)
 	if w := w.Menu(label.TA("About", "LC"), 120, nil); w != nil {
 		w.Row(10).Dynamic(1)
 		if w.MenuItem(label.T("Licenses")) {
@@ -71,13 +77,17 @@ func updatefn(ctx *ntcontext, w *nucular.Window) {
 			ctx.versionScreen = true
 		}
 	}
-	if w := w.Menu(label.TA("Support NoiseTorch on PATREON", "RC"), 120, nil); w != nil {
-		exec.Command("xdg-open", "https://patreon.com/lawl").Run()
-		w.Close()
-	}
+
 	w.MenubarEnd()
 
-	w.Row(15).Dynamic(1)
+	w.Row(25).Dynamic(2)
+	if patreonImg == nil {
+		patreonImg = loadPatreonImg()
+	}
+
+	if imageButton(w, patreonImg) {
+		exec.Command("xdg-open", "https://patreon.com/lawl").Run()
+	}
 
 	if ctx.noiseSupressorState == loaded {
 		w.LabelColored("NoiseTorch active", "RC", green)
@@ -283,4 +293,26 @@ func resetUI(ctx *ntcontext) {
 	if ctx.masterWindow != nil {
 		(*ctx.masterWindow).Changed()
 	}
+}
+
+func loadPatreonImg() *image.RGBA {
+	var pat *image.RGBA
+	img, _ := png.Decode(bytes.NewReader(patreonPNG))
+	pat = image.NewRGBA(img.Bounds())
+	draw.Draw(pat, img.Bounds(), img, image.Point{}, draw.Src)
+	return pat
+}
+
+func imageButton(w *nucular.Window, img *image.RGBA) bool {
+	style := w.Master().Style()
+	origButtonStyle := style.Button
+	style.Button.Border = 0
+	style.Button.Normal.Data.Color = style.NormalWindow.Background
+	style.Button.Hover.Data.Color = style.NormalWindow.Background
+	style.Button.Active.Data.Color = style.NormalWindow.Background
+
+	defer (func() { style.Button = origButtonStyle })()
+
+	return w.Button(label.I(patreonImg), false)
+
 }
