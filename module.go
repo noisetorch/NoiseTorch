@@ -186,7 +186,7 @@ func loadSupressor(ctx *ntcontext, inp *device, out *device) error {
 
 		_, err = c.LoadModule("module-ladspa-sink", fmt.Sprintf(`sink_name=nui_out_ladspa sink_master=nui_out_out_sink `+
 			`label=noise_suppressor_mono channels=1 plugin=%s control=%d rate=%d`,
-			/*out.ID,*/ ctx.librnnoise, ctx.config.Threshold /*out.rate*/, 48000))
+			ctx.librnnoise, ctx.config.Threshold, 48000))
 		if err != nil {
 			return err
 		}
