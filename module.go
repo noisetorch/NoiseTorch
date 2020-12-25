@@ -143,8 +143,6 @@ func loadSupressor(ctx *ntcontext, inp *device, out *device) error {
 		}
 		log.Printf("Loaded null sink as idx: %d\n", idx)
 
-		//time.Sleep(time.Millisecond * 500) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
-
 		idx, err = c.LoadModule("module-ladspa-sink",
 			fmt.Sprintf("sink_name=nui_mic_raw_in sink_master=nui_mic_denoised_out "+
 				"label=noise_suppressor_mono plugin=%s control=%d", ctx.librnnoise, ctx.config.Threshold))
@@ -153,16 +151,12 @@ func loadSupressor(ctx *ntcontext, inp *device, out *device) error {
 		}
 		log.Printf("Loaded ladspa sink as idx: %d\n", idx)
 
-		//time.Sleep(time.Millisecond * 1000) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
-
 		idx, err = c.LoadModule("module-loopback",
 			fmt.Sprintf("source=%s sink=nui_mic_raw_in channels=1 latency_msec=1 source_dont_move=true sink_dont_move=true", inp.ID))
 		if err != nil {
 			return err
 		}
 		log.Printf("Loaded loopback as idx: %d\n", idx)
-
-		//time.Sleep(time.Millisecond * 500) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
 
 		idx, err = c.LoadModule("module-remap-source", `master=nui_mic_denoised_out.monitor `+
 			`source_name=nui_mic_remap source_properties="device.description='NoiseTorch Microphone'"`)
@@ -232,7 +226,7 @@ func unloadSupressor(ctx *ntcontext) error {
 		log.Printf("Found null-sink at id [%d], sending unload command\n", m.Index)
 		c.UnloadModule(m.Index)
 	}
-	//time.Sleep(time.Millisecond * 500) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
+
 	log.Printf("Searching for ladspa-sink\n")
 	m, found, err = findModule(c, "module-ladspa-sink", "sink_name=nui_mic_raw_in sink_master=nui_mic_denoised_out")
 	if err != nil {
@@ -242,7 +236,7 @@ func unloadSupressor(ctx *ntcontext) error {
 		log.Printf("Found ladspa-sink at id [%d], sending unload command\n", m.Index)
 		c.UnloadModule(m.Index)
 	}
-	//time.Sleep(time.Millisecond * 500) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
+
 	log.Printf("Searching for loopback\n")
 	m, found, err = findModule(c, "module-loopback", "sink=nui_mic_raw_in")
 	if err != nil {
@@ -252,7 +246,7 @@ func unloadSupressor(ctx *ntcontext) error {
 		log.Printf("Found loopback at id [%d], sending unload command\n", m.Index)
 		c.UnloadModule(m.Index)
 	}
-	//time.Sleep(time.Millisecond * 500) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
+
 	log.Printf("Searching for remap-source\n")
 	m, found, err = findModule(c, "module-remap-source", "master=nui_mic_denoised_out.monitor source_name=nui_mic_remap")
 	if err != nil {
@@ -263,7 +257,6 @@ func unloadSupressor(ctx *ntcontext) error {
 		c.UnloadModule(m.Index)
 	}
 
-	//time.Sleep(time.Millisecond * 500) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
 	log.Printf("Searching for output module-null-sink\n")
 	m, found, err = findModule(c, "module-null-sink", "sink_name=nui_out_out_sink")
 	if err != nil {
@@ -274,7 +267,6 @@ func unloadSupressor(ctx *ntcontext) error {
 		c.UnloadModule(m.Index)
 	}
 
-	//time.Sleep(time.Millisecond * 500) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
 	log.Printf("Searching for output module-null-sink\n")
 	m, found, err = findModule(c, "module-null-sink", "sink_name=nui_out_in_sink")
 	if err != nil {
@@ -285,7 +277,6 @@ func unloadSupressor(ctx *ntcontext) error {
 		c.UnloadModule(m.Index)
 	}
 
-	//time.Sleep(time.Millisecond * 500) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
 	log.Printf("Searching for output module-ladspa-sink\n")
 	m, found, err = findModule(c, "module-ladspa-sink", "sink_name=nui_out_ladspa")
 	if err != nil {
@@ -296,7 +287,6 @@ func unloadSupressor(ctx *ntcontext) error {
 		c.UnloadModule(m.Index)
 	}
 
-	//time.Sleep(time.Millisecond * 500) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
 	log.Printf("Searching for output module-loopback\n")
 	m, found, err = findModule(c, "module-loopback", "source=nui_out_out_sink.monitor")
 	if err != nil {
@@ -307,7 +297,6 @@ func unloadSupressor(ctx *ntcontext) error {
 		c.UnloadModule(m.Index)
 	}
 
-	//time.Sleep(time.Millisecond * 500) // pulseaudio gets SIGKILL'd because of RLIMITS if we send these too fast
 	log.Printf("Searching for output module-loopback\n")
 	m, found, err = findModule(c, "module-loopback", "source=nui_out_in_sink.monitor")
 	if err != nil {
