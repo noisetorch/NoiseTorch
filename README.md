@@ -38,6 +38,10 @@ With gnome this can be done with:
 
 You now have a `noisetorch` binary and desktop entry on your system.
 
+Give it the required permissions with `setcap`:
+
+    sudo setcap 'CAP_SYS_RESOURCE=+ep' ~/.local/bin/noisetorch
+
 If noisetorch doesn't start after installation, you may also have to make sure that `.local/bin` is in your PATH. On most distributions e.g. Ubuntu, this should be the case by default. If it's not, make sure to append
 
 ```
