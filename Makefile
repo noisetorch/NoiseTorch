@@ -23,7 +23,6 @@ release: rnnoise
 	go run scripts/signer.go -s
 	git describe --tags > bin/version.txt
 rnnoise:
-	cd librnnoise_ladspa/; \
-	cmake . -DBUILD_VST_PLUGIN=OFF -DBUILD_LV2_PLUGIN=OFF -DBUILD_LADSPA_PLUGIN=ON; \
+	cd c/ladspa; \
 	make
 

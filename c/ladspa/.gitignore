@@ -1,0 +1,2 @@
+*.o
+rnnoise_ladspa.so
