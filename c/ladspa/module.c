@@ -57,8 +57,7 @@ instantiateSimpleFilter(const LADSPA_Descriptor *Descriptor,
 }
 
 static void activateSimpleFilter(LADSPA_Handle Instance) {
-  rnnoiseFilter *psSimpleFilter;
-  psSimpleFilter = (rnnoiseFilter *)Instance;
+  
 }
 
 static void connectPortToSimpleFilter(LADSPA_Handle Instance,
@@ -84,14 +83,7 @@ static void connectPortToSimpleFilter(LADSPA_Handle Instance,
 
 static void runFilter(LADSPA_Handle Instance, unsigned long n_samples) {
 
-  LADSPA_Data *pfInput;
-  LADSPA_Data *pfOutput;
-  LADSPA_Data fAmountOfCurrent;
-  LADSPA_Data fAmountOfLast;
-  LADSPA_Data fComp;
-  LADSPA_Data fLastOutput;
   rnnoiseFilter *psFilter;
-  unsigned long lSampleIndex;
 
   psFilter = (rnnoiseFilter *)Instance;
 
