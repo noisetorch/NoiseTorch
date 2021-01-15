@@ -66,7 +66,7 @@ If you have been maintaining a third party package for a while and would like it
 
 ## Usage
 
-Select the microphone you want to denoise, and click "Load NoiseTorch", NoiseTorch will create a virtual microphone called "NoiseTorch Microphone" that you can select in any application. Output filtering works the same way, simply output the applications you want to filter to "NoiseTorch Headphones".
+Select the microphone you want to denoise, and click "Load NoiseTorch", NoiseTorch will create a virtual microphone called "NoiseTorch Microphone" (CLI: `nui_mic_remap`) that you can select in any application. Output filtering works the same way, simply output the applications you want to filter to "NoiseTorch Headphones".
 
 When you're done using it, simply click "Unload NoiseTorch" to remove it again, until you need it next time.
 
