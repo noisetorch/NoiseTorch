@@ -58,10 +58,11 @@ func makeBinarySetcapped() error {
 	return nil
 }
 
-func pkexecSetcapSelf() {
+func pkexecSetcapSelf() error {
 	self, err := os.Executable()
 	if err != nil {
 		log.Fatalf("Couldn't find path to own binary\n")
+		return err
 	}
 
 	cmd := exec.Command("pkexec", self, "-setcap")
@@ -69,5 +70,8 @@ func pkexecSetcapSelf() {
 	err = cmd.Run()
 	if err != nil {
 		log.Printf("Couldn't setcap self as root: %v\n", err)
+		return err
 	}
+
+	return nil
 }

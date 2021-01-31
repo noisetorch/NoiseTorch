@@ -8,7 +8,9 @@ import (
 	"image/draw"
 	"image/png"
 	"log"
+	"os"
 	"os/exec"
+	"syscall"
 	"time"
 
 	"github.com/aarzilli/nucular"
@@ -31,6 +33,8 @@ type ntcontext struct {
 	masterWindow             *nucular.MasterWindow
 	update                   updateui
 	reloadRequired           bool
+	haveCapabilities         bool
+	errorMsg                 string
 }
 
 var green = color.RGBA{34, 187, 69, 255}
@@ -40,6 +44,18 @@ var orange = color.RGBA{255, 140, 0, 255}
 var patreonImg *image.RGBA
 
 func updatefn(ctx *ntcontext, w *nucular.Window) {
+
+	//TODO: this is disgusting
+
+	if ctx.errorMsg != "" {
+		errorScreen(ctx, w)
+		return
+	}
+
+	if !ctx.haveCapabilities {
+		capabilitiesScreen(ctx, w)
+		return
+	}
 
 	if !ctx.paClient.Connected() {
 		connectScreen(ctx, w)
@@ -371,6 +387,45 @@ func versionScreen(ctx *ntcontext, w *nucular.Window) {
 func connectScreen(ctx *ntcontext, w *nucular.Window) {
 	w.Row(50).Dynamic(1)
 	w.Label("Connecting to pulseaudio...", "CB")
+}
+
+func capabilitiesScreen(ctx *ntcontext, w *nucular.Window) {
+	w.Row(15).Dynamic(1)
+	w.Label("NoiseTorch currently does not have the capabilities to function properly.", "CB")
+	w.Row(15).Dynamic(1)
+	w.Label("We require CAP_SYS_RESOURCE. If that doesn't mean anything to you, don't worry. I'll fix it for you.", "CB")
+	w.Row(40).Dynamic(1)
+	w.Row(25).Dynamic(1)
+	if w.ButtonText("Grant capability (requires root)") {
+		err := pkexecSetcapSelf()
+		if err != nil {
+			ctx.errorMsg = err.Error()
+			return
+		}
+		self, err := os.Executable()
+		if err != nil {
+			ctx.errorMsg = err.Error()
+			return
+		}
+		err = syscall.Exec(self, []string{""}, os.Environ())
+		if err != nil {
+			ctx.errorMsg = err.Error()
+			return
+		}
+	}
+}
+
+func errorScreen(ctx *ntcontext, w *nucular.Window) {
+	w.Row(15).Dynamic(1)
+	w.Label("Error", "CB")
+	w.Row(15).Dynamic(1)
+	w.Label(ctx.errorMsg, "CB")
+	w.Row(40).Dynamic(1)
+	w.Row(25).Dynamic(1)
+	if w.ButtonText("OK") {
+		ctx.errorMsg = ""
+		return
+	}
 }
 
 func resetUI(ctx *ntcontext) {

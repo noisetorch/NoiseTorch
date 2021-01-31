@@ -200,6 +200,8 @@ func main() {
 
 	go paConnectionWatchdog(&ctx)
 
+	ctx.haveCapabilities = hasCapSysResource(getCurrentCaps())
+
 	wnd := nucular.NewMasterWindowSize(0, appName, image.Point{600, 400}, func(w *nucular.Window) {
 		updatefn(&ctx, w)
 	})
