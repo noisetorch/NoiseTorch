@@ -60,18 +60,16 @@ func main() {
 	flag.BoolVar(&list, "l", false, "List available PulseAudio devices")
 	flag.Parse()
 
-	// we also execute this opportunistically on pulsepid since that's also called as root, but need to do so silently, so no os.Exit()'s
-	if setcap || pulsepid > 0 {
+	if setcap {
 		err := makeBinarySetcapped()
-		if err != nil && !(pulsepid > 0) {
+		if err != nil {
 			os.Exit(1)
 		}
-
-		if !(pulsepid > 0) {
-			os.Exit(0)
-		}
+		os.Exit(0)
 	}
 
+	//TODO:remove this after 0.10. Not required anymore after that.
+	//We don't remove it right now, since someone could have an old instance running that calls the updated binary
 	if pulsepid > 0 {
 		const MaxUint = ^uint64(0)
 		new := syscall.Rlimit{Cur: MaxUint, Max: MaxUint}

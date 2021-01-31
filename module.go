@@ -205,12 +205,12 @@ func loadSupressor(ctx *ntcontext, inp *device, out *device) error {
 func unloadSupressor(ctx *ntcontext) error {
 	log.Printf("Unloading pulseaudio modules\n")
 
-	// we ignore errors here on purpose, since NT didn't use to do this for unloading anyways
-	// and we don't want to prompt for root again
-	// so this only suceeds with CAP_SYS_RESOURCE, which we want to make the new default anyways.
 	if pid, err := getPulsePid(); err == nil {
 		if lim, err := getRlimit(pid); err == nil {
+			log.Printf("Trying to remove rlimit. Limit is: %+v\n", lim)
 			removeRlimit(pid)
+			newLim, _ := getRlimit(pid)
+			log.Printf("Rlimit: %+v\n", newLim)
 			defer setRlimit(pid, &lim)
 		}
 
