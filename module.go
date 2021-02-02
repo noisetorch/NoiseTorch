@@ -151,12 +151,21 @@ func loadSupressor(ctx *ntcontext, inp *device, out *device) error {
 		}
 		log.Printf("Loaded ladspa sink as idx: %d\n", idx)
 
-		idx, err = c.LoadModule("module-loopback",
-			fmt.Sprintf("source=%s sink=nui_mic_raw_in channels=1 latency_msec=1 source_dont_move=true sink_dont_move=true", inp.ID))
-		if err != nil {
-			return err
+		if inp.dynamicLatency {
+			idx, err = c.LoadModule("module-loopback",
+				fmt.Sprintf("source=%s sink=nui_mic_raw_in channels=1 latency_msec=1 source_dont_move=true sink_dont_move=true", inp.ID))
+			if err != nil {
+				return err
+			}
+			log.Printf("Loaded loopback as idx: %d\n", idx)
+		} else {
+			idx, err = c.LoadModule("module-loopback",
+				fmt.Sprintf("source=%s sink=nui_mic_raw_in channels=1 latency_msec=50 source_dont_move=true sink_dont_move=true adjust_time=1", inp.ID))
+			if err != nil {
+				return err
+			}
+			log.Printf("Loaded fixed latency loopback as idx: %d\n", idx)
 		}
-		log.Printf("Loaded loopback as idx: %d\n", idx)
 
 		idx, err = c.LoadModule("module-remap-source", `master=nui_mic_denoised_out.monitor `+
 			`source_name=nui_mic_remap source_properties="device.description='NoiseTorch Microphone'"`)
