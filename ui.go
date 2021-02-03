@@ -35,6 +35,7 @@ type ntcontext struct {
 	reloadRequired           bool
 	haveCapabilities         bool
 	errorMsg                 string
+	capsMismatch             bool
 }
 
 var green = color.RGBA{34, 187, 69, 255}
@@ -394,6 +395,12 @@ func capabilitiesScreen(ctx *ntcontext, w *nucular.Window) {
 	w.Label("NoiseTorch currently does not have the capabilities to function properly.", "CB")
 	w.Row(15).Dynamic(1)
 	w.Label("We require CAP_SYS_RESOURCE. If that doesn't mean anything to you, don't worry. I'll fix it for you.", "CB")
+	if ctx.capsMismatch {
+		w.Row(15).Dynamic(1)
+		w.LabelColored("Warning: File has CAP_SYS_RESOURCE but our process doesn't.", "CB", orange)
+		w.Row(15).Dynamic(1)
+		w.LabelColored("Check if your filesystem has nosuid set or check the troubleshooting page.", "CB", orange)
+	}
 	w.Row(40).Dynamic(1)
 	w.Row(25).Dynamic(1)
 	if w.ButtonText("Grant capability (requires root)") {

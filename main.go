@@ -199,6 +199,7 @@ func main() {
 	go paConnectionWatchdog(&ctx)
 
 	ctx.haveCapabilities = hasCapSysResource(getCurrentCaps())
+	ctx.capsMismatch = hasCapSysResource(getCurrentCaps()) != hasCapSysResource(getSelfFileCaps())
 
 	wnd := nucular.NewMasterWindowSize(0, appName, image.Point{600, 400}, func(w *nucular.Window) {
 		updatefn(&ctx, w)
