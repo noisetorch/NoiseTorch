@@ -82,7 +82,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	date := time.Now().Format("2006_01_02_03_04_05")
+	date := time.Now().Format("2006_01_02_15_04_05")
 	tmpdir := os.TempDir()
 	f, err := os.OpenFile(filepath.Join(tmpdir, fmt.Sprintf("noisetorch-%s.log", date)), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
