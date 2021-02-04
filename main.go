@@ -107,6 +107,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	ctx.paClient = paClient
+
 	if list {
 		fmt.Println("Sources:")
 		sources := getSources(paClient)
@@ -133,12 +135,15 @@ func main() {
 	}
 
 	if unload {
-		unloadSupressor(&ctx)
+		err := unloadSupressor(&ctx)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error unloading PulseAudio Module: %+v\n", err)
+			os.Exit(1)
+		}
 		os.Exit(0)
 	}
 
 	if loadInput {
-		ctx.paClient = paClient
 		sources := getSources(paClient)
 
 		if sinkName == "" {
@@ -165,7 +170,6 @@ func main() {
 
 	}
 	if loadOutput {
-		ctx.paClient = paClient
 		sinks := getSinks(paClient)
 
 		if sinkName == "" {
