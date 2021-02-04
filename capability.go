@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -25,7 +24,7 @@ func getCurrentCaps() *capability.Capabilities {
 
 func getSelfFileCaps() *capability.Capabilities {
 	self, err := os.Executable()
-	fmt.Printf("Getting caps for: %s\n", self)
+	log.Printf("Getting caps for: %s\n", self)
 	if err != nil {
 		log.Fatalf("Could not get path to own executable: %+v\n", err)
 	}
