@@ -42,7 +42,7 @@ Give it the required permissions with `setcap`:
 
     sudo setcap 'CAP_SYS_RESOURCE=+ep' ~/.local/bin/noisetorch
 
-If noisetorch doesn't start after installation, you may also have to make sure that `.local/bin` is in your PATH. On most distributions e.g. Ubuntu, this should be the case by default. If it's not, make sure to append
+If noisetorch doesn't start after installation, you may also have to make sure that `~/.local/bin` is in your PATH. On most distributions e.g. Ubuntu, this should be the case by default. If it's not, make sure to append
 
 ```
 if [ -d "$HOME/.local/bin" ] ; then
@@ -50,7 +50,7 @@ if [ -d "$HOME/.local/bin" ] ; then
 fi
 ```
 
-to your `~/.profile`.
+to your `~/.profile`. If you do already have that, you may have to log in and out for it to actually apply if this is the first time you're using `~/.local/bin`.
 
 #### Uninstall
 
