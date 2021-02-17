@@ -95,8 +95,6 @@ Install the Go compiler from [golang.org](https://golang.org/). And make sure yo
 ```shell
  git clone https://github.com/lawl/NoiseTorch # Clone the repository
  cd NoiseTorch # cd into the cloned repository
- git submodule init # Tell git to look at submodules
- git submodule update # Update submodules
  make # build it
  ```
 
