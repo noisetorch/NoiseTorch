@@ -1,5 +1,3 @@
 bin/
-librnnoise.go
 version.go
 licenses.go
-patreon.go

@@ -19,14 +19,20 @@ import (
 
 	"github.com/lawl/pulseaudio"
 
+	_ "embed"
+
 	"github.com/aarzilli/nucular"
 	"github.com/aarzilli/nucular/style"
 )
 
-//go:generate go run scripts/embedbinary.go c/ladspa/rnnoise_ladspa.so librnnoise.go libRNNoise
-//go:generate go run scripts/embedbinary.go assets/patreon.png patreon.go patreonPNG
 //go:generate go run scripts/embedversion.go
 //go:generate go run scripts/embedlicenses.go
+
+//go:embed c/ladspa/rnnoise_ladspa.so
+var libRNNoise []byte
+
+//go:embed assets/patreon.png
+var patreonPNG []byte
 
 type device struct {
 	ID             string

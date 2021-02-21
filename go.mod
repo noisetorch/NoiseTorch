@@ -1,6 +1,6 @@
 module noisetorch
 
-go 1.14
+go 1.16
 
 require (
 	gioui.org v0.0.0-20200630184602-223f8fd40ae4 // indirect
