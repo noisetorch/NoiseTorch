@@ -1,5 +1,15 @@
-NoiseTorch (c) 2020 lawl (github.com/lawl)
-SPDX-License-Identifier: GPL-3.0-or-later
+NoiseTorch (c) 2020-2021 lawl (github.com/lawl)
+
+This software is distributed under the GNU General Public License Version 3 ("GPLv3").
+
+In accordance with Section 7, subsection `c` of the GPLv3 the following additional term(s) apply:
+
+  * Distributing modified versions of this program ("NoiseTorch") must be marked as modified in a reasonable way.
+    Modified versions may not be distributed to others under same name as the original program.
+    Package names, source code, user interfaces and other visible appearances of the program name should make it obvious for users
+    and potential users that the modified version differs from the original version of NoiseTorch it is based upon.
+
+
 
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
