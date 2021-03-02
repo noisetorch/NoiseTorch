@@ -58,6 +58,10 @@ to your `~/.profile`. If you do already have that, you may have to log in and ou
     rm ~/.local/share/applications/noisetorch.desktop
     rm ~/.local/share/icons/hicolor/256x256/apps/noisetorch.png 
 
+## Troubleshooting
+
+Please see the [Troubleshooting](https://github.com/lawl/NoiseTorch/wiki/Troubleshooting) section in the wiki.
+
 ## Third party packages (like AUR)
 
 Please do not use them. Some are known to mess with configuration files and will break things even if you did install a NoiseTorch package from an official source later on. If you had ever installed NoiseTorch from a non-official source, make sure to *completely* remove every trace, including deleting your `~/.config/noisetorch` directory, before reporting an issue.
@@ -77,10 +81,6 @@ If you set this to 0%, NoiseTorch will still dampen noise, but not deactivate yo
 Please keep in mind that you will need to reload NoiseTorch for these changes to apply.
 
 Once NoiseTorch has been loaded, feel free to close the window, the virtual microphone will continue working until you explicitly unload it. The NoiseTorch process is not required anymore once it has been loaded.
-
-## Troubleshooting
-
-Please see the [Troubleshooting](https://github.com/lawl/NoiseTorch/wiki/Troubleshooting) section in the wiki.
 
 ## Latency
 
