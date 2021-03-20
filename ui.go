@@ -26,16 +26,13 @@ type ntcontext struct {
 	librnnoise               string
 	sourceListColdWidthIndex int
 	config                   *config
-	loadingScreen            bool
-	licenseScreen            bool
-	versionScreen            bool
 	licenseTextArea          nucular.TextEditor
 	masterWindow             *nucular.MasterWindow
 	update                   updateui
 	reloadRequired           bool
 	haveCapabilities         bool
-	errorMsg                 string
 	capsMismatch             bool
+	views                    *ViewStack
 }
 
 var green = color.RGBA{34, 187, 69, 255}
@@ -45,38 +42,11 @@ var orange = color.RGBA{255, 140, 0, 255}
 var patreonImg *image.RGBA
 
 func updatefn(ctx *ntcontext, w *nucular.Window) {
+	currView := ctx.views.Peek()
+	currView(ctx, w)
+}
 
-	//TODO: this is disgusting
-
-	if ctx.errorMsg != "" {
-		errorScreen(ctx, w)
-		return
-	}
-
-	if !ctx.haveCapabilities {
-		capabilitiesScreen(ctx, w)
-		return
-	}
-
-	if !ctx.paClient.Connected() {
-		connectScreen(ctx, w)
-		return
-	}
-
-	if ctx.loadingScreen {
-		loadingScreen(ctx, w)
-		return
-	}
-
-	if ctx.licenseScreen {
-		licenseScreen(ctx, w)
-		return
-	}
-
-	if ctx.versionScreen {
-		versionScreen(ctx, w)
-		return
-	}
+func mainScreen(ctx *ntcontext, w *nucular.Window) {
 
 	w.MenubarBegin()
 
@@ -84,14 +54,14 @@ func updatefn(ctx *ntcontext, w *nucular.Window) {
 	if w := w.Menu(label.TA("About", "LC"), 120, nil); w != nil {
 		w.Row(10).Dynamic(1)
 		if w.MenuItem(label.T("Licenses")) {
-			ctx.licenseScreen = true
+			ctx.views.Push(licenseScreen)
 		}
 		w.Row(10).Dynamic(1)
 		if w.MenuItem(label.T("Source code")) {
 			exec.Command("xdg-open", "https://github.com/lawl/NoiseTorch").Run()
 		}
 		if w.MenuItem(label.T("Version")) {
-			ctx.versionScreen = true
+			ctx.views.Push(versionScreen)
 		}
 	}
 
@@ -248,7 +218,7 @@ func updatefn(ctx *ntcontext, w *nucular.Window) {
 	w.Row(25).Dynamic(2)
 	if ctx.noiseSupressorState != unloaded {
 		if w.ButtonText("Unload NoiseTorch") {
-			ctx.loadingScreen = true
+			ctx.views.Push(loadingScreen)
 			ctx.reloadRequired = false
 			go func() { // don't block the UI thread, just display a working screen so user can't run multiple loads/unloads
 				if err := unloadSupressor(ctx); err != nil {
@@ -260,7 +230,7 @@ func updatefn(ctx *ntcontext, w *nucular.Window) {
 						time.Sleep(time.Millisecond * 500)
 					}
 				}
-				ctx.loadingScreen = false
+				ctx.views.Pop()
 				(*ctx.masterWindow).Changed()
 			}()
 		}
@@ -280,7 +250,7 @@ func updatefn(ctx *ntcontext, w *nucular.Window) {
 		((ctx.config.FilterOutput && ctx.config.GuiltTripped) || !ctx.config.FilterOutput) &&
 		ctx.noiseSupressorState != inconsistent {
 		if w.ButtonText(txt) {
-			ctx.loadingScreen = true
+			ctx.views.Push(loadingScreen)
 			ctx.reloadRequired = false
 			go func() { // don't block the UI thread, just display a working screen so user can't run multiple loads/unloads
 				if ctx.noiseSupressorState == loaded {
@@ -301,7 +271,7 @@ func updatefn(ctx *ntcontext, w *nucular.Window) {
 				ctx.config.LastUsedInput = inp.ID
 				ctx.config.LastUsedOutput = out.ID
 				go writeConfig(ctx.config)
-				ctx.loadingScreen = false
+				ctx.views.Pop()
 				(*ctx.masterWindow).Changed()
 			}()
 		}
@@ -367,7 +337,7 @@ func licenseScreen(ctx *ntcontext, w *nucular.Window) {
 	w.Row(20).Dynamic(2)
 	w.Spacing(1)
 	if w.ButtonText("OK") {
-		ctx.licenseScreen = false
+		ctx.views.Pop()
 	}
 }
 
@@ -381,7 +351,7 @@ func versionScreen(ctx *ntcontext, w *nucular.Window) {
 	w.Row(20).Dynamic(2)
 	w.Spacing(1)
 	if w.ButtonText("OK") {
-		ctx.versionScreen = false
+		ctx.views.Pop()
 	}
 }
 
@@ -406,40 +376,43 @@ func capabilitiesScreen(ctx *ntcontext, w *nucular.Window) {
 	if w.ButtonText("Grant capability (requires root)") {
 		err := pkexecSetcapSelf()
 		if err != nil {
-			ctx.errorMsg = err.Error()
+			ctx.views.Push(makeErrorScreen(ctx, w, err.Error()))
 			return
 		}
 		self, err := os.Executable()
 		if err != nil {
-			ctx.errorMsg = err.Error()
+			ctx.views.Push(makeErrorScreen(ctx, w, err.Error()))
 			return
 		}
 		err = syscall.Exec(self, []string{""}, os.Environ())
 		if err != nil {
-			ctx.errorMsg = err.Error()
+			ctx.views.Push(makeErrorScreen(ctx, w, err.Error()))
 			return
 		}
 	}
 }
 
-func errorScreen(ctx *ntcontext, w *nucular.Window) {
-	w.Row(15).Dynamic(1)
-	w.Label("Error", "CB")
-	w.Row(15).Dynamic(1)
-	w.Label(ctx.errorMsg, "CB")
-	w.Row(40).Dynamic(1)
-	w.Row(25).Dynamic(1)
-	if w.ButtonText("OK") {
-		ctx.errorMsg = ""
-		return
+func makeErrorScreen(ctx *ntcontext, w *nucular.Window, errorMsg string) func(ctx *ntcontext, w *nucular.Window) {
+	return func(ctx *ntcontext, w *nucular.Window) {
+		w.Row(15).Dynamic(1)
+		w.Label("Error", "CB")
+		w.Row(15).Dynamic(1)
+		w.Label(errorMsg, "CB")
+		w.Row(40).Dynamic(1)
+		w.Row(25).Dynamic(1)
+		if w.ButtonText("OK") {
+			ctx.views.Pop()
+			return
+		}
 	}
 }
 
 func resetUI(ctx *ntcontext) {
-	ctx.loadingScreen = false
+	ctx.views = NewViewStack()
+	ctx.views.Push(mainScreen)
 
-	if ctx.masterWindow != nil {
-		(*ctx.masterWindow).Changed()
+	if !ctx.haveCapabilities {
+		ctx.views.Push(capabilitiesScreen)
 	}
 }
 

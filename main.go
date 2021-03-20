@@ -209,16 +209,20 @@ func main() {
 		go updateCheck(&ctx)
 	}
 
-	go paConnectionWatchdog(&ctx)
-
 	ctx.haveCapabilities = hasCapSysResource(getCurrentCaps())
 	ctx.capsMismatch = hasCapSysResource(getCurrentCaps()) != hasCapSysResource(getSelfFileCaps())
+
+	resetUI(&ctx)
 
 	wnd := nucular.NewMasterWindowSize(0, appName, image.Point{600, 400}, func(w *nucular.Window) {
 		updatefn(&ctx, w)
 	})
 
 	ctx.masterWindow = &wnd
+	(*ctx.masterWindow).Changed()
+
+	go paConnectionWatchdog(&ctx)
+
 	style := style.FromTheme(style.DarkTheme, 2.0)
 	style.Font = font.DefaultFont(16, 1)
 	wnd.SetStyle(style)
@@ -315,6 +319,9 @@ func paConnectionWatchdog(ctx *ntcontext) {
 			continue
 		}
 
+		ctx.views.Push(connectScreen)
+		(*ctx.masterWindow).Changed()
+
 		paClient, err := pulseaudio.NewClient()
 		if err != nil {
 			log.Printf("Couldn't create pulseaudio client: %v\n", err)
@@ -328,6 +335,7 @@ func paConnectionWatchdog(ctx *ntcontext) {
 		ctx.outputList = preselectDevice(ctx, getSinks(paClient), ctx.config.LastUsedOutput, getDefaultSinkID)
 
 		resetUI(ctx)
+		(*ctx.masterWindow).Changed()
 
 		time.Sleep(500 * time.Millisecond)
 	}
