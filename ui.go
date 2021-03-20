@@ -46,7 +46,7 @@ func updatefn(ctx *ntcontext, w *nucular.Window) {
 	currView(ctx, w)
 }
 
-func mainScreen(ctx *ntcontext, w *nucular.Window) {
+func mainView(ctx *ntcontext, w *nucular.Window) {
 
 	w.MenubarBegin()
 
@@ -54,14 +54,14 @@ func mainScreen(ctx *ntcontext, w *nucular.Window) {
 	if w := w.Menu(label.TA("About", "LC"), 120, nil); w != nil {
 		w.Row(10).Dynamic(1)
 		if w.MenuItem(label.T("Licenses")) {
-			ctx.views.Push(licenseScreen)
+			ctx.views.Push(licenseView)
 		}
 		w.Row(10).Dynamic(1)
 		if w.MenuItem(label.T("Source code")) {
 			exec.Command("xdg-open", "https://github.com/lawl/NoiseTorch").Run()
 		}
 		if w.MenuItem(label.T("Version")) {
-			ctx.views.Push(versionScreen)
+			ctx.views.Push(versionView)
 		}
 	}
 
@@ -218,7 +218,7 @@ func mainScreen(ctx *ntcontext, w *nucular.Window) {
 	w.Row(25).Dynamic(2)
 	if ctx.noiseSupressorState != unloaded {
 		if w.ButtonText("Unload NoiseTorch") {
-			ctx.views.Push(loadingScreen)
+			ctx.views.Push(loadingView)
 			ctx.reloadRequired = false
 			go func() { // don't block the UI thread, just display a working screen so user can't run multiple loads/unloads
 				if err := unloadSupressor(ctx); err != nil {
@@ -250,7 +250,7 @@ func mainScreen(ctx *ntcontext, w *nucular.Window) {
 		((ctx.config.FilterOutput && ctx.config.GuiltTripped) || !ctx.config.FilterOutput) &&
 		ctx.noiseSupressorState != inconsistent {
 		if w.ButtonText(txt) {
-			ctx.views.Push(loadingScreen)
+			ctx.views.Push(loadingView)
 			ctx.reloadRequired = false
 			go func() { // don't block the UI thread, just display a working screen so user can't run multiple loads/unloads
 				if ctx.noiseSupressorState == loaded {
@@ -318,14 +318,14 @@ func outputSelection(ctx *ntcontext) (device, bool) {
 	return device{}, false
 }
 
-func loadingScreen(ctx *ntcontext, w *nucular.Window) {
+func loadingView(ctx *ntcontext, w *nucular.Window) {
 	w.Row(50).Dynamic(1)
 	w.Label("Working...", "CB")
 	w.Row(50).Dynamic(1)
 	w.Label("(this may take a few seconds)", "CB")
 }
 
-func licenseScreen(ctx *ntcontext, w *nucular.Window) {
+func licenseView(ctx *ntcontext, w *nucular.Window) {
 	w.Row(255).Dynamic(1)
 	field := &ctx.licenseTextArea
 	field.Flags |= nucular.EditMultiline
@@ -341,7 +341,7 @@ func licenseScreen(ctx *ntcontext, w *nucular.Window) {
 	}
 }
 
-func versionScreen(ctx *ntcontext, w *nucular.Window) {
+func versionView(ctx *ntcontext, w *nucular.Window) {
 	w.Row(50).Dynamic(1)
 	w.Label("Version", "CB")
 	w.Row(50).Dynamic(1)
@@ -355,12 +355,12 @@ func versionScreen(ctx *ntcontext, w *nucular.Window) {
 	}
 }
 
-func connectScreen(ctx *ntcontext, w *nucular.Window) {
+func connectView(ctx *ntcontext, w *nucular.Window) {
 	w.Row(50).Dynamic(1)
 	w.Label("Connecting to pulseaudio...", "CB")
 }
 
-func capabilitiesScreen(ctx *ntcontext, w *nucular.Window) {
+func capabilitiesView(ctx *ntcontext, w *nucular.Window) {
 	w.Row(15).Dynamic(1)
 	w.Label("NoiseTorch currently does not have the capabilities to function properly.", "CB")
 	w.Row(15).Dynamic(1)
@@ -376,23 +376,23 @@ func capabilitiesScreen(ctx *ntcontext, w *nucular.Window) {
 	if w.ButtonText("Grant capability (requires root)") {
 		err := pkexecSetcapSelf()
 		if err != nil {
-			ctx.views.Push(makeErrorScreen(ctx, w, err.Error()))
+			ctx.views.Push(makeErrorView(ctx, w, err.Error()))
 			return
 		}
 		self, err := os.Executable()
 		if err != nil {
-			ctx.views.Push(makeErrorScreen(ctx, w, err.Error()))
+			ctx.views.Push(makeErrorView(ctx, w, err.Error()))
 			return
 		}
 		err = syscall.Exec(self, []string{""}, os.Environ())
 		if err != nil {
-			ctx.views.Push(makeErrorScreen(ctx, w, err.Error()))
+			ctx.views.Push(makeErrorView(ctx, w, err.Error()))
 			return
 		}
 	}
 }
 
-func makeErrorScreen(ctx *ntcontext, w *nucular.Window, errorMsg string) func(ctx *ntcontext, w *nucular.Window) {
+func makeErrorView(ctx *ntcontext, w *nucular.Window, errorMsg string) ViewFunc {
 	return func(ctx *ntcontext, w *nucular.Window) {
 		w.Row(15).Dynamic(1)
 		w.Label("Error", "CB")
@@ -409,10 +409,10 @@ func makeErrorScreen(ctx *ntcontext, w *nucular.Window, errorMsg string) func(ct
 
 func resetUI(ctx *ntcontext) {
 	ctx.views = NewViewStack()
-	ctx.views.Push(mainScreen)
+	ctx.views.Push(mainView)
 
 	if !ctx.haveCapabilities {
-		ctx.views.Push(capabilitiesScreen)
+		ctx.views.Push(capabilitiesView)
 	}
 }
 

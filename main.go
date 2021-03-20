@@ -319,7 +319,7 @@ func paConnectionWatchdog(ctx *ntcontext) {
 			continue
 		}
 
-		ctx.views.Push(connectScreen)
+		ctx.views.Push(connectView)
 		(*ctx.masterWindow).Changed()
 
 		paClient, err := pulseaudio.NewClient()
