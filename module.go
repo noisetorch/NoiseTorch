@@ -120,13 +120,9 @@ func loadSupressor(ctx *ntcontext, inp *device, out *device) error {
 		return err
 	}
 	log.Printf("Rlimit: %+v. Trying to remove.\n", lim)
-	if hasCapSysResource(getCurrentCaps()) {
-		log.Printf("Have capabilities\n")
-		removeRlimit(pid)
-	} else {
-		log.Printf("Capabilities missing, removing via pkexec\n")
-		removeRlimitAsRoot(pid)
-	}
+
+	removeRlimit(pid)
+
 	defer setRlimit(pid, &lim) // lowering RLIMIT doesn't require root
 
 	newLim, err := getRlimit(pid)

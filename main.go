@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/BurntSushi/xgbutil"
@@ -47,7 +46,6 @@ const appName = "NoiseTorch"
 
 func main() {
 
-	var pulsepid int
 	var setcap bool
 	var sinkName string
 	var unload bool
@@ -56,7 +54,6 @@ func main() {
 	var threshold int
 	var list bool
 
-	flag.IntVar(&pulsepid, "removerlimit", -1, "for internal use only")
 	flag.BoolVar(&setcap, "setcap", false, "for internal use only")
 	flag.StringVar(&sinkName, "s", "", "Use the specified source/sink device ID")
 	flag.BoolVar(&loadInput, "i", false, "Load supressor for input. If no source device ID is specified the default pulse audio source is used.")
@@ -68,18 +65,6 @@ func main() {
 
 	if setcap {
 		err := makeBinarySetcapped()
-		if err != nil {
-			os.Exit(1)
-		}
-		os.Exit(0)
-	}
-
-	//TODO:remove this after 0.10. Not required anymore after that.
-	//We don't remove it right now, since someone could have an old instance running that calls the updated binary
-	if pulsepid > 0 {
-		const MaxUint = ^uint64(0)
-		new := syscall.Rlimit{Cur: MaxUint, Max: MaxUint}
-		err := setRlimit(pulsepid, &new)
 		if err != nil {
 			os.Exit(1)
 		}

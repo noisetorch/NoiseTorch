@@ -3,8 +3,6 @@ package main
 import (
 	"io/ioutil"
 	"log"
-	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"syscall"
@@ -49,20 +47,6 @@ func removeRlimit(pid int) {
 	err := setRlimit(pid, &new)
 	if err != nil {
 		log.Printf("Couldn't set rlimit with caps\n")
-	}
-}
-
-func removeRlimitAsRoot(pid int) {
-	self, err := os.Executable()
-	if err != nil {
-		log.Fatalf("Couldn't find path to own binary\n")
-	}
-
-	cmd := exec.Command("pkexec", self, "-removerlimit", strconv.Itoa(pid))
-	log.Printf("Calling: %s\n", cmd.String())
-	err = cmd.Run()
-	if err != nil {
-		log.Printf("Couldn't remove rlimit as root: %v\n", err)
 	}
 }
 
