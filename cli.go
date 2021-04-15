@@ -29,7 +29,7 @@ func doCLI(config *config, librnnoise string) {
 	paClient, err := pulseaudio.NewClient()
 
 	if err != nil {
-		fmt.Printf("Couldn't create pulseaudio client: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Couldn't create pulseaudio client: %v\n", err)
 		os.Exit(1)
 	}
 	defer paClient.Close()
