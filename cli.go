@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/lawl/pulseaudio"
@@ -30,7 +29,7 @@ func doCLI(config *config, librnnoise string) {
 	paClient, err := pulseaudio.NewClient()
 
 	if err != nil {
-		log.Printf("Couldn't create pulseaudio client: %v\n", err)
+		fmt.Printf("Couldn't create pulseaudio client: %v\n", err)
 		os.Exit(1)
 	}
 	defer paClient.Close()
