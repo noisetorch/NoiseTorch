@@ -17,6 +17,10 @@ Then simply select NoiseTorch as your microphone in any application. OBS, Mumble
 
 ![](https://i.imgur.com/nimi7Ne.png)
 
+## Demo
+
+Linux For Everyone has a good demo video [here](https://www.youtube.com/watch?v=DzN9rYNeeIU).
+
 ## Features
 * Two click setup of your virtual denoising microphone
 * A single, small, statically linked, self-contained binary
