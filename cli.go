@@ -8,23 +8,41 @@ import (
 	"github.com/lawl/pulseaudio"
 )
 
-func doCLI(config *config, librnnoise string) {
-	var setcap bool
-	var sinkName string
-	var unload bool
-	var loadInput bool
-	var loadOutput bool
-	var threshold int
-	var list bool
+type CLIOpts struct {
+	doLog      bool
+	setcap     bool
+	sinkName   string
+	unload     bool
+	loadInput  bool
+	loadOutput bool
+	threshold  int
+	list       bool
+}
 
-	flag.BoolVar(&setcap, "setcap", false, "for internal use only")
-	flag.StringVar(&sinkName, "s", "", "Use the specified source/sink device ID")
-	flag.BoolVar(&loadInput, "i", false, "Load supressor for input. If no source device ID is specified the default pulse audio source is used.")
-	flag.BoolVar(&loadOutput, "o", false, "Load supressor for output. If no source device ID is specified the default pulse audio source is used.")
-	flag.BoolVar(&unload, "u", false, "Unload supressor")
-	flag.IntVar(&threshold, "t", -1, "Voice activation threshold")
-	flag.BoolVar(&list, "l", false, "List available PulseAudio devices")
+func parseCLIOpts() CLIOpts {
+	var opt CLIOpts
+	flag.BoolVar(&opt.doLog, "log", false, "Print debugging output to stdout")
+	flag.BoolVar(&opt.setcap, "setcap", false, "for internal use only")
+	flag.StringVar(&opt.sinkName, "s", "", "Use the specified source/sink device ID")
+	flag.BoolVar(&opt.loadInput, "i", false, "Load supressor for input. If no source device ID is specified the default pulse audio source is used.")
+	flag.BoolVar(&opt.loadOutput, "o", false, "Load supressor for output. If no source device ID is specified the default pulse audio source is used.")
+	flag.BoolVar(&opt.unload, "u", false, "Unload supressor")
+	flag.IntVar(&opt.threshold, "t", -1, "Voice activation threshold")
+	flag.BoolVar(&opt.list, "l", false, "List available PulseAudio devices")
 	flag.Parse()
+
+	return opt
+}
+
+func doCLI(opt CLIOpts, config *config, librnnoise string) {
+
+	if opt.setcap {
+		err := makeBinarySetcapped()
+		if err != nil {
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
 
 	paClient, err := pulseaudio.NewClient()
 
@@ -40,15 +58,7 @@ func doCLI(config *config, librnnoise string) {
 
 	ctx.paClient = paClient
 
-	if setcap {
-		err := makeBinarySetcapped()
-		if err != nil {
-			os.Exit(1)
-		}
-		os.Exit(0)
-	}
-
-	if list {
+	if opt.list {
 		fmt.Println("Sources:")
 		sources := getSources(paClient)
 		for i := range sources {
@@ -64,16 +74,16 @@ func doCLI(config *config, librnnoise string) {
 		os.Exit(0)
 	}
 
-	if threshold > 0 {
-		if threshold > 95 {
-			fmt.Fprintf(os.Stderr, "Threshold of '%d' too high, setting to maximum of 95.\n", threshold)
+	if opt.threshold > 0 {
+		if opt.threshold > 95 {
+			fmt.Fprintf(os.Stderr, "Threshold of '%d' too high, setting to maximum of 95.\n", opt.threshold)
 			ctx.config.Threshold = 95
 		} else {
-			ctx.config.Threshold = threshold
+			ctx.config.Threshold = opt.threshold
 		}
 	}
 
-	if unload {
+	if opt.unload {
 		err := unloadSupressor(&ctx)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error unloading PulseAudio Module: %+v\n", err)
@@ -82,19 +92,19 @@ func doCLI(config *config, librnnoise string) {
 		os.Exit(0)
 	}
 
-	if loadInput {
+	if opt.loadInput {
 		sources := getSources(paClient)
 
-		if sinkName == "" {
+		if opt.sinkName == "" {
 			defaultSource, err := getDefaultSourceID(paClient)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "No source specified to load and failed to load default source: %+v\n", err)
 				os.Exit(1)
 			}
-			sinkName = defaultSource
+			opt.sinkName = defaultSource
 		}
 		for i := range sources {
-			if sources[i].ID == sinkName {
+			if sources[i].ID == opt.sinkName {
 				sources[i].checked = true
 				err := loadSupressor(&ctx, &sources[i], &device{})
 				if err != nil {
@@ -104,23 +114,23 @@ func doCLI(config *config, librnnoise string) {
 				os.Exit(0)
 			}
 		}
-		fmt.Fprintf(os.Stderr, "PulseAudio source not found: %s\n", sinkName)
+		fmt.Fprintf(os.Stderr, "PulseAudio source not found: %s\n", opt.sinkName)
 		os.Exit(1)
 
 	}
-	if loadOutput {
+	if opt.loadOutput {
 		sinks := getSinks(paClient)
 
-		if sinkName == "" {
+		if opt.sinkName == "" {
 			defaultSink, err := getDefaultSinkID(paClient)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "No sink specified to load and failed to load default sink: %+v\n", err)
 				os.Exit(1)
 			}
-			sinkName = defaultSink
+			opt.sinkName = defaultSink
 		}
 		for i := range sinks {
-			if sinks[i].ID == sinkName {
+			if sinks[i].ID == opt.sinkName {
 				sinks[i].checked = true
 				err := loadSupressor(&ctx, &device{}, &sinks[i])
 				if err != nil {
@@ -130,7 +140,7 @@ func doCLI(config *config, librnnoise string) {
 				os.Exit(0)
 			}
 		}
-		fmt.Fprintf(os.Stderr, "PulseAudio sink not found: %s\n", sinkName)
+		fmt.Fprintf(os.Stderr, "PulseAudio sink not found: %s\n", opt.sinkName)
 		os.Exit(1)
 
 	}

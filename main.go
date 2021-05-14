@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -44,16 +43,13 @@ type device struct {
 const appName = "NoiseTorch"
 
 func main() {
+	opt := parseCLIOpts()
 
-	date := time.Now().Format("2006_01_02_15_04_05")
-	tmpdir := os.TempDir()
-	f, err := os.OpenFile(filepath.Join(tmpdir, fmt.Sprintf("noisetorch-%s.log", date)), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatalf("error opening file: %v\n", err)
+	if opt.doLog {
+		log.SetOutput(os.Stdout)
+	} else {
+		log.SetOutput(ioutil.Discard)
 	}
-	defer f.Close()
-
-	log.SetOutput(f)
 	log.Printf("Application starting. Version: %s\n", version)
 	log.Printf("CAP_SYS_RESOURCE: %t\n", hasCapSysResource(getCurrentCaps()))
 
@@ -65,7 +61,7 @@ func main() {
 	ctx.config = readConfig()
 	ctx.librnnoise = rnnoisefile
 
-	doCLI(ctx.config, ctx.librnnoise)
+	doCLI(opt, ctx.config, ctx.librnnoise)
 
 	if ctx.config.EnableUpdates {
 		go updateCheck(&ctx)
