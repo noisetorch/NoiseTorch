@@ -186,6 +186,21 @@ func paConnectionWatchdog(ctx *ntcontext) {
 			fmt.Fprintf(os.Stderr, "Couldn't create pulseaudio client: %v\n", err)
 		}
 
+		// This searches for the pipewire server, which is not supported yet. In order to reduce support requests
+		// due to missing modules, we inform the user in the UI. Remove when Pipewire is supported:
+		// cf. https://github.com/lawl/NoiseTorch/issues/63
+		info, err := paClient.ServerInfo()
+		if err != nil {
+			log.Printf("Couldn't fetch pulse server info: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Couldn't fetch pulse server info: %v\n", err)
+		}
+		ctx.isPipewire = strings.Contains(info.PackageName, "PipeWire")
+		if ctx.isPipewire {
+			msg := "Found Pipewire, which is not yet supported. Check the implementation issue for progress and help: https://github.com/lawl/NoiseTorch/issues/63\n"
+			log.Printf(msg, err)
+			fmt.Fprintf(os.Stderr, msg)
+		}
+
 		ctx.paClient = paClient
 		go updateNoiseSupressorLoaded(ctx)
 

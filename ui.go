@@ -33,6 +33,7 @@ type ntcontext struct {
 	haveCapabilities         bool
 	capsMismatch             bool
 	views                    *ViewStack
+	isPipewire               bool
 }
 
 var green = color.RGBA{34, 187, 69, 255}
@@ -78,6 +79,8 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 
 	if ctx.noiseSupressorState == loaded {
 		w.LabelColored("NoiseTorch active", "RC", green)
+	} else if ctx.isPipewire { // intermediate warning - remove when resolved: https://github.com/lawl/NoiseTorch/issues/63
+		w.LabelColored("Unfortunately, Pipewire is not supported yet :/", "RC", red)
 	} else if ctx.noiseSupressorState == unloaded {
 		w.LabelColored("NoiseTorch inactive", "RC", red)
 	} else if ctx.noiseSupressorState == inconsistent {
