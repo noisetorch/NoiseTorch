@@ -34,6 +34,7 @@ type ntcontext struct {
 	capsMismatch             bool
 	views                    *ViewStack
 	isPipewire               bool
+	pipewireWarningShown     bool
 }
 
 var green = color.RGBA{34, 187, 69, 255}
@@ -79,8 +80,6 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 
 	if ctx.noiseSupressorState == loaded {
 		w.LabelColored("NoiseTorch active", "RC", green)
-	} else if ctx.isPipewire { // intermediate warning - remove when resolved: https://github.com/lawl/NoiseTorch/issues/63
-		w.LabelColored("Unfortunately, Pipewire is not supported yet :/", "RC", red)
 	} else if ctx.noiseSupressorState == unloaded {
 		w.LabelColored("NoiseTorch inactive", "RC", red)
 	} else if ctx.noiseSupressorState == inconsistent {
@@ -282,6 +281,10 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 		w.Spacing(1)
 	}
 
+	if ctx.isPipewire && !ctx.pipewireWarningShown {
+		ctx.views.Push(makeErrorView(ctx, w, "Pipewire detected - unfortunately, this is not supported yet. :/"))
+		ctx.pipewireWarningShown = true
+	}
 }
 
 func ensureOnlyOneInputSelected(inps *[]device, current *device) {
