@@ -40,11 +40,11 @@ type device struct {
 }
 
 const appName = "NoiseTorch"
-var version = "unknown"
-var distribution = "custom"  // will be changed by build
 
-var updateURL = ""  // ditto
-var publicKeyString = ""  // ditto
+var version = "unknown"     // will be changed by build
+var distribution = "custom" // ditto
+var updateURL = ""          // ditto
+var publicKeyString = ""    // ditto
 
 func main() {
 	opt := parseCLIOpts()
