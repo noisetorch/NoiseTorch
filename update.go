@@ -100,8 +100,8 @@ func fetchFile(file string) ([]byte, error) {
 func publickey() []byte {
 	pub, err := base64.StdEncoding.DecodeString(publicKeyString)
 	if err != nil { // Should only happen when distributor ships an invalid public key
-                log.Fatalf("Error while reading public key: %s\nContact the distribution '%s' about this error.\n", err, distribution)
-                os.Exit(1)
+		log.Fatalf("Error while reading public key: %s\nContact the distribution '%s' about this error.\n", err, distribution)
+		os.Exit(1)
 	}
 	return pub
 }
