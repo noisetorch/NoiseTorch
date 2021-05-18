@@ -22,7 +22,6 @@ import (
 	"github.com/aarzilli/nucular/style"
 )
 
-//go:generate go run scripts/embedversion.go
 //go:generate go run scripts/embedlicenses.go
 
 //go:embed c/ladspa/rnnoise_ladspa.so
@@ -42,6 +41,11 @@ type device struct {
 
 const appName = "NoiseTorch"
 
+var version = "unknown"     // will be changed by build
+var distribution = "custom" // ditto
+var updateURL = ""          // ditto
+var publicKeyString = ""    // ditto
+
 func main() {
 	opt := parseCLIOpts()
 
@@ -50,7 +54,7 @@ func main() {
 	} else {
 		log.SetOutput(ioutil.Discard)
 	}
-	log.Printf("Application starting. Version: %s\n", version)
+	log.Printf("Application starting. Version: %s (%s)\n", version, distribution)
 	log.Printf("CAP_SYS_RESOURCE: %t\n", hasCapSysResource(getCurrentCaps()))
 
 	initializeConfigIfNot()

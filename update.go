@@ -1,5 +1,3 @@
-// +build release
-
 package main
 
 import (
@@ -14,9 +12,6 @@ import (
 	"strings"
 )
 
-var updateURL = "https://noisetorch.epicgamer.org"
-var publicKeyString = "3mL+rBi4yBZ1wGimQ/oSQCjxELzgTh+673H4JdzQBOk="
-
 type updateui struct {
 	serverVersion string
 	available     bool
@@ -24,7 +19,14 @@ type updateui struct {
 	updatingText  string
 }
 
+func updateable() bool {
+	return updateURL != "" && publicKeyString != ""
+}
+
 func updateCheck(ctx *ntcontext) {
+	if !updateable() {
+		return
+	}
 	log.Println("Checking for updates")
 	bodybuf, err := fetchFile("version.txt")
 	if err != nil {
@@ -41,6 +43,9 @@ func updateCheck(ctx *ntcontext) {
 }
 
 func update(ctx *ntcontext) {
+	if !updateable() {
+		return
+	}
 	sig, err := fetchFile("NoiseTorch_x64.tgz.sig")
 	if err != nil {
 		log.Println("Couldn't fetch signature", err)
@@ -94,8 +99,9 @@ func fetchFile(file string) ([]byte, error) {
 
 func publickey() []byte {
 	pub, err := base64.StdEncoding.DecodeString(publicKeyString)
-	if err != nil {
-		panic(err) // it's hardcoded, we should never hit this, panic if we do
+	if err != nil { // Should only happen when distributor ships an invalid public key
+		log.Fatalf("Error while reading public key: %s\nContact the distribution '%s' about this error.\n", err, distribution)
+		os.Exit(1)
 	}
 	return pub
 }

@@ -345,7 +345,7 @@ func versionView(ctx *ntcontext, w *nucular.Window) {
 	w.Row(50).Dynamic(1)
 	w.Label("Version", "CB")
 	w.Row(50).Dynamic(1)
-	w.Label(version, "CB")
+	w.Label(fmt.Sprintf("%s (%s)", version, distribution), "CB")
 	w.Row(50).Dynamic(1)
 	w.Spacing(1)
 	w.Row(20).Dynamic(2)
