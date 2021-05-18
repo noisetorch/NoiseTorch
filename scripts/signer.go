@@ -23,7 +23,7 @@ func main() {
 	flag.BoolVar(&doSign, "s", false, "Sign the release tar")
 
 	var publicKeyString string
-	flag.StringVar(&publicKeyString, "k", "", "Public key to verify the release afterwards")
+	flag.StringVar(&publicKeyString, "k", "", "Public key to verify against (runs verifier if set)")
 
 	flag.Parse()
 
