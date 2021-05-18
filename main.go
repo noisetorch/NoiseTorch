@@ -22,7 +22,6 @@ import (
 	"github.com/aarzilli/nucular/style"
 )
 
-//go:generate go run scripts/embedversion.go
 //go:generate go run scripts/embedlicenses.go
 
 //go:embed c/ladspa/rnnoise_ladspa.so
@@ -41,6 +40,7 @@ type device struct {
 }
 
 const appName = "NoiseTorch"
+var version = "unknown"
 var distribution = "custom"  // will be changed by build
 
 var updateURL = ""  // ditto
