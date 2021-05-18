@@ -5,7 +5,7 @@ VERSION := $(shell git describe --tags)
 dev: rnnoise
 	mkdir -p bin/
 	go generate
-	go build -o bin/noisetorch
+	go build -ldflags '-X main.version=${VERSION}' -o bin/noisetorch
 release: rnnoise
 	mkdir -p bin/
 	mkdir -p tmp/
