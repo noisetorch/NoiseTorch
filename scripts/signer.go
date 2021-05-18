@@ -22,8 +22,8 @@ func main() {
 	var doSign bool
 	flag.BoolVar(&doSign, "s", false, "Sign the release tar")
 
-	var doVerify bool
-	flag.BoolVar(&doVerify, "v", false, "Verify the signature of the tar")
+	var publicKeyString string
+	flag.StringVar(&publicKeyString, "k", "", "Public key to verify the release afterwards")
 
 	flag.Parse()
 
@@ -56,9 +56,8 @@ func main() {
 		os.Exit(0)
 	}
 
-	if doVerify {
-		pubStr := "3mL+rBi4yBZ1wGimQ/oSQCjxELzgTh+673H4JdzQBOk="
-		pub, err := base64.StdEncoding.DecodeString(pubStr)
+	if publicKeyString != "" {
+		pub, err := base64.StdEncoding.DecodeString(publicKeyString)
 		if err != nil {
 			panic(err)
 		}
