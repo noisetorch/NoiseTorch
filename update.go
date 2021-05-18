@@ -14,9 +14,6 @@ import (
 	"strings"
 )
 
-var updateURL = "https://noisetorch.epicgamer.org"
-var publicKeyString = "3mL+rBi4yBZ1wGimQ/oSQCjxELzgTh+673H4JdzQBOk="
-
 type updateui struct {
 	serverVersion string
 	available     bool
@@ -24,7 +21,14 @@ type updateui struct {
 	updatingText  string
 }
 
+func updateable() bool {
+	return updateURL != "" && publicKeyString != ""
+}
+
 func updateCheck(ctx *ntcontext) {
+	if !updateable() {
+		return
+	}
 	log.Println("Checking for updates")
 	bodybuf, err := fetchFile("version.txt")
 	if err != nil {
@@ -41,6 +45,9 @@ func updateCheck(ctx *ntcontext) {
 }
 
 func update(ctx *ntcontext) {
+	if !updateable() {
+		return
+	}
 	sig, err := fetchFile("NoiseTorch_x64.tgz.sig")
 	if err != nil {
 		log.Println("Couldn't fetch signature", err)

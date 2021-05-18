@@ -1,3 +1,6 @@
+UPDATE_URL=https://noisetorch.epicgamer.org
+UPDATE_PUBKEY=3mL+rBi4yBZ1wGimQ/oSQCjxELzgTh+673H4JdzQBOk=
+
 dev: rnnoise
 	mkdir -p bin/
 	go generate
@@ -14,7 +17,7 @@ release: rnnoise
 
 	mkdir -p tmp/.local/bin/
 	go generate
-	CGO_ENABLED=0 GOOS=linux go build -tags release -a -ldflags '-s -w -extldflags "-static"' .
+	CGO_ENABLED=0 GOOS=linux go build -tags release -a -ldflags '-s -w -extldflags "-static" -X main.distribution=official -X main.updateURL=${UPDATE_URL} -X main.publicKeyString=${UPDATE_PUBKEY}' .
 	upx noisetorch
 	mv noisetorch tmp/.local/bin/
 	cd tmp/; \

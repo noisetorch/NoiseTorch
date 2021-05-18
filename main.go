@@ -41,6 +41,10 @@ type device struct {
 }
 
 const appName = "NoiseTorch"
+var distribution = "custom"  // will be changed by build
+
+var updateURL = ""  // ditto
+var publicKeyString = ""  // ditto
 
 func main() {
 	opt := parseCLIOpts()
@@ -50,7 +54,7 @@ func main() {
 	} else {
 		log.SetOutput(ioutil.Discard)
 	}
-	log.Printf("Application starting. Version: %s\n", version)
+	log.Printf("Application starting. Version: %s (%s)\n", version, distribution)
 	log.Printf("CAP_SYS_RESOURCE: %t\n", hasCapSysResource(getCurrentCaps()))
 
 	initializeConfigIfNot()
