@@ -45,7 +45,6 @@ func doCLI(opt CLIOpts, config *config, librnnoise string) {
 	}
 
 	paClient, err := pulseaudio.NewClient()
-
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Couldn't create pulseaudio client: %v\n", err)
 		os.Exit(1)
@@ -53,6 +52,13 @@ func doCLI(opt CLIOpts, config *config, librnnoise string) {
 	defer paClient.Close()
 
 	ctx := ntcontext{}
+
+	info, err := serverInfo(paClient)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Couldn't fetch audio server info: %s\n", err)
+	}
+	ctx.serverInfo = info
+
 	ctx.config = config
 	ctx.librnnoise = librnnoise
 

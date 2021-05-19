@@ -33,7 +33,23 @@ type ntcontext struct {
 	haveCapabilities         bool
 	capsMismatch             bool
 	views                    *ViewStack
+	serverInfo               audioserverinfo
 }
+
+//TODO pull some of these strucs out of UI, they don't belong here
+type audioserverinfo struct {
+	servertype       uint
+	name             string
+	major            int
+	minor            int
+	patch            int
+	outdatedPipeWire bool
+}
+
+const (
+	servertype_pulse = iota
+	servertype_pipewire
+)
 
 var green = color.RGBA{34, 187, 69, 255}
 var red = color.RGBA{255, 70, 70, 255}
@@ -82,6 +98,11 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 		w.LabelColored("NoiseTorch inactive", "RC", red)
 	} else if ctx.noiseSupressorState == inconsistent {
 		w.LabelColored("Inconsistent state, please unload first.", "RC", orange)
+	}
+
+	if ctx.serverInfo.servertype == servertype_pipewire {
+		w.Row(20).Dynamic(1)
+		w.Label("Running in PipeWire mode. PipeWire support is currently alpha quality. Please report bugs.", "LC")
 	}
 
 	if ctx.update.available && !ctx.update.triggered {
@@ -376,23 +397,23 @@ func capabilitiesView(ctx *ntcontext, w *nucular.Window) {
 	if w.ButtonText("Grant capability (requires root)") {
 		err := pkexecSetcapSelf()
 		if err != nil {
-			ctx.views.Push(makeErrorView(ctx, w, err.Error()))
+			ctx.views.Push(makeErrorView(ctx, err.Error()))
 			return
 		}
 		self, err := os.Executable()
 		if err != nil {
-			ctx.views.Push(makeErrorView(ctx, w, err.Error()))
+			ctx.views.Push(makeErrorView(ctx, err.Error()))
 			return
 		}
 		err = syscall.Exec(self, []string{""}, os.Environ())
 		if err != nil {
-			ctx.views.Push(makeErrorView(ctx, w, err.Error()))
+			ctx.views.Push(makeErrorView(ctx, err.Error()))
 			return
 		}
 	}
 }
 
-func makeErrorView(ctx *ntcontext, w *nucular.Window, errorMsg string) ViewFunc {
+func makeErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 	return func(ctx *ntcontext, w *nucular.Window) {
 		w.Row(15).Dynamic(1)
 		w.Label("Error", "CB")
@@ -407,12 +428,33 @@ func makeErrorView(ctx *ntcontext, w *nucular.Window, errorMsg string) ViewFunc 
 	}
 }
 
+func makeFatalErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
+	return func(ctx *ntcontext, w *nucular.Window) {
+		w.Row(15).Dynamic(1)
+		w.Label("Fatal Error", "CB")
+		w.Row(15).Dynamic(1)
+		w.Label(errorMsg, "CB")
+		w.Row(40).Dynamic(1)
+		w.Row(25).Dynamic(1)
+		if w.ButtonText("Quit") {
+			os.Exit(1)
+			return
+		}
+	}
+}
+
 func resetUI(ctx *ntcontext) {
 	ctx.views = NewViewStack()
 	ctx.views.Push(mainView)
 
 	if !ctx.haveCapabilities {
 		ctx.views.Push(capabilitiesView)
+	}
+
+	if ctx.serverInfo.outdatedPipeWire {
+		ctx.views.Push(makeFatalErrorView(ctx,
+			fmt.Sprintf("Your PipeWire version is too old. Detected %d.%d.%d. Require at least 0.3.28.",
+				ctx.serverInfo.major, ctx.serverInfo.minor, ctx.serverInfo.patch)))
 	}
 }
 

@@ -14,9 +14,9 @@
 #include "../ringbuf.h"
 #include "../rnnoise/rnnoise.h"
 
-#define SF_VAD 0
-#define SF_INPUT 1
-#define SF_OUTPUT 2
+#define SF_INPUT 0
+#define SF_OUTPUT 1
+#define SF_VAD 2
 
 #define FRAMESIZE_NSAMPLES 480
 #define FRAMESIZE_BYTES (480 * sizeof(float))
@@ -187,9 +187,7 @@ ON_LOAD_ROUTINE {
     g_psDescriptor->PortRangeHints =
         (const LADSPA_PortRangeHint *)psPortRangeHints;
     psPortRangeHints[SF_VAD].HintDescriptor =
-        (LADSPA_HINT_BOUNDED_BELOW | LADSPA_HINT_BOUNDED_ABOVE |
-         LADSPA_HINT_SAMPLE_RATE | LADSPA_HINT_LOGARITHMIC |
-         LADSPA_HINT_DEFAULT_440);
+        (LADSPA_HINT_BOUNDED_BELOW | LADSPA_HINT_BOUNDED_ABOVE);
     psPortRangeHints[SF_VAD].LowerBound = 0;
     psPortRangeHints[SF_VAD].UpperBound = 95;
     psPortRangeHints[SF_INPUT].HintDescriptor = 0;
