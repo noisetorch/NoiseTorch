@@ -176,10 +176,20 @@ func loadSupressor(ctx *ntcontext, inp *device, out *device) error {
 	return nil
 }
 
+func loadModule(ctx *ntcontext, module, args string) (uint32, error) {
+	idx, err := ctx.paClient.LoadModule(module, args)
+
+	//14 = module initialisation failed
+	if paErr, ok := err.(*pulseaudio.Error); ok && paErr.Code == 14 {
+		resetUI(ctx)
+		ctx.views.Push(makeErrorView(ctx, fmt.Sprintf("Could not load module '%s'. This is likely a problem with your system or distribution.", module)))
+	}
+	return idx, err
+}
+
 func loadPipeWireInput(ctx *ntcontext, inp *device) error {
-	c := ctx.paClient
 	log.Printf("Loading supressor for pipewire\n")
-	idx, err := c.LoadModule("module-ladspa-source",
+	idx, err := loadModule(ctx, "module-ladspa-source",
 		fmt.Sprintf("source_name='NoiseTorch Microphone' master=%s "+
 			"rate=48000 channels=1 "+
 			"label=noisetorch plugin=%s control=%d", inp.ID, ctx.librnnoise, ctx.config.Threshold))
@@ -192,9 +202,8 @@ func loadPipeWireInput(ctx *ntcontext, inp *device) error {
 }
 
 func loadPipeWireOutput(ctx *ntcontext, out *device) error {
-	c := ctx.paClient
 	log.Printf("Loading supressor for pipewire\n")
-	idx, err := c.LoadModule("module-ladspa-sink",
+	idx, err := loadModule(ctx, "module-ladspa-sink",
 		fmt.Sprintf("sink_name='NoiseTorch Headphones' master=%s "+
 			"rate=48000 channels=1 "+
 			"label=noisetorch plugin=%s control=%d", out.ID, ctx.librnnoise, ctx.config.Threshold))
@@ -207,15 +216,14 @@ func loadPipeWireOutput(ctx *ntcontext, out *device) error {
 }
 
 func loadPulseInput(ctx *ntcontext, inp *device) error {
-	c := ctx.paClient
 	log.Printf("Loading supressor for pulse\n")
-	idx, err := c.LoadModule("module-null-sink", "sink_name=nui_mic_denoised_out rate=48000")
+	idx, err := loadModule(ctx, "module-null-sink", "sink_name=nui_mic_denoised_out rate=48000")
 	if err != nil {
 		return err
 	}
 	log.Printf("Loaded null sink as idx: %d\n", idx)
 
-	idx, err = c.LoadModule("module-ladspa-sink",
+	idx, err = loadModule(ctx, "module-ladspa-sink",
 		fmt.Sprintf("sink_name=nui_mic_raw_in sink_master=nui_mic_denoised_out "+
 			"label=noisetorch plugin=%s control=%d", ctx.librnnoise, ctx.config.Threshold))
 	if err != nil {
@@ -224,14 +232,14 @@ func loadPulseInput(ctx *ntcontext, inp *device) error {
 	log.Printf("Loaded ladspa sink as idx: %d\n", idx)
 
 	if inp.dynamicLatency {
-		idx, err = c.LoadModule("module-loopback",
+		idx, err = loadModule(ctx, "module-loopback",
 			fmt.Sprintf("source=%s sink=nui_mic_raw_in channels=1 latency_msec=1 source_dont_move=true sink_dont_move=true", inp.ID))
 		if err != nil {
 			return err
 		}
 		log.Printf("Loaded loopback as idx: %d\n", idx)
 	} else {
-		idx, err = c.LoadModule("module-loopback",
+		idx, err = loadModule(ctx, "module-loopback",
 			fmt.Sprintf("source=%s sink=nui_mic_raw_in channels=1 latency_msec=50 source_dont_move=true sink_dont_move=true adjust_time=1", inp.ID))
 		if err != nil {
 			return err
@@ -239,7 +247,7 @@ func loadPulseInput(ctx *ntcontext, inp *device) error {
 		log.Printf("Loaded fixed latency loopback as idx: %d\n", idx)
 	}
 
-	idx, err = c.LoadModule("module-remap-source", `master=nui_mic_denoised_out.monitor `+
+	idx, err = loadModule(ctx, "module-remap-source", `master=nui_mic_denoised_out.monitor `+
 		`source_name=nui_mic_remap source_properties="device.description='NoiseTorch Microphone'"`)
 	if err != nil {
 		return err
@@ -249,31 +257,30 @@ func loadPulseInput(ctx *ntcontext, inp *device) error {
 }
 
 func loadPulseOutput(ctx *ntcontext, out *device) error {
-	c := ctx.paClient
-	_, err := c.LoadModule("module-null-sink", `sink_name=nui_out_out_sink`)
+	_, err := loadModule(ctx, "module-null-sink", `sink_name=nui_out_out_sink`)
 	if err != nil {
 		return err
 	}
 
-	_, err = c.LoadModule("module-null-sink", `sink_name=nui_out_in_sink sink_properties="device.description='NoiseTorch Headphones'"`)
+	_, err = loadModule(ctx, "module-null-sink", `sink_name=nui_out_in_sink sink_properties="device.description='NoiseTorch Headphones'"`)
 	if err != nil {
 		return err
 	}
 
-	_, err = c.LoadModule("module-ladspa-sink", fmt.Sprintf(`sink_name=nui_out_ladspa sink_master=nui_out_out_sink `+
+	_, err = loadModule(ctx, "module-ladspa-sink", fmt.Sprintf(`sink_name=nui_out_ladspa sink_master=nui_out_out_sink `+
 		`label=noisetorch channels=1 plugin=%s control=%d rate=%d`,
 		ctx.librnnoise, ctx.config.Threshold, 48000))
 	if err != nil {
 		return err
 	}
 
-	_, err = c.LoadModule("module-loopback",
+	_, err = loadModule(ctx, "module-loopback",
 		fmt.Sprintf("source=nui_out_out_sink.monitor sink=%s channels=2 latency_msec=50 source_dont_move=true sink_dont_move=true", out.ID))
 	if err != nil {
 		return err
 	}
 
-	_, err = c.LoadModule("module-loopback",
+	_, err = loadModule(ctx, "module-loopback",
 		fmt.Sprintf("source=nui_out_in_sink.monitor sink=nui_out_ladspa channels=1 latency_msec=50 source_dont_move=true sink_dont_move=true"))
 	if err != nil {
 		return err
