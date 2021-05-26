@@ -2,9 +2,6 @@ UPDATE_URL=https://noisetorch.epicgamer.org
 UPDATE_PUBKEY=3mL+rBi4yBZ1wGimQ/oSQCjxELzgTh+673H4JdzQBOk=
 VERSION := $(shell git describe --tags)
 
-
-CLANG := $(shell which clang)
-
 dev: rnnoise
 	mkdir -p bin/
 	go generate
@@ -30,14 +27,6 @@ release: rnnoise
 	go run scripts/signer.go -s
 	git describe --tags > bin/version.txt
 rnnoise:
-	# For some reason gcc10 refuses to link libm
-	# gcc11 seems to work. Temporarily force clang
-	# if available until i can fix this properly
-ifdef CLANG
-	cd c/ladspa; \
-	CC=clang make
-else
 	cd c/ladspa; \
 	make
-endif
 
