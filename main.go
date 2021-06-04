@@ -247,19 +247,20 @@ func serverInfo(paClient *pulseaudio.Client) (audioserverinfo, error) {
 
 	res := versionRegex.FindStringSubmatch(versionString)
 	if len(res) != 4 {
-		return audioserverinfo{}, fmt.Errorf("couldn't parse server version, regexp didn't match.")
+		log.Printf("couldn't parse server version, regexp didn't match version: %s\n", versionString)
+		return audioserverinfo{servertype: servertype}, nil
 	}
 	major, err = strconv.Atoi(res[1])
 	if err != nil {
-		return audioserverinfo{}, err
+		return audioserverinfo{servertype: servertype}, err
 	}
 	minor, err = strconv.Atoi(res[2])
 	if err != nil {
-		return audioserverinfo{}, err
+		return audioserverinfo{servertype: servertype}, err
 	}
 	patch, err = strconv.Atoi(res[3])
 	if err != nil {
-		return audioserverinfo{}, err
+		return audioserverinfo{servertype: servertype}, err
 	}
 	if isPipewire && major <= 0 && minor <= 3 && patch < 28 {
 		log.Printf("pipewire version %d.%d.%d too old.\n", major, minor, patch)
