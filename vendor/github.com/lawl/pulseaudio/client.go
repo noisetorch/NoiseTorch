@@ -383,7 +383,7 @@ func cookiePath() (string, error) {
 		return p, nil
 	}
 
-	p = filepath.Join(os.Getenv("HOME"), "/.pulse_cookie")
+	p = filepath.Join(os.Getenv("HOME"), "/.pulse-cookie")
 	if exists(p) {
 		return p, nil
 	}

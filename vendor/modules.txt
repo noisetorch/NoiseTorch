@@ -71,7 +71,7 @@ github.com/golang/freetype/truetype
 # github.com/hashicorp/golang-lru v0.0.0-20160813221303-0a025b7e63ad
 github.com/hashicorp/golang-lru
 github.com/hashicorp/golang-lru/simplelru
-# github.com/lawl/pulseaudio v0.0.0-20200802093727-ab0735955fd0
+# github.com/lawl/pulseaudio v0.0.0-20210604102109-cb2596d6a8ef
 ## explicit
 github.com/lawl/pulseaudio
 # github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635
