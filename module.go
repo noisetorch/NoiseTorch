@@ -24,8 +24,7 @@ func updateNoiseSupressorLoaded(ctx *ntcontext) {
 	}
 
 	for {
-		ctx.noiseSupressorState = supressorState(ctx)
-
+		ctx.noiseSupressorState, ctx.virtualDeviceInUse = supressorState(ctx)
 		if !c.Connected() {
 			break
 		}
@@ -34,16 +33,18 @@ func updateNoiseSupressorLoaded(ctx *ntcontext) {
 	}
 }
 
-func supressorState(ctx *ntcontext) int {
+func supressorState(ctx *ntcontext) (int, bool) {
 	//perform some checks to see if it looks like the noise supressor is loaded
 	c := ctx.paClient
 	var inpLoaded, outLoaded, inputInc, outputInc bool
+	var virtualDeviceInUse bool = false
 	if ctx.config.FilterInput {
 		if ctx.serverInfo.servertype == servertype_pipewire {
-			_, ladspasource, err := findModule(c, "module-ladspa-source", "source_name='NoiseTorch Microphone'")
+			module, ladspasource, err := findModule(c, "module-ladspa-source", "source_name='NoiseTorch Microphone'")
 			if err != nil {
 				log.Printf("Couldn't fetch module list to check for module-ladspa-source: %v\n", err)
 			}
+			virtualDeviceInUse = virtualDeviceInUse || (module.NUsed != 0)
 			inpLoaded = ladspasource
 			inputInc = false
 		} else {
@@ -59,10 +60,12 @@ func supressorState(ctx *ntcontext) int {
 			if err != nil {
 				log.Printf("Couldn't fetch module list to check for module-loopback: %v\n", err)
 			}
-			_, remap, err := findModule(c, "module-remap-source", "master=nui_mic_denoised_out.monitor source_name=nui_mic_remap")
+			module, remap, err := findModule(c, "module-remap-source", "master=nui_mic_denoised_out.monitor source_name=nui_mic_remap")
 			if err != nil {
 				log.Printf("Couldn't fetch module list to check for module-remap-source: %v\n", err)
 			}
+
+			virtualDeviceInUse = virtualDeviceInUse || (module.NUsed != 0)
 
 			if nullsink && ladspasink && loopback && remap {
 				inpLoaded = true
@@ -76,10 +79,11 @@ func supressorState(ctx *ntcontext) int {
 
 	if ctx.config.FilterOutput {
 		if ctx.serverInfo.servertype == servertype_pipewire {
-			_, ladspasink, err := findModule(c, "module-ladspa-sink", "sink_name='NoiseTorch Headphones'")
+			module, ladspasink, err := findModule(c, "module-ladspa-sink", "sink_name='NoiseTorch Headphones'")
 			if err != nil {
 				log.Printf("Couldn't fetch module list to check for module-ladspa-sink: %v\n", err)
 			}
+			virtualDeviceInUse = virtualDeviceInUse || (module.NUsed != 0)
 			outLoaded = ladspasink
 			outputInc = false
 		} else {
@@ -95,10 +99,11 @@ func supressorState(ctx *ntcontext) int {
 			if err != nil {
 				log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
 			}
-			_, outin, err := findModule(c, "module-null-sink", "sink_name=nui_out_in_sink")
+			module, outin, err := findModule(c, "module-null-sink", "sink_name=nui_out_in_sink")
 			if err != nil {
 				log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
 			}
+			virtualDeviceInUse = virtualDeviceInUse || (module.NUsed != 0)
 			_, loop2, err := findModule(c, "module-loopback", "source=nui_out_in_sink.monitor")
 			if err != nil {
 				log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
@@ -112,14 +117,14 @@ func supressorState(ctx *ntcontext) int {
 	}
 
 	if (inpLoaded || !ctx.config.FilterInput) && (outLoaded || !ctx.config.FilterOutput) && !inputInc {
-		return loaded
+		return loaded, virtualDeviceInUse
 	}
 
 	if (inpLoaded && ctx.config.FilterInput) || (outLoaded && ctx.config.FilterOutput) || inputInc || outputInc {
-		return inconsistent
+		return inconsistent, virtualDeviceInUse
 	}
 
-	return unloaded
+	return unloaded, virtualDeviceInUse
 }
 
 func loadSupressor(ctx *ntcontext, inp *device, out *device) error {

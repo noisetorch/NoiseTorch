@@ -34,6 +34,7 @@ type ntcontext struct {
 	capsMismatch             bool
 	views                    *ViewStack
 	serverInfo               audioserverinfo
+	virtualDeviceInUse       bool
 }
 
 //TODO pull some of these strucs out of UI, they don't belong here
@@ -149,13 +150,13 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 		if w.CheckboxText("Filter Microphone", &ctx.config.FilterInput) {
 			ctx.sourceListColdWidthIndex++ //recompute the with because of new elements
 			go writeConfig(ctx.config)
-			go (func() { ctx.noiseSupressorState = supressorState(ctx) })()
+			go (func() { ctx.noiseSupressorState, _ = supressorState(ctx) })()
 		}
 
 		if w.CheckboxText("Filter Headphones", &ctx.config.FilterOutput) {
 			ctx.sourceListColdWidthIndex++ //recompute the with because of new elements
 			go writeConfig(ctx.config)
-			go (func() { ctx.noiseSupressorState = supressorState(ctx) })()
+			go (func() { ctx.noiseSupressorState, _ = supressorState(ctx) })()
 		}
 
 		w.TreePop()
@@ -239,21 +240,19 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 	w.Row(25).Dynamic(2)
 	if ctx.noiseSupressorState != unloaded {
 		if w.ButtonText("Unload NoiseTorch") {
-			ctx.views.Push(loadingView)
 			ctx.reloadRequired = false
-			go func() { // don't block the UI thread, just display a working screen so user can't run multiple loads/unloads
-				if err := unloadSupressor(ctx); err != nil {
-					log.Println(err)
-				}
-				//wait until PA reports it has actually loaded it, timeout at 10s
-				for i := 0; i < 20; i++ {
-					if supressorState(ctx) != unloaded {
-						time.Sleep(time.Millisecond * 500)
-					}
-				}
-				ctx.views.Pop()
-				(*ctx.masterWindow).Changed()
-			}()
+			if ctx.virtualDeviceInUse {
+				confirm := makeConfirmView(ctx,
+					"Virtual Device in Use",
+					"Some applications may behave weirdly when you remove a device they're currently using",
+					"Unload",
+					"Go back",
+					func() { uiUnloadNoisetorch(ctx) },
+					func() {})
+				ctx.views.Push(confirm)
+			} else {
+				go uiUnloadNoisetorch(ctx)
+			}
 		}
 	} else {
 		w.Spacing(1)
@@ -271,35 +270,64 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 		((ctx.config.FilterOutput && ctx.config.GuiltTripped) || !ctx.config.FilterOutput) &&
 		ctx.noiseSupressorState != inconsistent {
 		if w.ButtonText(txt) {
-			ctx.views.Push(loadingView)
 			ctx.reloadRequired = false
-			go func() { // don't block the UI thread, just display a working screen so user can't run multiple loads/unloads
-				if ctx.noiseSupressorState == loaded {
-					if err := unloadSupressor(ctx); err != nil {
-						log.Println(err)
-					}
-				}
-				if err := loadSupressor(ctx, &inp, &out); err != nil {
-					log.Println(err)
-				}
 
-				//wait until PA reports it has actually loaded it, timeout at 10s
-				for i := 0; i < 20; i++ {
-					if supressorState(ctx) != loaded {
-						time.Sleep(time.Millisecond * 500)
-					}
-				}
-				ctx.config.LastUsedInput = inp.ID
-				ctx.config.LastUsedOutput = out.ID
-				go writeConfig(ctx.config)
-				ctx.views.Pop()
-				(*ctx.masterWindow).Changed()
-			}()
+			if ctx.virtualDeviceInUse {
+				confirm := makeConfirmView(ctx,
+					"Virtual Device in Use",
+					"Some applications may behave weirdly when you reload a device they're currently using",
+					"Reload",
+					"Go back",
+					func() { uiReloadNoisetorch(ctx, inp, out) },
+					func() {})
+				ctx.views.Push(confirm)
+			} else {
+				go uiReloadNoisetorch(ctx, inp, out)
+			}
 		}
 	} else {
 		w.Spacing(1)
 	}
 
+}
+
+func uiUnloadNoisetorch(ctx *ntcontext) {
+	ctx.views.Push(loadingView)
+	if err := unloadSupressor(ctx); err != nil {
+		log.Println(err)
+	}
+	//wait until PA reports it has actually loaded it, timeout at 10s
+	for i := 0; i < 20; i++ {
+		if state, _ := supressorState(ctx); state != unloaded {
+			time.Sleep(time.Millisecond * 500)
+		}
+	}
+	ctx.views.Pop()
+	(*ctx.masterWindow).Changed()
+}
+
+func uiReloadNoisetorch(ctx *ntcontext, inp, out device) {
+	ctx.views.Push(loadingView)
+	if ctx.noiseSupressorState == loaded {
+		if err := unloadSupressor(ctx); err != nil {
+			log.Println(err)
+		}
+	}
+	if err := loadSupressor(ctx, &inp, &out); err != nil {
+		log.Println(err)
+	}
+
+	//wait until PA reports it has actually loaded it, timeout at 10s
+	for i := 0; i < 20; i++ {
+		if state, _ := supressorState(ctx); state != loaded {
+			time.Sleep(time.Millisecond * 500)
+		}
+	}
+	ctx.config.LastUsedInput = inp.ID
+	ctx.config.LastUsedOutput = out.ID
+	go writeConfig(ctx.config)
+	ctx.views.Pop()
+	(*ctx.masterWindow).Changed()
 }
 
 func ensureOnlyOneInputSelected(inps *[]device, current *device) {
@@ -438,6 +466,27 @@ func makeFatalErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 		w.Row(25).Dynamic(1)
 		if w.ButtonText("Quit") {
 			os.Exit(1)
+			return
+		}
+	}
+}
+
+func makeConfirmView(ctx *ntcontext, title, text, confirmText, denyText string, confirmfunc, denyfunc func()) ViewFunc {
+	return func(ctx *ntcontext, w *nucular.Window) {
+		w.Row(15).Dynamic(1)
+		w.Label(title, "CB")
+		w.Row(15).Dynamic(1)
+		w.Label(text, "CB")
+		w.Row(40).Dynamic(1)
+		w.Row(25).Dynamic(2)
+		if w.ButtonText(denyText) {
+			ctx.views.Pop()
+			go denyfunc()
+			return
+		}
+		if w.ButtonText(confirmText) {
+			ctx.views.Pop()
+			go confirmfunc()
 			return
 		}
 	}
