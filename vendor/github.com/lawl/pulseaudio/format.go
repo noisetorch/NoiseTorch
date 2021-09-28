@@ -156,13 +156,15 @@ func bread(r io.Reader, data ...interface{}) error {
 
 		sptr, ok := v.(*string)
 		if ok {
-			buf := make([]byte, 1024) // max string length i guess.
+			buf := make([]byte, 0)
 			i := 0
 			for {
-				_, err := r.Read(buf[i : i+1])
+				var curChar [1]byte
+				_, err := r.Read(curChar[:])
 				if err != nil {
 					return err
 				}
+				buf = append(buf, curChar[0])
 				if buf[i] == 0 {
 					*sptr = string(buf[:i])
 					break
