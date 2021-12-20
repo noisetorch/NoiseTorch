@@ -289,6 +289,11 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 		w.Spacing(1)
 	}
 
+	w.Row(25).Dynamic(4)
+
+	if w.ButtonText("Something is not working...") {
+		exec.Command("xdg-open", "https://github.com/lawl/NoiseTorch/wiki/Troubleshooting").Run()
+	}
 }
 
 func uiUnloadNoisetorch(ctx *ntcontext) {
