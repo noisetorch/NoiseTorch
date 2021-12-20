@@ -67,7 +67,7 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 
 	w.MenubarBegin()
 
-	w.Row(10).Dynamic(1)
+	w.Row(16).Dynamic(4)
 	if w := w.Menu(label.TA("About", "LC"), 120, nil); w != nil {
 		w.Row(10).Dynamic(1)
 		if w.MenuItem(label.T("Licenses")) {
@@ -80,6 +80,11 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 		if w.MenuItem(label.T("Version")) {
 			ctx.views.Push(versionView)
 		}
+	}
+	w.Label("","RC")
+	w.Label("","RC")
+	if w.Button(label.TA("Troubleshooting", "CC"), true) {
+		exec.Command("xdg-open", "https://github.com/lawl/NoiseTorch/wiki/Troubleshooting").Run()
 	}
 
 	w.MenubarEnd()
@@ -287,12 +292,6 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 		}
 	} else {
 		w.Spacing(1)
-	}
-
-	w.Row(25).Dynamic(4)
-
-	if w.ButtonText("Something is not working...") {
-		exec.Command("xdg-open", "https://github.com/lawl/NoiseTorch/wiki/Troubleshooting").Run()
 	}
 }
 
