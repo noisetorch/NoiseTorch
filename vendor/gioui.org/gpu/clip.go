@@ -2,11 +2,10 @@ package gpu
 
 import (
 	"gioui.org/f32"
-	"gioui.org/internal/ops"
+	"gioui.org/internal/stroke"
 )
 
 type quadSplitter struct {
-	verts   []byte
 	bounds  f32.Rectangle
 	contour uint32
 	d       *drawOps
@@ -48,7 +47,7 @@ func (qs *quadSplitter) encodeQuadTo(from, ctrl, to f32.Point) {
 	encodeQuadTo(data, qs.contour, from, ctrl, to)
 }
 
-func (qs *quadSplitter) splitAndEncode(quad ops.Quad) {
+func (qs *quadSplitter) splitAndEncode(quad stroke.QuadSegment) {
 	cbnd := f32.Rectangle{
 		Min: quad.From,
 		Max: quad.To,
@@ -94,5 +93,22 @@ func (qs *quadSplitter) splitAndEncode(quad ops.Quad) {
 		}
 	}
 
-	qs.bounds = qs.bounds.Union(cbnd)
+	qs.bounds = unionRect(qs.bounds, cbnd)
+}
+
+// Union is like f32.Rectangle.Union but ignores empty rectangles.
+func unionRect(r, s f32.Rectangle) f32.Rectangle {
+	if r.Min.X > s.Min.X {
+		r.Min.X = s.Min.X
+	}
+	if r.Min.Y > s.Min.Y {
+		r.Min.Y = s.Min.Y
+	}
+	if r.Max.X < s.Max.X {
+		r.Max.X = s.Max.X
+	}
+	if r.Max.Y < s.Max.Y {
+		r.Max.Y = s.Max.Y
+	}
+	return r
 }

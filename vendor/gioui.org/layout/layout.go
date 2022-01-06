@@ -23,6 +23,10 @@ type Constraints struct {
 }
 
 // Dimensions are the resolved size and baseline for a widget.
+//
+// Baseline is the distance from the bottom of a widget to the baseline of
+// any text it contains (or 0). The purpose is to be able to align text
+// that span multiple widgets.
 type Dimensions struct {
 	Size     image.Point
 	Baseline int
@@ -105,7 +109,9 @@ func (c Constraints) Constrain(size image.Point) image.Point {
 	return size
 }
 
-// Inset adds space around a widget.
+// Inset adds space around a widget by decreasing its maximum
+// constraints. The minimum constraints will be adjusted to ensure
+// they do not exceed the maximum.
 type Inset struct {
 	Top, Right, Bottom, Left unit.Value
 }
@@ -135,11 +141,10 @@ func (in Inset) Layout(gtx Context, w Widget) Dimensions {
 	if mcs.Min.Y > mcs.Max.Y {
 		mcs.Min.Y = mcs.Max.Y
 	}
-	stack := op.Push(gtx.Ops)
-	op.Offset(FPt(image.Point{X: left, Y: top})).Add(gtx.Ops)
 	gtx.Constraints = mcs
+	trans := op.Offset(FPt(image.Point{X: left, Y: top})).Push(gtx.Ops)
 	dims := w(gtx)
-	stack.Pop()
+	trans.Pop()
 	return Dimensions{
 		Size:     dims.Size.Add(image.Point{X: right + left, Y: top + bottom}),
 		Baseline: dims.Baseline + bottom,
@@ -153,39 +158,70 @@ func UniformInset(v unit.Value) Inset {
 }
 
 // Layout a widget according to the direction.
-func (a Direction) Layout(gtx Context, w Widget) Dimensions {
+// The widget is called with the context constraints minimum cleared.
+func (d Direction) Layout(gtx Context, w Widget) Dimensions {
 	macro := op.Record(gtx.Ops)
-	cs := gtx.Constraints
-	gtx.Constraints.Min = image.Point{}
+	csn := gtx.Constraints.Min
+	switch d {
+	case N, S:
+		gtx.Constraints.Min.Y = 0
+	case E, W:
+		gtx.Constraints.Min.X = 0
+	default:
+		gtx.Constraints.Min = image.Point{}
+	}
 	dims := w(gtx)
 	call := macro.Stop()
 	sz := dims.Size
-	if sz.X < cs.Min.X {
-		sz.X = cs.Min.X
+	if sz.X < csn.X {
+		sz.X = csn.X
 	}
-	if sz.Y < cs.Min.Y {
-		sz.Y = cs.Min.Y
+	if sz.Y < csn.Y {
+		sz.Y = csn.Y
 	}
-	var p image.Point
-	switch Direction(a) {
-	case N, S, Center:
-		p.X = (sz.X - dims.Size.X) / 2
-	case NE, SE, E:
-		p.X = sz.X - dims.Size.X
-	}
-	switch Direction(a) {
-	case W, Center, E:
-		p.Y = (sz.Y - dims.Size.Y) / 2
-	case SW, S, SE:
-		p.Y = sz.Y - dims.Size.Y
-	}
-	stack := op.Push(gtx.Ops)
-	op.Offset(FPt(p)).Add(gtx.Ops)
+
+	p := d.Position(dims.Size, sz)
+	defer op.Offset(FPt(p)).Push(gtx.Ops).Pop()
 	call.Add(gtx.Ops)
-	stack.Pop()
+
 	return Dimensions{
 		Size:     sz,
 		Baseline: dims.Baseline + sz.Y - dims.Size.Y - p.Y,
+	}
+}
+
+// Position calculates widget position according to the direction.
+func (d Direction) Position(widget, bounds image.Point) image.Point {
+	var p image.Point
+
+	switch d {
+	case N, S, Center:
+		p.X = (bounds.X - widget.X) / 2
+	case NE, SE, E:
+		p.X = bounds.X - widget.X
+	}
+
+	switch d {
+	case W, Center, E:
+		p.Y = (bounds.Y - widget.Y) / 2
+	case SW, S, SE:
+		p.Y = bounds.Y - widget.Y
+	}
+
+	return p
+}
+
+// Spacer adds space between widgets.
+type Spacer struct {
+	Width, Height unit.Value
+}
+
+func (s Spacer) Layout(gtx Context) Dimensions {
+	return Dimensions{
+		Size: image.Point{
+			X: gtx.Px(s.Width),
+			Y: gtx.Px(s.Height),
+		},
 	}
 }
 
@@ -202,6 +238,50 @@ func (a Alignment) String() string {
 	default:
 		panic("unreachable")
 	}
+}
+
+// Convert a point in (x, y) coordinates to (main, cross) coordinates,
+// or vice versa. Specifically, Convert((x, y)) returns (x, y) unchanged
+// for the horizontal axis, or (y, x) for the vertical axis.
+func (a Axis) Convert(pt image.Point) image.Point {
+	if a == Horizontal {
+		return pt
+	}
+	return image.Pt(pt.Y, pt.X)
+}
+
+// FConvert a point in (x, y) coordinates to (main, cross) coordinates,
+// or vice versa. Specifically, FConvert((x, y)) returns (x, y) unchanged
+// for the horizontal axis, or (y, x) for the vertical axis.
+func (a Axis) FConvert(pt f32.Point) f32.Point {
+	if a == Horizontal {
+		return pt
+	}
+	return f32.Pt(pt.Y, pt.X)
+}
+
+// mainConstraint returns the min and max main constraints for axis a.
+func (a Axis) mainConstraint(cs Constraints) (int, int) {
+	if a == Horizontal {
+		return cs.Min.X, cs.Max.X
+	}
+	return cs.Min.Y, cs.Max.Y
+}
+
+// crossConstraint returns the min and max cross constraints for axis a.
+func (a Axis) crossConstraint(cs Constraints) (int, int) {
+	if a == Horizontal {
+		return cs.Min.Y, cs.Max.Y
+	}
+	return cs.Min.X, cs.Max.X
+}
+
+// constraints returns the constraints for axis a.
+func (a Axis) constraints(mainMin, mainMax, crossMin, crossMax int) Constraints {
+	if a == Horizontal {
+		return Constraints{Min: image.Pt(mainMin, crossMin), Max: image.Pt(mainMax, crossMax)}
+	}
+	return Constraints{Min: image.Pt(crossMin, mainMin), Max: image.Pt(crossMax, mainMax)}
 }
 
 func (a Axis) String() string {

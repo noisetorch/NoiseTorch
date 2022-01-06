@@ -40,16 +40,22 @@ type androidLogWriter struct {
 }
 
 func (w *androidLogWriter) Write(data []byte) (int, error) {
-	// Truncate the buffer, leaving space for the '\0'.
-	if max := len(w.buf) - 1; len(data) > max {
-		data = data[:max]
+	n := 0
+	for len(data) > 0 {
+		msg := data
+		// Truncate the buffer, leaving space for the '\0'.
+		if max := len(w.buf) - 1; len(msg) > max {
+			msg = msg[:max]
+		}
+		buf := w.buf[:len(msg)+1]
+		copy(buf, msg)
+		// Terminating '\0'.
+		buf[len(msg)] = 0
+		C.__android_log_write(C.ANDROID_LOG_INFO, logTag, (*C.char)(unsafe.Pointer(&buf[0])))
+		n += len(msg)
+		data = data[len(msg):]
 	}
-	buf := w.buf[:len(data)+1]
-	copy(buf, data)
-	// Terminating '\0'.
-	buf[len(data)] = 0
-	C.__android_log_write(C.ANDROID_LOG_INFO, logTag, (*C.char)(unsafe.Pointer(&buf[0])))
-	return len(data), nil
+	return n, nil
 }
 
 func logFd(fd uintptr) {

@@ -37,7 +37,7 @@ This example both aligns and insets a child:
 
 	inset := layout.Inset{...}
 	inset.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-		align := layout.Align(...)
+		align := layout.Alignment(...)
 		return align.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 			return widget.Layout(gtx, ...)
 		})

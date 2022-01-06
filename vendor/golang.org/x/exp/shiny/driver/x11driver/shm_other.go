@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build !linux
-// +build !dragonfly
-// +build !openbsd
+//go:build !linux && !dragonfly && !openbsd
+// +build !linux,!dragonfly,!openbsd
 
 package x11driver
 

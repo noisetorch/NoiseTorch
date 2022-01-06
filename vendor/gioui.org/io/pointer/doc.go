@@ -25,63 +25,67 @@ Leave, or Scroll):
 
 Cancel events are always delivered.
 
-Areas
+Hit areas
 
-The area operations are used for specifying the area where
-subsequent InputOp are active.
+Clip operations from package op/clip are used for specifying
+hit areas where subsequent InputOps are active.
 
-For example, to set up a rectangular hit area:
+For example, to set up a handler with a rectangular hit area:
 
 	r := image.Rectangle{...}
-	pointer.Rect(r).Add(ops)
+	area := clip.Rect(r).Push(ops)
 	pointer.InputOp{Tag: h}.Add(ops)
+	area.Pop()
 
-Note that areas compound: the effective area of multiple area
-operations is the intersection of the areas.
+Note that hit areas behave similar to painting: the effective area of a stack
+of multiple area operations is the intersection of the areas.
+
+BUG: Clip operations other than clip.Rect and clip.Ellipse are approximated
+with their bounding boxes.
 
 Matching events
 
-StackOp operations and input handlers form an implicit tree.
-Each stack operation is a node, and each input handler is associated
-with the most recent node.
+Areas form an implicit tree, with input handlers as leaves. The children of
+an area is every area and handler added between its Push and corresponding Pop.
 
 For example:
 
 	ops := new(op.Ops)
-	var stack op.StackOp
 	var h1, h2 *Handler
 
-	stack := op.Push(ops)
+	area := clip.Rect(...).Push(ops)
 	pointer.InputOp{Tag: h1}.Add(Ops)
-	stack.Pop()
+	area.Pop()
 
-	stack = op.Push(ops)
+	area := clip.Rect(...).Push(ops)
 	pointer.InputOp{Tag: h2}.Add(ops)
-	stack.Pop()
+	area.Pop()
 
-implies a tree of two inner nodes, each with one pointer handler.
+implies a tree of two inner nodes, each with one pointer handler attached.
 
-When determining which handlers match an Event, only handlers whose
-areas contain the event position are considered. The matching
-proceeds as follows.
+The matching proceeds as follows.
 
-First, the foremost matching handler is included. If the handler
-has pass-through enabled, this step is repeated.
+First, the foremost area that contains the event is found. Only areas whose
+parent areas all contain the event is considered.
 
-Then, all matching handlers from the current node and all parent
-nodes are included.
+Then, every handler attached to the area is matched with the event.
 
-In the example above, all events will go to h2 only even though both
-handlers have the same area (the entire screen).
+If all attached handlers are marked pass-through or if no handlers are
+attached, the matching repeats with the next foremost (sibling) area. Otherwise
+the matching repeats with the parent area.
+
+In the example above, all events will go to h2 because it and h1 are siblings
+and none are pass-through.
 
 Pass-through
 
-The PassOp operations controls the pass-through setting. A handler's
-pass-through setting is recorded along with the InputOp.
+The PassOp operations controls the pass-through setting. All handlers added
+inside one or more PassOp scopes are marked pass-through.
 
-Pass-through handlers are useful for overlay widgets such as a hidden
-side drawer. When the user touches the side, both the (transparent)
-drawer handle and the interface below should receive pointer events.
+Pass-through is useful for overlay widgets. Consider a hidden side drawer: when
+the user touches the side, both the (transparent) drawer handle and the
+interface below should receive pointer events. This effect is achieved by
+marking the drawer handle pass-through.
 
 Disambiguation
 

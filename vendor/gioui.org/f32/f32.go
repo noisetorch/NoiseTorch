@@ -66,6 +66,17 @@ func (p Point) Mul(s float32) Point {
 	return Point{X: p.X * s, Y: p.Y * s}
 }
 
+// Div returns the vector p/s.
+func (p Point) Div(s float32) Point {
+	return Point{X: p.X / s, Y: p.Y / s}
+}
+
+// In reports whether p is in r.
+func (p Point) In(r Rectangle) bool {
+	return r.Min.X <= p.X && p.X < r.Max.X &&
+		r.Min.Y <= p.Y && p.Y < r.Max.Y
+}
+
 // Size returns r's width and height.
 func (r Rectangle) Size() Point {
 	return Point{X: r.Dx(), Y: r.Dy()}
@@ -95,11 +106,20 @@ func (r Rectangle) Intersect(s Rectangle) Rectangle {
 	if r.Max.Y > s.Max.Y {
 		r.Max.Y = s.Max.Y
 	}
+	if r.Empty() {
+		return Rectangle{}
+	}
 	return r
 }
 
 // Union returns the union of r and s.
 func (r Rectangle) Union(s Rectangle) Rectangle {
+	if r.Empty() {
+		return s
+	}
+	if s.Empty() {
+		return r
+	}
 	if r.Min.X > s.Min.X {
 		r.Min.X = s.Min.X
 	}

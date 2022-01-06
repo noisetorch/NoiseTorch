@@ -30,24 +30,24 @@ Drawing a colored square:
 
 State
 
-An Ops list can be viewed as a very simple virtual machine: it has an implicit
-mutable state stack and execution flow can be controlled with macros.
+An Ops list can be viewed as a very simple virtual machine: it has state such
+as transformation and color and execution flow can be controlled with macros.
 
-The StackOp saves the current state to the state stack and restores it later:
+Some state, such as the current color, is modified directly by operations with
+Add methods. Other state, such as transformation and clip shape, are
+represented by stacks.
+
+This example sets the simple color state and pushes an offset to the
+transformation stack.
 
 	ops := new(op.Ops)
-	// Save the current state, in particular the transform.
-	stack := op.Push(ops)
-	// Apply a transform to subsequent operations.
-	op.Offset(...).Add(ops)
+	// Set the color.
+	paint.ColorOp{...}.Add(ops)
+	// Apply an offset to subsequent operations.
+	stack := op.Offset(...).Push(ops)
 	...
-	// Restore the previous transform.
+	// Undo the offset transformation.
 	stack.Pop()
-
-You can also use this one-line to save the current state and restore it at the
-end of a function :
-
-  defer op.Push(ops).Pop()
 
 The MacroOp records a list of operations to be executed later:
 
@@ -71,44 +71,29 @@ import (
 	"time"
 
 	"gioui.org/f32"
-	"gioui.org/internal/opconst"
+	"gioui.org/internal/ops"
 )
 
 // Ops holds a list of operations. Operations are stored in
 // serialized form to avoid garbage during construction of
 // the ops list.
 type Ops struct {
-	// version is incremented at each Reset.
-	version int
-	// data contains the serialized operations.
-	data []byte
-	// External references for operations.
-	refs []interface{}
-
-	stackStack stack
-	macroStack stack
-}
-
-// StackOp saves and restores the operation state
-// in a stack-like manner.
-type StackOp struct {
-	id      stackID
-	macroID int
-	ops     *Ops
+	// Internal is for internal use, despite being exported.
+	Internal ops.Ops
 }
 
 // MacroOp records a list of operations for later use.
 type MacroOp struct {
-	ops *Ops
-	id  stackID
-	pc  pc
+	ops *ops.Ops
+	id  ops.StackID
+	pc  ops.PC
 }
 
 // CallOp invokes the operations recorded by Record.
 type CallOp struct {
 	// Ops is the list of operations to invoke.
-	ops *Ops
-	pc  pc
+	ops *ops.Ops
+	pc  ops.PC
 }
 
 // InvalidateOp requests a redraw at the given time. Use
@@ -117,100 +102,58 @@ type InvalidateOp struct {
 	At time.Time
 }
 
-// TransformOp applies a transform to the current transform. The zero value
-// for TransformOp represents the identity transform.
+// TransformOp represents a transformation that can be pushed on the
+// transformation stack.
 type TransformOp struct {
 	t f32.Affine2D
 }
 
-// stack tracks the integer identities of StackOp and MacroOp
-// operations to ensure correct pairing of Push/Pop and Record/End.
-type stack struct {
-	currentID int
-	nextID    int
+// TransformStack represents a TransformOp pushed on the transformation stack.
+type TransformStack struct {
+	id      ops.StackID
+	macroID int
+	ops     *ops.Ops
 }
 
-type stackID struct {
-	id   int
-	prev int
-}
-
-type pc struct {
-	data int
-	refs int
-}
-
-// Push (save) the current operations state.
-func Push(o *Ops) StackOp {
-	s := StackOp{
-		ops:     o,
-		id:      o.stackStack.push(),
-		macroID: o.macroStack.currentID,
+// Defer executes c after all other operations have completed, including
+// previously deferred operations.
+// Defer saves the transformation stack and pushes it prior to executing
+// c. All other operation state is reset.
+//
+// Note that deferred operations are executed in first-in-first-out order,
+// unlike the Go facility of the same name.
+func Defer(o *Ops, c CallOp) {
+	if c.ops == nil {
+		return
 	}
-	data := o.Write(opconst.TypePushLen)
-	data[0] = byte(opconst.TypePush)
-	return s
-}
-
-// Pop (restore) a previously Pushed operations state.
-func (s StackOp) Pop() {
-	if s.ops.macroStack.currentID != s.macroID {
-		panic("pop in a different macro than push")
-	}
-	s.ops.stackStack.pop(s.id)
-	data := s.ops.Write(opconst.TypePopLen)
-	data[0] = byte(opconst.TypePop)
+	state := ops.Save(&o.Internal)
+	// Wrap c in a macro that loads the saved state before execution.
+	m := Record(o)
+	state.Load()
+	c.Add(o)
+	c = m.Stop()
+	// A Defer is recorded as a TypeDefer followed by the
+	// wrapped macro.
+	data := ops.Write(&o.Internal, ops.TypeDeferLen)
+	data[0] = byte(ops.TypeDefer)
+	c.Add(o)
 }
 
 // Reset the Ops, preparing it for re-use. Reset invalidates
 // any recorded macros.
 func (o *Ops) Reset() {
-	o.stackStack = stack{}
-	o.macroStack = stack{}
-	// Leave references to the GC.
-	for i := range o.refs {
-		o.refs[i] = nil
-	}
-	o.data = o.data[:0]
-	o.refs = o.refs[:0]
-	o.version++
-}
-
-// Data is for internal use only.
-func (o *Ops) Data() []byte {
-	return o.data
-}
-
-// Refs is for internal use only.
-func (o *Ops) Refs() []interface{} {
-	return o.refs
-}
-
-// Version is for internal use only.
-func (o *Ops) Version() int {
-	return o.version
-}
-
-// Write is for internal use only.
-func (o *Ops) Write(n int, refs ...interface{}) []byte {
-	o.data = append(o.data, make([]byte, n)...)
-	o.refs = append(o.refs, refs...)
-	return o.data[len(o.data)-n:]
-}
-
-func (o *Ops) pc() pc {
-	return pc{data: len(o.data), refs: len(o.refs)}
+	ops.Reset(&o.Internal)
 }
 
 // Record a macro of operations.
 func Record(o *Ops) MacroOp {
 	m := MacroOp{
-		ops: o,
-		id:  o.macroStack.push(),
-		pc:  o.pc(),
+		ops: &o.Internal,
+		id:  ops.PushMacro(&o.Internal),
+		pc:  ops.PCFor(&o.Internal),
 	}
 	// Reserve room for a macro definition. Updated in Stop.
-	m.ops.Write(opconst.TypeMacroLen)
+	ops.Write(m.ops, ops.TypeMacroLen)
 	m.fill()
 	return m
 }
@@ -218,7 +161,7 @@ func Record(o *Ops) MacroOp {
 // Stop ends a previously started recording and returns an
 // operation for replaying it.
 func (m MacroOp) Stop() CallOp {
-	m.ops.macroStack.pop(m.id)
+	ops.PopMacro(m.ops, m.id)
 	m.fill()
 	return CallOp{
 		ops: m.ops,
@@ -227,14 +170,7 @@ func (m MacroOp) Stop() CallOp {
 }
 
 func (m MacroOp) fill() {
-	pc := m.ops.pc()
-	// Fill out the macro definition reserved in Record.
-	data := m.ops.data[m.pc.data:]
-	data = data[:opconst.TypeMacroLen]
-	data[0] = byte(opconst.TypeMacro)
-	bo := binary.LittleEndian
-	bo.PutUint32(data[1:], uint32(pc.data))
-	bo.PutUint32(data[5:], uint32(pc.refs))
+	ops.FillMacro(m.ops, m.pc)
 }
 
 // Add the recorded list of operations. Add
@@ -244,16 +180,12 @@ func (c CallOp) Add(o *Ops) {
 	if c.ops == nil {
 		return
 	}
-	data := o.Write(opconst.TypeCallLen, c.ops)
-	data[0] = byte(opconst.TypeCall)
-	bo := binary.LittleEndian
-	bo.PutUint32(data[1:], uint32(c.pc.data))
-	bo.PutUint32(data[5:], uint32(c.pc.refs))
+	ops.AddCall(&o.Internal, c.ops, c.pc)
 }
 
 func (r InvalidateOp) Add(o *Ops) {
-	data := o.Write(opconst.TypeRedrawLen)
-	data[0] = byte(opconst.TypeInvalidate)
+	data := ops.Write(&o.Internal, ops.TypeRedrawLen)
+	data[0] = byte(ops.TypeInvalidate)
 	bo := binary.LittleEndian
 	// UnixNano cannot represent the zero time.
 	if t := r.At; !t.IsZero() {
@@ -274,36 +206,38 @@ func Affine(a f32.Affine2D) TransformOp {
 	return TransformOp{t: a}
 }
 
+// Push the current transformation to the stack and then multiply the
+// current transformation with t.
+func (t TransformOp) Push(o *Ops) TransformStack {
+	id, macroID := ops.PushOp(&o.Internal, ops.TransStack)
+	t.add(o, true)
+	return TransformStack{ops: &o.Internal, id: id, macroID: macroID}
+}
+
+// Add is like Push except it doesn't push the current transformation to the
+// stack.
 func (t TransformOp) Add(o *Ops) {
-	data := o.Write(opconst.TypeTransformLen)
-	data[0] = byte(opconst.TypeTransform)
+	t.add(o, false)
+}
+
+func (t TransformOp) add(o *Ops, push bool) {
+	data := ops.Write(&o.Internal, ops.TypeTransformLen)
+	data[0] = byte(ops.TypeTransform)
+	if push {
+		data[1] = 1
+	}
 	bo := binary.LittleEndian
 	a, b, c, d, e, f := t.t.Elems()
-	bo.PutUint32(data[1:], math.Float32bits(a))
-	bo.PutUint32(data[1+4*1:], math.Float32bits(b))
-	bo.PutUint32(data[1+4*2:], math.Float32bits(c))
-	bo.PutUint32(data[1+4*3:], math.Float32bits(d))
-	bo.PutUint32(data[1+4*4:], math.Float32bits(e))
-	bo.PutUint32(data[1+4*5:], math.Float32bits(f))
+	bo.PutUint32(data[2:], math.Float32bits(a))
+	bo.PutUint32(data[2+4*1:], math.Float32bits(b))
+	bo.PutUint32(data[2+4*2:], math.Float32bits(c))
+	bo.PutUint32(data[2+4*3:], math.Float32bits(d))
+	bo.PutUint32(data[2+4*4:], math.Float32bits(e))
+	bo.PutUint32(data[2+4*5:], math.Float32bits(f))
 }
 
-func (s *stack) push() stackID {
-	s.nextID++
-	sid := stackID{
-		id:   s.nextID,
-		prev: s.currentID,
-	}
-	s.currentID = s.nextID
-	return sid
-}
-
-func (s *stack) check(sid stackID) {
-	if s.currentID != sid.id {
-		panic("unbalanced operation")
-	}
-}
-
-func (s *stack) pop(sid stackID) {
-	s.check(sid)
-	s.currentID = sid.prev
+func (t TransformStack) Pop() {
+	ops.PopOp(t.ops, ops.TransStack, t.id, t.macroID)
+	data := ops.Write(t.ops, ops.TypePopTransformLen)
+	data[0] = byte(ops.TypePopTransform)
 }

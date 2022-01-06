@@ -1,7 +1,6 @@
 // +build darwin
 
 #import <Metal/Metal.h>
-#include <stdlib.h>
 #include "mtl.h"
 
 struct Device CreateSystemDefaultDevice() {
@@ -40,7 +39,7 @@ struct Devices CopyAllDevices() {
 	return d;
 }
 
-BOOL Device_SupportsFeatureSet(void * device, uint16_t featureSet) {
+bool Device_SupportsFeatureSet(void * device, uint16_t featureSet) {
 	return [(id<MTLDevice>)device supportsFeatureSet:featureSet];
 }
 

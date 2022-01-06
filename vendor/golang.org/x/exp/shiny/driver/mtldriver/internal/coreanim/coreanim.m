@@ -41,7 +41,7 @@ const char * MetalLayer_SetMaximumDrawableCount(void * metalLayer, uint_t maximu
 	return NULL;
 }
 
-void MetalLayer_SetDisplaySyncEnabled(void * metalLayer, BOOL displaySyncEnabled) {
+void MetalLayer_SetDisplaySyncEnabled(void * metalLayer, bool displaySyncEnabled) {
 	((CAMetalLayer *)metalLayer).displaySyncEnabled = displaySyncEnabled;
 }
 

@@ -795,6 +795,18 @@ func (p *psInterpreter) parseNumber() (hasResult bool, err error) {
 		}
 		number, hasResult = int32(u32(p.instructions[1:])), true
 		p.instructions = p.instructions[5:]
+		// 5177.Type2.pdf section 3.2 "Charstring Number Encoding" says "If the
+		// charstring byte contains the value 255... [this] number is
+		// interpreted as a Fixed; that is, a signed number with 16 bits of
+		// fraction".
+		//
+		// TODO: change the psType2CharstringsData.b.segments and
+		// psInterpreter.argStack data structures to optionally hold fixed
+		// point values, not just integer values. That's a substantial
+		// re-design, though. Until then, just round the 16.16 fixed point
+		// number to the closest integer value. This isn't just "number =
+		// ((number + 0x8000) >> 16)" because of potential overflow.
+		number = (number >> 16) + (1 & (number >> 15))
 	}
 
 	if hasResult {

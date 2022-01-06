@@ -17,8 +17,9 @@ import (
 )
 
 /*
-#cgo LDFLAGS: -framework Metal -framework Foundation
+#cgo LDFLAGS: -framework Metal -framework CoreGraphics -framework Foundation
 #include <stdlib.h>
+#include <stdbool.h>
 #include "mtl.h"
 struct Library Go_Device_MakeLibrary(void * device, _GoString_ source) {
 	return Device_MakeLibrary(device, _GoStringPtr(source), _GoStringLen(source));
@@ -301,9 +302,9 @@ func CreateSystemDefaultDevice() (Device, error) {
 
 	return Device{
 		device:     d.Device,
-		Headless:   d.Headless != 0,
-		LowPower:   d.LowPower != 0,
-		Removable:  d.Removable != 0,
+		Headless:   bool(d.Headless),
+		LowPower:   bool(d.LowPower),
+		Removable:  bool(d.Removable),
 		RegistryID: uint64(d.RegistryID),
 		Name:       C.GoString(d.Name),
 	}, nil
@@ -321,9 +322,9 @@ func CopyAllDevices() []Device {
 		d := (*C.struct_Device)(unsafe.Pointer(uintptr(unsafe.Pointer(d.Devices)) + uintptr(i)*C.sizeof_struct_Device))
 
 		ds[i].device = d.Device
-		ds[i].Headless = d.Headless != 0
-		ds[i].LowPower = d.LowPower != 0
-		ds[i].Removable = d.Removable != 0
+		ds[i].Headless = bool(d.Headless)
+		ds[i].LowPower = bool(d.LowPower)
+		ds[i].Removable = bool(d.Removable)
 		ds[i].RegistryID = uint64(d.RegistryID)
 		ds[i].Name = C.GoString(d.Name)
 	}
@@ -337,7 +338,7 @@ func (d Device) Device() unsafe.Pointer { return d.device }
 //
 // Reference: https://developer.apple.com/documentation/metal/mtldevice/1433418-supportsfeatureset.
 func (d Device) SupportsFeatureSet(fs FeatureSet) bool {
-	return C.Device_SupportsFeatureSet(d.device, C.uint16_t(fs)) != 0
+	return bool(C.Device_SupportsFeatureSet(d.device, C.uint16_t(fs)))
 }
 
 // MakeCommandQueue creates a serial command submission queue.

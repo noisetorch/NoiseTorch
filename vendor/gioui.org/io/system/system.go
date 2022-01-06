@@ -26,27 +26,8 @@ type FrameEvent struct {
 	Size image.Point
 	// Insets is the insets to apply.
 	Insets Insets
-	// Frame is the callback to supply the list of
-	// operations to complete the FrameEvent.
-	//
-	// Note that the operation list and the operations themselves
-	// may not be mutated until another FrameEvent is received from
-	// the same event source.
-	// That means that calls to frame.Reset and changes to referenced
-	// data such as ImageOp backing images should happen between
-	// receiving a FrameEvent and calling Frame.
-	//
-	// Example:
-	//
-	//  var w *app.Window
-	//  var frame *op.Ops
-	//  for e := range w.Events() {
-	//      if e, ok := e.(system.FrameEvent); ok {
-	//          // Call frame.Reset and manipulate images for ImageOps
-	//          // here.
-	//          e.Frame(frame)
-	//      }
-	//  }
+	// Frame completes the FrameEvent by drawing the graphical operations
+	// from ops into the window.
 	Frame func(frame *op.Ops)
 	// Queue supplies the events for event handlers.
 	Queue event.Queue
@@ -58,12 +39,6 @@ type DestroyEvent struct {
 	// Err is nil for normal window closures. If a
 	// window is prematurely closed, Err is the cause.
 	Err error
-}
-
-// ClipboardEvent is sent once for each request for the
-// clipboard content.
-type ClipboardEvent struct {
-	Text string
 }
 
 // Insets is the space taken up by
@@ -79,10 +54,11 @@ type StageEvent struct {
 	Stage Stage
 }
 
-// CommandEvent is a system event.
+// CommandEvent is a system event. Unlike most other events, CommandEvent is
+// delivered as a pointer to allow Cancel to suppress it.
 type CommandEvent struct {
 	Type CommandType
-	// Suppress the default action of the command.
+	// Cancel suppress the default action of the command.
 	Cancel bool
 }
 
@@ -117,8 +93,7 @@ func (l Stage) String() string {
 	}
 }
 
-func (FrameEvent) ImplementsEvent()     {}
-func (StageEvent) ImplementsEvent()     {}
-func (*CommandEvent) ImplementsEvent()  {}
-func (DestroyEvent) ImplementsEvent()   {}
-func (ClipboardEvent) ImplementsEvent() {}
+func (FrameEvent) ImplementsEvent()    {}
+func (StageEvent) ImplementsEvent()    {}
+func (*CommandEvent) ImplementsEvent() {}
+func (DestroyEvent) ImplementsEvent()  {}

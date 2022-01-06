@@ -5,15 +5,13 @@ package text
 import (
 	"io"
 
-	"gioui.org/op"
+	"gioui.org/op/clip"
 	"golang.org/x/image/math/fixed"
 )
 
 // A Line contains the measurements of a line of text.
 type Line struct {
-	Layout []Glyph
-	// Len is the length in UTF8 bytes of the line.
-	Len int
+	Layout Layout
 	// Width is the width of the line.
 	Width fixed.Int26_6
 	// Ascent is the height above the baseline.
@@ -25,15 +23,16 @@ type Line struct {
 	Bounds fixed.Rectangle26_6
 }
 
-type Glyph struct {
-	Rune    rune
-	Advance fixed.Int26_6
+type Layout struct {
+	Text     string
+	Advances []fixed.Int26_6
 }
 
 // Style is the font style.
 type Style int
 
-// Weight is a font weight, in CSS units.
+// Weight is a font weight, in CSS units subtracted 400 so the zero value
+// is normal text weight.
 type Weight int
 
 // Font specify a particular typeface variant, style and weight.
@@ -45,10 +44,11 @@ type Font struct {
 	Weight Weight
 }
 
-// Face implements text layout and shaping for a particular font.
+// Face implements text layout and shaping for a particular font. All
+// methods must be safe for concurrent use.
 type Face interface {
 	Layout(ppem fixed.Int26_6, maxWidth int, txt io.Reader) ([]Line, error)
-	Shape(ppem fixed.Int26_6, str []Glyph) op.CallOp
+	Shape(ppem fixed.Int26_6, str Layout) clip.PathSpec
 }
 
 // Typeface identifies a particular typeface design. The empty
@@ -72,9 +72,22 @@ const (
 )
 
 const (
-	Normal Weight = 400
-	Medium Weight = 500
-	Bold   Weight = 600
+	Thin       Weight = 100 - 400
+	Hairline   Weight = Thin
+	ExtraLight Weight = 200 - 400
+	UltraLight Weight = ExtraLight
+	Light      Weight = 300 - 400
+	Normal     Weight = 400 - 400
+	Medium     Weight = 500 - 400
+	SemiBold   Weight = 600 - 400
+	DemiBold   Weight = SemiBold
+	Bold       Weight = 700 - 400
+	ExtraBold  Weight = 800 - 400
+	UltraBold  Weight = ExtraBold
+	Black      Weight = 900 - 400
+	Heavy      Weight = Black
+	ExtraBlack Weight = 950 - 400
+	UltraBlack Weight = ExtraBlack
 )
 
 func (a Alignment) String() string {
@@ -86,6 +99,56 @@ func (a Alignment) String() string {
 	case Middle:
 		return "Middle"
 	default:
-		panic("unreachable")
+		panic("invalid Alignment")
 	}
+}
+
+func (s Style) String() string {
+	switch s {
+	case Regular:
+		return "Regular"
+	case Italic:
+		return "Italic"
+	default:
+		panic("invalid Style")
+	}
+}
+
+func (w Weight) String() string {
+	switch w {
+	case Thin:
+		return "Thin"
+	case ExtraLight:
+		return "ExtraLight"
+	case Light:
+		return "Light"
+	case Normal:
+		return "Normal"
+	case Medium:
+		return "Medium"
+	case SemiBold:
+		return "SemiBold"
+	case Bold:
+		return "Bold"
+	case ExtraBold:
+		return "ExtraBold"
+	case Black:
+		return "Black"
+	case ExtraBlack:
+		return "ExtraBlack"
+	default:
+		panic("invalid Weight")
+	}
+}
+
+// weightDistance returns the distance value between two font weights.
+func weightDistance(wa Weight, wb Weight) int {
+	// Avoid dealing with negative Weight values.
+	a := int(wa) + 400
+	b := int(wb) + 400
+	diff := a - b
+	if diff < 0 {
+		return -diff
+	}
+	return diff
 }

@@ -5,8 +5,6 @@ package app
 import (
 	"os"
 	"strings"
-
-	"gioui.org/app/internal/window"
 )
 
 // extraArgs contains extra arguments to append to
@@ -44,5 +42,5 @@ func DataDir() (string, error) {
 // require control of the main thread of the program for
 // running windows.
 func Main() {
-	window.Main()
+	osMain()
 }

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build darwin
 // +build darwin
 
 // Package mtldriver provides a Metal driver for accessing a screen.
@@ -55,6 +56,12 @@ func main(f func(screen.Screen)) error {
 	}
 	defer glfw.Terminate()
 	glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
+	{
+		// TODO(dmitshur): Delete this when https://github.com/go-gl/glfw/issues/272 is resolved.
+		// Post an empty event from the main thread before it can happen in a non-main thread,
+		// to work around https://github.com/glfw/glfw/issues/1649.
+		glfw.PostEmptyEvent()
+	}
 	var (
 		done            = make(chan struct{})
 		newWindowCh     = make(chan newWindowReq, 1)
@@ -67,14 +74,6 @@ func main(f func(screen.Screen)) error {
 		close(done)
 		glfw.PostEmptyEvent() // Break main loop out of glfw.WaitEvents so it can receive on done.
 	}()
-	select {
-	// TODO(dmitshur): Delete this when https://github.com/go-gl/glfw/issues/262 is resolved.
-	// Wait for first window request (or done) before entering main
-	// loop to work around https://github.com/glfw/glfw/issues/1543.
-	case w := <-newWindowCh:
-		newWindowCh <- w
-	case <-done:
-	}
 	for {
 		select {
 		case <-done:

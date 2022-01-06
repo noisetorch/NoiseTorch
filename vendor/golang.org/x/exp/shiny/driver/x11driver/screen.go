@@ -51,6 +51,7 @@ type screenImpl struct {
 
 	// opaqueP is a fully opaque, solid fill picture.
 	opaqueP render.Picture
+	useShm  bool
 
 	uniformMu sync.Mutex
 	uniformC  render.Color
@@ -64,13 +65,14 @@ type screenImpl struct {
 	completionKeys  []uint16
 }
 
-func newScreenImpl(xc *xgb.Conn) (*screenImpl, error) {
+func newScreenImpl(xc *xgb.Conn, useShm bool) (*screenImpl, error) {
 	s := &screenImpl{
 		xc:      xc,
 		xsi:     xproto.Setup(xc).DefaultScreen(xc),
 		buffers: map[shm.Seg]*bufferImpl{},
 		uploads: map[uint16]chan struct{}{},
 		windows: map[xproto.Window]*windowImpl{},
+		useShm:  useShm,
 	}
 	if err := s.initAtoms(); err != nil {
 		return nil, err
@@ -282,12 +284,26 @@ const (
 )
 
 func (s *screenImpl) NewBuffer(size image.Point) (retBuf screen.Buffer, retErr error) {
-	// TODO: detect if the X11 server or connection cannot support SHM pixmaps,
-	// and fall back to regular pixmaps.
 
 	w, h := int64(size.X), int64(size.Y)
 	if w < 0 || maxShmSide < w || h < 0 || maxShmSide < h || maxShmSize < 4*w*h {
 		return nil, fmt.Errorf("x11driver: invalid buffer size %v", size)
+	}
+
+	// If the X11 server or connection cannot support SHM pixmaps,
+	// fall back to regular pixmaps.
+	if !s.useShm {
+		b := &bufferFallbackImpl{
+			xc:   s.xc,
+			size: size,
+			rgba: image.RGBA{
+				Stride: 4 * size.X,
+				Rect:   image.Rectangle{Max: size},
+				Pix:    make([]uint8, 4*size.X*size.Y),
+			},
+		}
+		b.buf = b.rgba.Pix
+		return b, nil
 	}
 
 	b := &bufferImpl{

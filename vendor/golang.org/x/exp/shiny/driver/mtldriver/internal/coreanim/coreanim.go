@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build darwin
 // +build darwin
 
 // Package coreanim provides access to Apple's Core Animation API
@@ -11,7 +12,7 @@
 // It's a minimal implementation with scope limited to
 // supporting mtldriver.
 //
-// It was copied from dmitri.shuralyov.com/gpu/mtl/example/movingtriangle/internal/ca.
+// It was copied from dmitri.shuralyov.com/gpu/mtl/example/movingtriangle/internal/coreanim.
 package coreanim
 
 import (
@@ -23,6 +24,7 @@ import (
 
 /*
 #cgo LDFLAGS: -framework QuartzCore -framework Foundation
+#include <stdbool.h>
 #include "coreanim.h"
 */
 import "C"
@@ -99,7 +101,7 @@ func (ml MetalLayer) SetMaximumDrawableCount(count int) {
 //
 // Reference: https://developer.apple.com/documentation/quartzcore/cametallayer/2887087-displaysyncenabled.
 func (ml MetalLayer) SetDisplaySyncEnabled(enabled bool) {
-	C.MetalLayer_SetDisplaySyncEnabled(ml.metalLayer, toCBool(enabled))
+	C.MetalLayer_SetDisplaySyncEnabled(ml.metalLayer, C.bool(enabled))
 }
 
 // SetDrawableSize sets the size, in pixels, of textures for rendering layer content.
@@ -136,11 +138,4 @@ func (md MetalDrawable) Drawable() unsafe.Pointer { return md.metalDrawable }
 // Reference: https://developer.apple.com/documentation/quartzcore/cametaldrawable/1478159-texture.
 func (md MetalDrawable) Texture() mtl.Texture {
 	return mtl.NewTexture(C.MetalDrawable_Texture(md.metalDrawable))
-}
-
-func toCBool(b bool) C.BOOL {
-	if b {
-		return 1
-	}
-	return 0
 }

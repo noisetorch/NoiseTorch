@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build darwin || linux || openbsd
 // +build darwin linux openbsd
 
 #include <stdlib.h>
@@ -356,7 +357,7 @@ uintptr_t processFn(struct fnargs* args, char* parg) {
 		glScissor((GLint)args->a0, (GLint)args->a1, (GLint)args->a2, (GLint)args->a3);
 		break;
 	case glfnShaderSource:
-#if defined(os_ios) || defined(os_osx)
+#if defined(os_ios) || defined(os_macos)
 		glShaderSource((GLuint)args->a0, (GLsizei)args->a1, (const GLchar *const *)args->a2, NULL);
 #else
 		glShaderSource((GLuint)args->a0, (GLsizei)args->a1, (const GLchar **)args->a2, NULL);

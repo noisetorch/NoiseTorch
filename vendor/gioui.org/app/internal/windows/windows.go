@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Unlicense OR MIT
 
+//go:build windows
 // +build windows
 
 package windows
@@ -54,14 +55,44 @@ type MinMaxInfo struct {
 	PtMaxTrackSize Point
 }
 
+type WindowPlacement struct {
+	length           uint32
+	flags            uint32
+	showCmd          uint32
+	ptMinPosition    Point
+	ptMaxPosition    Point
+	rcNormalPosition Rect
+	rcDevice         Rect
+}
+
+type MonitorInfo struct {
+	cbSize   uint32
+	Monitor  Rect
+	WorkArea Rect
+	Flags    uint32
+}
+
 const (
+	TRUE = 1
+
 	CS_HREDRAW = 0x0002
 	CS_VREDRAW = 0x0001
 	CS_OWNDC   = 0x0020
 
 	CW_USEDEFAULT = -2147483648
 
-	IDC_ARROW = 32512
+	GWL_STYLE    = ^(uint32(16) - 1) // -16
+	HWND_TOPMOST = ^(uint32(1) - 1)  // -1
+
+	HTCLIENT = 1
+
+	IDC_ARROW   = 32512
+	IDC_IBEAM   = 32513
+	IDC_HAND    = 32649
+	IDC_CROSS   = 32515
+	IDC_SIZENS  = 32645
+	IDC_SIZEWE  = 32644
+	IDC_SIZEALL = 32646
 
 	INFINITE = 0xFFFFFFFF
 
@@ -76,6 +107,13 @@ const (
 	SIZE_RESTORED  = 0
 
 	SW_SHOWDEFAULT = 10
+
+	SWP_FRAMECHANGED  = 0x0020
+	SWP_NOMOVE        = 0x0002
+	SWP_NOOWNERZORDER = 0x0200
+	SWP_NOSIZE        = 0x0001
+	SWP_NOZORDER      = 0x0004
+	SWP_SHOWWINDOW    = 0x0040
 
 	USER_TIMER_MINIMUM = 0x0000000A
 
@@ -142,14 +180,17 @@ const (
 	WM_MBUTTONUP     = 0x0208
 	WM_MOUSEMOVE     = 0x0200
 	WM_MOUSEWHEEL    = 0x020A
+	WM_MOUSEHWHEEL   = 0x020E
 	WM_PAINT         = 0x000F
 	WM_CLOSE         = 0x0010
 	WM_QUIT          = 0x0012
+	WM_SETCURSOR     = 0x0020
 	WM_SETFOCUS      = 0x0007
 	WM_KILLFOCUS     = 0x0008
 	WM_SHOWWINDOW    = 0x0018
 	WM_SIZE          = 0x0005
 	WM_SYSKEYDOWN    = 0x0104
+	WM_SYSKEYUP      = 0x0105
 	WM_RBUTTONDOWN   = 0x0204
 	WM_RBUTTONUP     = 0x0205
 	WM_TIMER         = 0x0113
@@ -159,6 +200,7 @@ const (
 
 	WS_CLIPCHILDREN     = 0x00010000
 	WS_CLIPSIBLINGS     = 0x04000000
+	WS_MAXIMIZE         = 0x01000000
 	WS_VISIBLE          = 0x10000000
 	WS_OVERLAPPED       = 0x00000000
 	WS_OVERLAPPEDWINDOW = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME |
@@ -185,6 +227,19 @@ const (
 	GHND = 0x0042
 
 	CF_UNICODETEXT = 13
+	IMAGE_BITMAP   = 0
+	IMAGE_ICON     = 1
+	IMAGE_CURSOR   = 2
+
+	LR_CREATEDIBSECTION = 0x00002000
+	LR_DEFAULTCOLOR     = 0x00000000
+	LR_DEFAULTSIZE      = 0x00000040
+	LR_LOADFROMFILE     = 0x00000010
+	LR_LOADMAP3DCOLORS  = 0x00001000
+	LR_LOADTRANSPARENT  = 0x00000020
+	LR_MONOCHROME       = 0x00000001
+	LR_SHARED           = 0x00008000
+	LR_VGACOLOR         = 0x00000080
 )
 
 var (
@@ -207,12 +262,20 @@ var (
 	_GetClientRect               = user32.NewProc("GetClientRect")
 	_GetClipboardData            = user32.NewProc("GetClipboardData")
 	_GetDC                       = user32.NewProc("GetDC")
+	_GetDpiForWindow             = user32.NewProc("GetDpiForWindow")
 	_GetKeyState                 = user32.NewProc("GetKeyState")
 	_GetMessage                  = user32.NewProc("GetMessageW")
 	_GetMessageTime              = user32.NewProc("GetMessageTime")
+	_GetMonitorInfo              = user32.NewProc("GetMonitorInfoW")
+	_GetWindowLong               = user32.NewProc("GetWindowLongPtrW")
+	_GetWindowLong32             = user32.NewProc("GetWindowLongW")
+	_GetWindowPlacement          = user32.NewProc("GetWindowPlacement")
 	_KillTimer                   = user32.NewProc("KillTimer")
 	_LoadCursor                  = user32.NewProc("LoadCursorW")
+	_LoadImage                   = user32.NewProc("LoadImageW")
 	_MonitorFromPoint            = user32.NewProc("MonitorFromPoint")
+	_MonitorFromWindow           = user32.NewProc("MonitorFromWindow")
+	_MoveWindow                  = user32.NewProc("MoveWindow")
 	_MsgWaitForMultipleObjectsEx = user32.NewProc("MsgWaitForMultipleObjectsEx")
 	_OpenClipboard               = user32.NewProc("OpenClipboard")
 	_PeekMessage                 = user32.NewProc("PeekMessageW")
@@ -224,11 +287,17 @@ var (
 	_ScreenToClient              = user32.NewProc("ScreenToClient")
 	_ShowWindow                  = user32.NewProc("ShowWindow")
 	_SetCapture                  = user32.NewProc("SetCapture")
+	_SetCursor                   = user32.NewProc("SetCursor")
 	_SetClipboardData            = user32.NewProc("SetClipboardData")
 	_SetForegroundWindow         = user32.NewProc("SetForegroundWindow")
 	_SetFocus                    = user32.NewProc("SetFocus")
 	_SetProcessDPIAware          = user32.NewProc("SetProcessDPIAware")
 	_SetTimer                    = user32.NewProc("SetTimer")
+	_SetWindowLong               = user32.NewProc("SetWindowLongPtrW")
+	_SetWindowLong32             = user32.NewProc("SetWindowLongW")
+	_SetWindowPlacement          = user32.NewProc("SetWindowPlacement")
+	_SetWindowPos                = user32.NewProc("SetWindowPos")
+	_SetWindowText               = user32.NewProc("SetWindowTextW")
 	_TranslateMessage            = user32.NewProc("TranslateMessage")
 	_UnregisterClass             = user32.NewProc("UnregisterClassW")
 	_UpdateWindow                = user32.NewProc("UpdateWindow")
@@ -343,7 +412,7 @@ func getDpiForMonitor(hmonitor syscall.Handle, dpiType uint32) int {
 
 // GetSystemDPI returns the effective DPI of the system.
 func GetSystemDPI() int {
-	// Check for getDpiForMonitor, introduced in Windows 8.1.
+	// Check for GetDpiForMonitor, introduced in Windows 8.1.
 	if _GetDpiForMonitor.Find() == nil {
 		hmon := monitorFromPoint(Point{}, MONITOR_DEFAULTTOPRIMARY)
 		return getDpiForMonitor(hmon, MDT_EFFECTIVE_DPI)
@@ -375,6 +444,66 @@ func GetMessage(m *Msg, hwnd syscall.Handle, wMsgFilterMin, wMsgFilterMax uint32
 func GetMessageTime() time.Duration {
 	r, _, _ := _GetMessageTime.Call()
 	return time.Duration(r) * time.Millisecond
+}
+
+// GetWindowDPI returns the effective DPI of the window.
+func GetWindowDPI(hwnd syscall.Handle) int {
+	// Check for GetDpiForWindow, introduced in Windows 10.
+	if _GetDpiForWindow.Find() == nil {
+		dpi, _, _ := _GetDpiForWindow.Call(uintptr(hwnd))
+		return int(dpi)
+	} else {
+		return GetSystemDPI()
+	}
+}
+
+func GetWindowPlacement(hwnd syscall.Handle) *WindowPlacement {
+	var wp WindowPlacement
+	wp.length = uint32(unsafe.Sizeof(wp))
+	_GetWindowPlacement.Call(uintptr(hwnd), uintptr(unsafe.Pointer(&wp)))
+	return &wp
+}
+
+func GetMonitorInfo(hwnd syscall.Handle) MonitorInfo {
+	var mi MonitorInfo
+	mi.cbSize = uint32(unsafe.Sizeof(mi))
+	v, _, _ := _MonitorFromWindow.Call(uintptr(hwnd), MONITOR_DEFAULTTOPRIMARY)
+	_GetMonitorInfo.Call(v, uintptr(unsafe.Pointer(&mi)))
+	return mi
+}
+
+func GetWindowLong(hwnd syscall.Handle) (style uintptr) {
+	if runtime.GOARCH == "386" {
+		style, _, _ = _GetWindowLong32.Call(uintptr(hwnd), uintptr(GWL_STYLE))
+	} else {
+		style, _, _ = _GetWindowLong.Call(uintptr(hwnd), uintptr(GWL_STYLE))
+	}
+	return
+}
+
+func SetWindowLong(hwnd syscall.Handle, idx uint32, style uintptr) {
+	if runtime.GOARCH == "386" {
+		_SetWindowLong32.Call(uintptr(hwnd), uintptr(idx), style)
+	} else {
+		_SetWindowLong.Call(uintptr(hwnd), uintptr(idx), style)
+	}
+}
+
+func SetWindowPlacement(hwnd syscall.Handle, wp *WindowPlacement) {
+	_SetWindowPlacement.Call(uintptr(hwnd), uintptr(unsafe.Pointer(wp)))
+}
+
+func SetWindowPos(hwnd syscall.Handle, hwndInsertAfter uint32, x, y, dx, dy int32, style uintptr) {
+	_SetWindowPos.Call(uintptr(hwnd), uintptr(hwndInsertAfter),
+		uintptr(x), uintptr(y),
+		uintptr(dx), uintptr(dy),
+		style,
+	)
+}
+
+func SetWindowText(hwnd syscall.Handle, title string) {
+	wname := syscall.StringToUTF16Ptr(title)
+	_SetWindowText.Call(uintptr(hwnd), uintptr(unsafe.Pointer(wname)))
 }
 
 func GlobalAlloc(size int) (syscall.Handle, error) {
@@ -415,6 +544,22 @@ func LoadCursor(curID uint16) (syscall.Handle, error) {
 		return 0, fmt.Errorf("LoadCursorW failed: %v", err)
 	}
 	return syscall.Handle(h), nil
+}
+
+func LoadImage(hInst syscall.Handle, res uint32, typ uint32, cx, cy int, fuload uint32) (syscall.Handle, error) {
+	h, _, err := _LoadImage.Call(uintptr(hInst), uintptr(res), uintptr(typ), uintptr(cx), uintptr(cy), uintptr(fuload))
+	if h == 0 {
+		return 0, fmt.Errorf("LoadImageW failed: %v", err)
+	}
+	return syscall.Handle(h), nil
+}
+
+func MoveWindow(hwnd syscall.Handle, x, y, width, height int32, repaint bool) {
+	var paint uintptr
+	if repaint {
+		paint = TRUE
+	}
+	_MoveWindow.Call(uintptr(hwnd), uintptr(x), uintptr(y), uintptr(width), uintptr(height), paint)
 }
 
 func monitorFromPoint(pt Point, flags uint32) syscall.Handle {
@@ -500,6 +645,10 @@ func SetClipboardData(format uint32, mem syscall.Handle) error {
 	return nil
 }
 
+func SetCursor(h syscall.Handle) {
+	_SetCursor.Call(uintptr(h))
+}
+
 func SetTimer(hwnd syscall.Handle, nIDEvent uintptr, uElapse uint32, timerProc uintptr) error {
 	r, _, err := _SetTimer.Call(uintptr(hwnd), uintptr(nIDEvent), uintptr(uElapse), timerProc)
 	if r == 0 {
@@ -528,6 +677,10 @@ func UnregisterClass(cls uint16, hInst syscall.Handle) {
 
 func UpdateWindow(hwnd syscall.Handle) {
 	_UpdateWindow.Call(uintptr(hwnd))
+}
+
+func (p WindowPlacement) Rect() Rect {
+	return p.rcNormalPosition
 }
 
 // issue34474KeepAlive calls runtime.KeepAlive as a

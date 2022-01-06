@@ -1,6 +1,5 @@
 // +build darwin
 
-typedef signed char BOOL;
 typedef unsigned long uint_t;
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
@@ -8,9 +7,9 @@ typedef unsigned long long uint64_t;
 
 struct Device {
 	void *       Device;
-	BOOL         Headless;
-	BOOL         LowPower;
-	BOOL         Removable;
+	bool         Headless;
+	bool         LowPower;
+	bool         Removable;
 	uint64_t     RegistryID;
 	const char * Name;
 };
@@ -77,7 +76,7 @@ struct Region {
 struct Device CreateSystemDefaultDevice();
 struct Devices CopyAllDevices();
 
-BOOL                       Device_SupportsFeatureSet(void * device, uint16_t featureSet);
+bool                       Device_SupportsFeatureSet(void * device, uint16_t featureSet);
 void *                     Device_MakeCommandQueue(void * device);
 struct Library             Device_MakeLibrary(void * device, const char * source, size_t sourceLength);
 struct RenderPipelineState Device_MakeRenderPipelineState(void * device, struct RenderPipelineDescriptor descriptor);

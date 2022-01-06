@@ -1378,7 +1378,11 @@ func (ed *TextEditor) doEdit(bounds rect.Rect, style *nstyle.Edit, inp *Input, c
 		scroll_step := float64(scroll.H) * 0.1
 		scroll_inc := float64(scroll.H) * 0.01
 		scroll_target := float64(d.TextSize.Y + row_height)
-		ed.Scrollbar.Y = int(doScrollbarv(ed.win, scroll, bounds, scroll_offset, scroll_target, scroll_step, scroll_inc, &style.Scrollbar, inp, font))
+		newy := int(doScrollbarv(ed.win, scroll, bounds, scroll_offset, scroll_target, scroll_step, scroll_inc, &style.Scrollbar, inp, font))
+		if newy != ed.Scrollbar.Y {
+			ed.win.ctx.trashFrame = true
+		}
+		ed.Scrollbar.Y = newy
 	}
 
 	return ret

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build aix
 // +build aix
 
 // Aix system calls.
@@ -18,6 +19,22 @@ import "unsafe"
 /*
  * Wrapped
  */
+
+func Access(path string, mode uint32) (err error) {
+	return Faccessat(AT_FDCWD, path, mode, 0)
+}
+
+func Chmod(path string, mode uint32) (err error) {
+	return Fchmodat(AT_FDCWD, path, mode, 0)
+}
+
+func Chown(path string, uid int, gid int) (err error) {
+	return Fchownat(AT_FDCWD, path, uid, gid, 0)
+}
+
+func Creat(path string, mode uint32) (fd int, err error) {
+	return Open(path, O_CREAT|O_WRONLY|O_TRUNC, mode)
+}
 
 //sys	utimes(path string, times *[2]Timeval) (err error)
 func Utimes(path string, tv []Timeval) error {
@@ -53,9 +70,7 @@ func (sa *SockaddrInet4) sockaddr() (unsafe.Pointer, _Socklen, error) {
 	p := (*[2]byte)(unsafe.Pointer(&sa.raw.Port))
 	p[0] = byte(sa.Port >> 8)
 	p[1] = byte(sa.Port)
-	for i := 0; i < len(sa.Addr); i++ {
-		sa.raw.Addr[i] = sa.Addr[i]
-	}
+	sa.raw.Addr = sa.Addr
 	return unsafe.Pointer(&sa.raw), SizeofSockaddrInet4, nil
 }
 
@@ -68,9 +83,7 @@ func (sa *SockaddrInet6) sockaddr() (unsafe.Pointer, _Socklen, error) {
 	p[0] = byte(sa.Port >> 8)
 	p[1] = byte(sa.Port)
 	sa.raw.Scope_id = sa.ZoneId
-	for i := 0; i < len(sa.Addr); i++ {
-		sa.raw.Addr[i] = sa.Addr[i]
-	}
+	sa.raw.Addr = sa.Addr
 	return unsafe.Pointer(&sa.raw), SizeofSockaddrInet6, nil
 }
 
@@ -235,7 +248,7 @@ func anyToSockaddr(fd int, rsa *RawSockaddrAny) (Sockaddr, error) {
 			}
 		}
 
-		bytes := (*[10000]byte)(unsafe.Pointer(&pp.Path[0]))[0:n]
+		bytes := (*[len(pp.Path)]byte)(unsafe.Pointer(&pp.Path[0]))[0:n]
 		sa.Name = string(bytes)
 		return sa, nil
 
@@ -244,9 +257,7 @@ func anyToSockaddr(fd int, rsa *RawSockaddrAny) (Sockaddr, error) {
 		sa := new(SockaddrInet4)
 		p := (*[2]byte)(unsafe.Pointer(&pp.Port))
 		sa.Port = int(p[0])<<8 + int(p[1])
-		for i := 0; i < len(sa.Addr); i++ {
-			sa.Addr[i] = pp.Addr[i]
-		}
+		sa.Addr = pp.Addr
 		return sa, nil
 
 	case AF_INET6:
@@ -255,9 +266,7 @@ func anyToSockaddr(fd int, rsa *RawSockaddrAny) (Sockaddr, error) {
 		p := (*[2]byte)(unsafe.Pointer(&pp.Port))
 		sa.Port = int(p[0])<<8 + int(p[1])
 		sa.ZoneId = pp.Scope_id
-		for i := 0; i < len(sa.Addr); i++ {
-			sa.Addr[i] = pp.Addr[i]
-		}
+		sa.Addr = pp.Addr
 		return sa, nil
 	}
 	return nil, EAFNOSUPPORT
@@ -368,6 +377,11 @@ func (w WaitStatus) TrapCause() int { return -1 }
 
 //sys	fcntl(fd int, cmd int, arg int) (val int, err error)
 
+//sys	fsyncRange(fd int, how int, start int64, length int64) (err error) = fsync_range
+func Fsync(fd int) error {
+	return fsyncRange(fd, O_SYNC, 0, 0)
+}
+
 /*
  * Direct access
  */
@@ -384,7 +398,6 @@ func (w WaitStatus) TrapCause() int { return -1 }
 //sys	Fchmodat(dirfd int, path string, mode uint32, flags int) (err error)
 //sys	Fchownat(dirfd int, path string, uid int, gid int, flags int) (err error)
 //sys	Fdatasync(fd int) (err error)
-//sys	Fsync(fd int) (err error)
 // readdir_r
 //sysnb	Getpgid(pid int) (pgid int, err error)
 
@@ -403,8 +416,8 @@ func (w WaitStatus) TrapCause() int { return -1 }
 //sys	Mknod(path string, mode uint32, dev int) (err error)
 //sys	Mknodat(dirfd int, path string, mode uint32, dev int) (err error)
 //sys	Nanosleep(time *Timespec, leftover *Timespec) (err error)
-//sys   Open(path string, mode int, perm uint32) (fd int, err error) = open64
-//sys   Openat(dirfd int, path string, flags int, mode uint32) (fd int, err error)
+//sys	Open(path string, mode int, perm uint32) (fd int, err error) = open64
+//sys	Openat(dirfd int, path string, flags int, mode uint32) (fd int, err error)
 //sys	read(fd int, p []byte) (n int, err error)
 //sys	Readlink(path string, buf []byte) (n int, err error)
 //sys	Renameat(olddirfd int, oldpath string, newdirfd int, newpath string) (err error)
@@ -423,8 +436,8 @@ func (w WaitStatus) TrapCause() int { return -1 }
 //sysnb	Times(tms *Tms) (ticks uintptr, err error)
 //sysnb	Umask(mask int) (oldmask int)
 //sysnb	Uname(buf *Utsname) (err error)
-//sys   Unlink(path string) (err error)
-//sys   Unlinkat(dirfd int, path string, flags int) (err error)
+//sys	Unlink(path string) (err error)
+//sys	Unlinkat(dirfd int, path string, flags int) (err error)
 //sys	Ustat(dev int, ubuf *Ustat_t) (err error)
 //sys	write(fd int, p []byte) (n int, err error)
 //sys	readlen(fd int, p *byte, np int) (n int, err error) = read
@@ -498,7 +511,7 @@ func Munmap(b []byte) (err error) {
 //sys	Munlock(b []byte) (err error)
 //sys	Munlockall() (err error)
 
-//sysnb pipe(p *[2]_C_int) (err error)
+//sysnb	pipe(p *[2]_C_int) (err error)
 
 func Pipe(p []int) (err error) {
 	if len(p) != 2 {
@@ -506,8 +519,10 @@ func Pipe(p []int) (err error) {
 	}
 	var pp [2]_C_int
 	err = pipe(&pp)
-	p[0] = int(pp[0])
-	p[1] = int(pp[1])
+	if err == nil {
+		p[0] = int(pp[0])
+		p[1] = int(pp[1])
+	}
 	return
 }
 

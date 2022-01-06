@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build (darwin || linux || openbsd || windows) && !gldebug
 // +build darwin linux openbsd windows
 // +build !gldebug
 
@@ -1284,6 +1285,14 @@ func (ctx *context) TexImage2D(target Enum, level int, internalFormat int, width
 }
 
 func (ctx *context) TexSubImage2D(target Enum, level int, x, y, width, height int, format, ty Enum, data []byte) {
+	// It is common to pass TexSubImage2D a nil data, indicating that a
+	// bound GL buffer is being used as the source. In that case, it
+	// is not necessary to block.
+	parg := unsafe.Pointer(nil)
+	if len(data) > 0 {
+		parg = unsafe.Pointer(&data[0])
+	}
+
 	ctx.enqueue(call{
 		args: fnargs{
 			fn: glfnTexSubImage2D,
@@ -1297,8 +1306,8 @@ func (ctx *context) TexSubImage2D(target Enum, level int, x, y, width, height in
 			a6: format.c(),
 			a7: ty.c(),
 		},
-		parg:     unsafe.Pointer(&data[0]),
-		blocking: true,
+		parg:     parg,
+		blocking: parg != nil,
 	})
 }
 

@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: Unlicense OR MIT
 
 /*
-Package clip provides operations for clipping paint operations.
-Drawing outside the current clip area is ignored.
+Package clip provides operations for defining areas that applies to operations
+such as paints and pointer handlers.
 
-The current clip is initially the infinite set. An Op sets the clip
-to the intersection of the current clip and the clip area it
-represents. If you need to reset the current clip to its value
-before applying an Op, use op.StackOp.
+The current clip is initially the infinite set. Pushing an Op sets the clip
+to the intersection of the current clip and pushed clip area. Popping the
+area restores the clip to its state before pushing.
 
-General clipping areas are constructed with Path. Simpler special
-cases such as rectangular clip areas also exist as convenient
-constructors.
+General clipping areas are constructed with Path. Common cases such as
+rectangular clip areas also exist as convenient constructors.
 */
 package clip

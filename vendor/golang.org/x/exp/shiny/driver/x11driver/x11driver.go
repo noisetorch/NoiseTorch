@@ -47,11 +47,13 @@ func main(f func(screen.Screen)) (retErr error) {
 	if err := render.Init(xc); err != nil {
 		return fmt.Errorf("x11driver: render.Init failed: %v", err)
 	}
+
+	useShm := true
 	if err := shm.Init(xc); err != nil {
-		return fmt.Errorf("x11driver: shm.Init failed: %v", err)
+		useShm = false
 	}
 
-	s, err := newScreenImpl(xc)
+	s, err := newScreenImpl(xc, useShm)
 	if err != nil {
 		return err
 	}

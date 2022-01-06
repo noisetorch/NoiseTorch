@@ -6,21 +6,19 @@ import (
 	"io"
 	"strings"
 
-	"gioui.org/op"
 	"golang.org/x/image/math/fixed"
+
+	"gioui.org/op/clip"
 )
 
 // Shaper implements layout and shaping of text.
 type Shaper interface {
 	// Layout a text according to a set of options.
 	Layout(font Font, size fixed.Int26_6, maxWidth int, txt io.Reader) ([]Line, error)
-	// Shape a line of text and return a clipping operation for its outline.
-	Shape(font Font, size fixed.Int26_6, layout []Glyph) op.CallOp
-
-	// LayoutString is like Layout, but for strings.
+	// LayoutString is Layout for strings.
 	LayoutString(font Font, size fixed.Int26_6, maxWidth int, str string) []Line
-	// ShapeString is like Shape for lines previously laid out by LayoutString.
-	ShapeString(font Font, size fixed.Int26_6, str string, layout []Glyph) op.CallOp
+	// Shape a line of text and return a clipping operation for its outline.
+	Shape(font Font, size fixed.Int26_6, layout Layout) clip.PathSpec
 }
 
 // A FontFace is a Font and a matching Face.
@@ -49,8 +47,7 @@ type faceCache struct {
 }
 
 func (c *Cache) lookup(font Font) *faceCache {
-	var f *faceCache
-	f = c.faceForStyle(font)
+	f := c.faceForStyle(font)
 	if f == nil {
 		font.Typeface = c.def
 		f = c.faceForStyle(font)
@@ -59,24 +56,42 @@ func (c *Cache) lookup(font Font) *faceCache {
 }
 
 func (c *Cache) faceForStyle(font Font) *faceCache {
-	tf := c.faces[font]
-	if tf == nil {
-		font := font
-		font.Weight = Normal
-		tf = c.faces[font]
+	if closest, ok := c.closestFont(font); ok {
+		return c.faces[closest]
 	}
-	if tf == nil {
-		font := font
-		font.Style = Regular
-		tf = c.faces[font]
+	font.Style = Regular
+	if closest, ok := c.closestFont(font); ok {
+		return c.faces[closest]
 	}
-	if tf == nil {
-		font := font
-		font.Style = Regular
-		font.Weight = Normal
-		tf = c.faces[font]
+	return nil
+}
+
+// closestFont returns the closest Font by weight, in case of equality the
+// lighter weight will be returned.
+func (c *Cache) closestFont(lookup Font) (Font, bool) {
+	if c.faces[lookup] != nil {
+		return lookup, true
 	}
-	return tf
+	found := false
+	var match Font
+	for cf := range c.faces {
+		if cf.Typeface != lookup.Typeface || cf.Variant != lookup.Variant || cf.Style != lookup.Style {
+			continue
+		}
+		if !found {
+			found = true
+			match = cf
+			continue
+		}
+		cDist := weightDistance(lookup.Weight, cf.Weight)
+		mDist := weightDistance(lookup.Weight, match.Weight)
+		if cDist < mDist {
+			match = cf
+		} else if cDist == mDist && cf.Weight < match.Weight {
+			match = cf
+		}
+	}
+	return match, found
 }
 
 func NewCache(collection []FontFace) *Cache {
@@ -84,9 +99,6 @@ func NewCache(collection []FontFace) *Cache {
 		faces: make(map[Font]*faceCache),
 	}
 	for i, ff := range collection {
-		if ff.Font.Weight == 0 {
-			ff.Font.Weight = Normal
-		}
 		if i == 0 {
 			c.def = ff.Font.Typeface
 		}
@@ -95,24 +107,23 @@ func NewCache(collection []FontFace) *Cache {
 	return c
 }
 
-func (s *Cache) Layout(font Font, size fixed.Int26_6, maxWidth int, txt io.Reader) ([]Line, error) {
-	cache := s.lookup(font)
+// Layout implements the Shaper interface.
+func (c *Cache) Layout(font Font, size fixed.Int26_6, maxWidth int, txt io.Reader) ([]Line, error) {
+	cache := c.lookup(font)
 	return cache.face.Layout(size, maxWidth, txt)
 }
 
-func (s *Cache) Shape(font Font, size fixed.Int26_6, layout []Glyph) op.CallOp {
-	cache := s.lookup(font)
-	return cache.face.Shape(size, layout)
-}
-
-func (s *Cache) LayoutString(font Font, size fixed.Int26_6, maxWidth int, str string) []Line {
-	cache := s.lookup(font)
+// LayoutString is a caching implementation of the Shaper interface.
+func (c *Cache) LayoutString(font Font, size fixed.Int26_6, maxWidth int, str string) []Line {
+	cache := c.lookup(font)
 	return cache.layout(size, maxWidth, str)
 }
 
-func (s *Cache) ShapeString(font Font, size fixed.Int26_6, str string, layout []Glyph) op.CallOp {
-	cache := s.lookup(font)
-	return cache.shape(size, str, layout)
+// Shape is a caching implementation of the Shaper interface. Shape assumes that the layout
+// argument is unchanged from a call to Layout or LayoutString.
+func (c *Cache) Shape(font Font, size fixed.Int26_6, layout Layout) clip.PathSpec {
+	cache := c.lookup(font)
+	return cache.shape(size, layout)
 }
 
 func (f *faceCache) layout(ppem fixed.Int26_6, maxWidth int, str string) []Line {
@@ -132,13 +143,13 @@ func (f *faceCache) layout(ppem fixed.Int26_6, maxWidth int, str string) []Line 
 	return l
 }
 
-func (f *faceCache) shape(ppem fixed.Int26_6, str string, layout []Glyph) op.CallOp {
+func (f *faceCache) shape(ppem fixed.Int26_6, layout Layout) clip.PathSpec {
 	if f == nil {
-		return op.CallOp{}
+		return clip.PathSpec{}
 	}
 	pk := pathKey{
 		ppem: ppem,
-		str:  str,
+		str:  layout.Text,
 	}
 	if clip, ok := f.pathCache.Get(pk); ok {
 		return clip

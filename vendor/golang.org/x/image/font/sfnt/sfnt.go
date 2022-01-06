@@ -4,8 +4,30 @@
 
 //go:generate go run gen.go
 
-// Package sfnt implements a decoder for SFNT font file formats, including
-// TrueType and OpenType.
+// Package sfnt implements a decoder for TTF (TrueType Fonts) and OTF (OpenType
+// Fonts). Such fonts are also known as SFNT fonts.
+//
+// This package provides a low-level API and does not depend on vector
+// rasterization packages. Glyphs are represented as vectors, not pixels.
+//
+// The sibling golang.org/x/image/font/opentype package provides a high-level
+// API, including glyph rasterization.
+//
+// This package provides a decoder in that it produces a TTF's glyphs (and
+// other metadata such as advance width and kerning pairs): give me the 'A'
+// from times_new_roman.ttf.
+//
+// Unlike the image.Image decoder functions (gif.Decode, jpeg.Decode and
+// png.Decode) in Go's standard library, an sfnt.Font needs ongoing access to
+// the TTF data (as a []byte or io.ReaderAt) after the sfnt.ParseXxx functions
+// return. If parsing a []byte, its elements are assumed immutable while the
+// sfnt.Font remains in use. If parsing an *os.File, you should not close the
+// file until after you're done with the sfnt.Font.
+//
+// The []byte or io.ReaderAt data given to ParseXxx can be re-written to
+// another io.Writer, copying the underlying TTF file, but this package does
+// not provide an encoder. Specifically, there is no API to build a different
+// TTF file, whether 'from scratch' or by modifying an existing one.
 package sfnt // import "golang.org/x/image/font/sfnt"
 
 // This implementation was written primarily to the
@@ -100,6 +122,7 @@ var (
 	errUnsupportedCFFVersion           = errors.New("sfnt: unsupported CFF version")
 	errUnsupportedClassDefFormat       = errors.New("sfnt: unsupported class definition format")
 	errUnsupportedCmapEncodings        = errors.New("sfnt: unsupported cmap encodings")
+	errUnsupportedCollection           = errors.New("sfnt: unsupported collection")
 	errUnsupportedCompoundGlyph        = errors.New("sfnt: unsupported compound glyph")
 	errUnsupportedCoverageFormat       = errors.New("sfnt: unsupported coverage format")
 	errUnsupportedExtensionPosFormat   = errors.New("sfnt: unsupported extension positioning format")
@@ -314,6 +337,9 @@ type table struct {
 //
 // If passed data for a single font, a TTF or OTF instead of a TTC or OTC, it
 // will return a collection containing 1 font.
+//
+// The caller should not modify src while the Collection or its Fonts remain in
+// use. See the package documentation for details.
 func ParseCollection(src []byte) (*Collection, error) {
 	c := &Collection{src: source{b: src}}
 	if err := c.initialize(); err != nil {
@@ -327,6 +353,9 @@ func ParseCollection(src []byte) (*Collection, error) {
 //
 // If passed data for a single font, a TTF or OTF instead of a TTC or OTC, it
 // will return a collection containing 1 font.
+//
+// The caller should not modify or close src while the Collection or its Fonts
+// remain in use. See the package documentation for details.
 func ParseCollectionReaderAt(src io.ReaderAt) (*Collection, error) {
 	c := &Collection{src: source{r: src}}
 	if err := c.initialize(); err != nil {
@@ -506,6 +535,9 @@ func (c *Collection) Font(i int) (*Font, error) {
 
 // Parse parses an SFNT font, such as TTF or OTF data, from a []byte data
 // source.
+//
+// The caller should not modify src while the Font remains in use. See the
+// package documentation for details.
 func Parse(src []byte) (*Font, error) {
 	f := &Font{src: source{b: src}}
 	if err := f.initialize(0, false); err != nil {
@@ -516,6 +548,9 @@ func Parse(src []byte) (*Font, error) {
 
 // ParseReaderAt parses an SFNT font, such as TTF or OTF data, from an
 // io.ReaderAt data source.
+//
+// The caller should not modify or close src while the Font remains in use. See
+// the package documentation for details.
 func ParseReaderAt(src io.ReaderAt) (*Font, error) {
 	f := &Font{src: source{r: src}}
 	if err := f.initialize(0, false); err != nil {
@@ -554,6 +589,10 @@ func ParseReaderAt(src io.ReaderAt) (*Font, error) {
 // further scaling necessary.
 type Font struct {
 	src source
+
+	// initialOffset is the file offset of the start of the font. This may be
+	// non-zero for fonts within a font collection.
+	initialOffset int32
 
 	// https://www.microsoft.com/typography/otspec/otff.htm#otttables
 	// "Required Tables".
@@ -601,6 +640,7 @@ type Font struct {
 	cached struct {
 		ascent           int32
 		capHeight        int32
+		finalTableOffset int32
 		glyphData        glyphData
 		glyphIndex       glyphIndexFunc
 		bounds           [4]int16
@@ -630,7 +670,7 @@ func (f *Font) initialize(offset int, isDfont bool) error {
 	if !f.src.valid() {
 		return errInvalidSourceData
 	}
-	buf, isPostScript, err := f.initializeTables(offset, isDfont)
+	buf, finalTableOffset, isPostScript, err := f.initializeTables(offset, isDfont)
 	if err != nil {
 		return err
 	}
@@ -686,6 +726,7 @@ func (f *Font) initialize(offset int, isDfont bool) error {
 
 	f.cached.ascent = ascent
 	f.cached.capHeight = capHeight
+	f.cached.finalTableOffset = finalTableOffset
 	f.cached.glyphData = glyphData
 	f.cached.glyphIndex = glyphIndex
 	f.cached.bounds = bounds
@@ -715,21 +756,25 @@ func (f *Font) initialize(offset int, isDfont bool) error {
 	return nil
 }
 
-func (f *Font) initializeTables(offset int, isDfont bool) (buf1 []byte, isPostScript bool, err error) {
+func (f *Font) initializeTables(offset int, isDfont bool) (buf1 []byte, finalTableOffset int32, isPostScript bool, err error) {
+	f.initialOffset = int32(offset)
+	if int(f.initialOffset) != offset {
+		return nil, 0, false, errUnsupportedTableOffsetLength
+	}
 	// https://www.microsoft.com/typography/otspec/otff.htm "Organization of an
 	// OpenType Font" says that "The OpenType font starts with the Offset
 	// Table", which is 12 bytes.
 	buf, err := f.src.view(nil, offset, 12)
 	if err != nil {
-		return nil, false, err
+		return nil, 0, false, err
 	}
 	// When updating the cases in this switch statement, also update the
 	// Collection.initialize method.
 	switch u32(buf) {
 	default:
-		return nil, false, errInvalidFont
+		return nil, 0, false, errInvalidFont
 	case dfontResourceDataOffset:
-		return nil, false, errInvalidSingleFont
+		return nil, 0, false, errInvalidSingleFont
 	case 0x00010000:
 		// No-op.
 	case 0x4f54544f: // "OTTO".
@@ -737,25 +782,25 @@ func (f *Font) initializeTables(offset int, isDfont bool) (buf1 []byte, isPostSc
 	case 0x74727565: // "true"
 		// No-op.
 	case 0x74746366: // "ttcf".
-		return nil, false, errInvalidSingleFont
+		return nil, 0, false, errInvalidSingleFont
 	}
 	numTables := int(u16(buf[4:]))
 	if numTables > maxNumTables {
-		return nil, false, errUnsupportedNumberOfTables
+		return nil, 0, false, errUnsupportedNumberOfTables
 	}
 
 	// "The Offset Table is followed immediately by the Table Record entries...
 	// sorted in ascending order by tag", 16 bytes each.
 	buf, err = f.src.view(buf, offset+12, 16*numTables)
 	if err != nil {
-		return nil, false, err
+		return nil, 0, false, err
 	}
 	for b, first, prevTag := buf, true, uint32(0); len(b) > 0; b = b[16:] {
 		tag := u32(b)
 		if first {
 			first = false
 		} else if tag <= prevTag {
-			return nil, false, errInvalidTableTagOrder
+			return nil, 0, false, errInvalidTableTagOrder
 		}
 		prevTag = tag
 
@@ -766,16 +811,19 @@ func (f *Font) initializeTables(offset int, isDfont bool) (buf1 []byte, isPostSc
 			origO := o
 			o += uint32(offset)
 			if o < origO {
-				return nil, false, errUnsupportedTableOffsetLength
+				return nil, 0, false, errUnsupportedTableOffsetLength
 			}
 		}
 		if o > maxTableOffset || n > maxTableLength {
-			return nil, false, errUnsupportedTableOffsetLength
+			return nil, 0, false, errUnsupportedTableOffsetLength
 		}
 		// We ignore the checksums, but "all tables must begin on four byte
 		// boundries [sic]".
 		if o&3 != 0 {
-			return nil, false, errInvalidTableOffset
+			return nil, 0, false, errInvalidTableOffset
+		}
+		if finalTableOffset < int32(o+n) {
+			finalTableOffset = int32(o + n)
 		}
 
 		// Match the 4-byte tag as a uint32. For example, "OS/2" is 0x4f532f32.
@@ -810,7 +858,11 @@ func (f *Font) initializeTables(offset int, isDfont bool) (buf1 []byte, isPostSc
 			f.post = table{o, n}
 		}
 	}
-	return buf, isPostScript, nil
+
+	if (f.src.b != nil) && (int(finalTableOffset) > len(f.src.b)) {
+		return nil, 0, false, errInvalidSourceData
+	}
+	return buf, finalTableOffset, isPostScript, nil
 }
 
 func (f *Font) parseCmap(buf []byte) (buf1 []byte, glyphIndex glyphIndexFunc, err error) {
@@ -1358,7 +1410,7 @@ type LoadGlyphOptions struct {
 // It returns ErrNotFound if the glyph index is out of range. It returns
 // ErrColoredGlyph if the glyph is not a monochrome vector glyph, such as a
 // colored (bitmap or vector) emoji glyph.
-func (f *Font) LoadGlyph(b *Buffer, x GlyphIndex, ppem fixed.Int26_6, opts *LoadGlyphOptions) ([]Segment, error) {
+func (f *Font) LoadGlyph(b *Buffer, x GlyphIndex, ppem fixed.Int26_6, opts *LoadGlyphOptions) (Segments, error) {
 	if b == nil {
 		b = &Buffer{}
 	}
@@ -1518,16 +1570,21 @@ func (f *Font) GlyphBounds(b *Buffer, x GlyphIndex, ppem fixed.Int26_6, h font.H
 	// optimization, the number of records can be less than the number of
 	// glyphs, in which case the advance width value of the last record applies
 	// to all remaining glyph IDs."
+	metricIndex := x
 	if n := GlyphIndex(f.cached.numHMetrics - 1); x > n {
-		x = n
+		metricIndex = n
 	}
 
-	buf, err := b.view(&f.src, int(f.hmtx.offset)+4*int(x), 2)
+	buf, err := b.view(&f.src, int(f.hmtx.offset)+4*int(metricIndex), 2)
 	if err != nil {
 		return fixed.Rectangle26_6{}, 0, err
 	}
 	advance = fixed.Int26_6(u16(buf))
 	advance = scale(advance*ppem, f.cached.unitsPerEm)
+	if h == font.HintingFull {
+		// Quantize the fixed.Int26_6 value to the nearest pixel.
+		advance = (advance + 32) &^ 63
+	}
 
 	// Ignore the hmtx LSB entries and the glyf bounding boxes. Instead, always
 	// calculate bounds from the segments. OpenType does contain the bounds for
@@ -1535,51 +1592,13 @@ func (f *Font) GlyphBounds(b *Buffer, x GlyphIndex, ppem fixed.Int26_6, h font.H
 	// compound glyphs. CFF/PostScript also have no explicit bounds and must be
 	// obtained from the segments.
 
-	seg, err := f.LoadGlyph(b, x, ppem, &LoadGlyphOptions{
+	segments, err := f.LoadGlyph(b, x, ppem, &LoadGlyphOptions{
 		// TODO: pass h, the font.Hinting.
 	})
 	if err != nil {
 		return fixed.Rectangle26_6{}, 0, err
 	}
-
-	if len(seg) > 0 {
-		bounds.Min.X = fixed.Int26_6(+(1 << 31) - 1)
-		bounds.Min.Y = fixed.Int26_6(+(1 << 31) - 1)
-		bounds.Max.X = fixed.Int26_6(-(1 << 31) + 0)
-		bounds.Max.Y = fixed.Int26_6(-(1 << 31) + 0)
-		for _, s := range seg {
-			n := 1
-			switch s.Op {
-			case SegmentOpQuadTo:
-				n = 2
-			case SegmentOpCubeTo:
-				n = 3
-			}
-			for i := 0; i < n; i++ {
-				if bounds.Max.X < s.Args[i].X {
-					bounds.Max.X = s.Args[i].X
-				}
-				if bounds.Min.X > s.Args[i].X {
-					bounds.Min.X = s.Args[i].X
-				}
-				if bounds.Max.Y < s.Args[i].Y {
-					bounds.Max.Y = s.Args[i].Y
-				}
-				if bounds.Min.Y > s.Args[i].Y {
-					bounds.Min.Y = s.Args[i].Y
-				}
-			}
-		}
-	}
-
-	if h == font.HintingFull {
-		// Quantize the fixed.Int26_6 value to the nearest pixel.
-		advance = (advance + 32) &^ 63
-		// TODO: hinting of bounds should be handled by LoadGlyph. See TODO
-		// above.
-	}
-
-	return bounds, advance, nil
+	return segments.Bounds(), advance, nil
 }
 
 // GlyphAdvance returns the advance width for the x'th glyph. ppem is the
@@ -1716,6 +1735,63 @@ func (f *Font) Metrics(b *Buffer, ppem fixed.Int26_6, h font.Hinting) (font.Metr
 	return m, nil
 }
 
+// WriteSourceTo writes the source data (the []byte or io.ReaderAt passed to
+// Parse or ParseReaderAt) to w.
+//
+// It returns the number of bytes written. On success, this is the final offset
+// of the furthest SFNT table in the source. This may be less than the length
+// of the []byte or io.ReaderAt originally passed.
+func (f *Font) WriteSourceTo(b *Buffer, w io.Writer) (int64, error) {
+	if f.initialOffset != 0 {
+		// TODO: when extracting a single font (i.e. TTF) out of a font
+		// collection (i.e. TTC), write only the i'th font and not the (i-1)
+		// previous fonts. Subtly, in the file format, table offsets may be
+		// relative to the start of the resource (for dfont collections) or the
+		// start of the file (otherwise). If we were to extract a single font
+		// here, we might need to dynamically patch the table offsets, bearing
+		// in mind that f.src.b is conceptually a 'read-only' slice of bytes.
+		return 0, errUnsupportedCollection
+	}
+
+	if f.src.b != nil {
+		n, err := w.Write(f.src.b[:f.cached.finalTableOffset])
+		return int64(n), err
+	}
+
+	// We have an io.ReaderAt source, not a []byte. It is tempting to see if
+	// the io.ReaderAt optionally implements the io.WriterTo interface, but we
+	// don't for two reasons:
+	//  - We want to write exactly f.cached.finalTableOffset bytes, even if the
+	//    underlying 'file' is larger, to be consistent with the []byte flavor.
+	//  - We document that "Font methods are safe to call concurrently" and
+	//    while io.ReaderAt is stateless (the offset is an argument), the
+	//    io.Reader / io.Writer abstractions are stateful (the current position
+	//    is a field) and mutable state generally isn't concurrent-safe.
+
+	if b == nil {
+		b = &Buffer{}
+	}
+	finalTableOffset := int(f.cached.finalTableOffset)
+	numBytesWritten := int64(0)
+	for offset := 0; offset < finalTableOffset; {
+		length := finalTableOffset - offset
+		if length > 4096 {
+			length = 4096
+		}
+		view, err := b.view(&f.src, offset, length)
+		if err != nil {
+			return numBytesWritten, err
+		}
+		n, err := w.Write(view)
+		numBytesWritten += int64(n)
+		if err != nil {
+			return numBytesWritten, err
+		}
+		offset += length
+	}
+	return numBytesWritten, nil
+}
+
 // Name returns the name value keyed by the given NameID.
 //
 // It returns ErrNotFound if there is no value for that key.
@@ -1806,7 +1882,7 @@ type Buffer struct {
 	// buf is a byte buffer for when a Font's source is an io.ReaderAt.
 	buf []byte
 	// segments holds glyph vector path segments.
-	segments []Segment
+	segments Segments
 	// compoundStack holds the components of a TrueType compound glyph.
 	compoundStack [maxCompoundStackSize]struct {
 		glyphIndex   GlyphIndex
@@ -1851,6 +1927,47 @@ const (
 	SegmentOpQuadTo
 	SegmentOpCubeTo
 )
+
+// Segments is a slice of Segment.
+type Segments []Segment
+
+// Bounds returns s' bounding box. It returns an empty rectangle if s is empty.
+func (s Segments) Bounds() (bounds fixed.Rectangle26_6) {
+	if len(s) == 0 {
+		return fixed.Rectangle26_6{}
+	}
+
+	bounds.Min.X = fixed.Int26_6(+(1 << 31) - 1)
+	bounds.Min.Y = fixed.Int26_6(+(1 << 31) - 1)
+	bounds.Max.X = fixed.Int26_6(-(1 << 31) + 0)
+	bounds.Max.Y = fixed.Int26_6(-(1 << 31) + 0)
+
+	for _, seg := range s {
+		n := 1
+		switch seg.Op {
+		case SegmentOpQuadTo:
+			n = 2
+		case SegmentOpCubeTo:
+			n = 3
+		}
+		for i := 0; i < n; i++ {
+			if bounds.Max.X < seg.Args[i].X {
+				bounds.Max.X = seg.Args[i].X
+			}
+			if bounds.Min.X > seg.Args[i].X {
+				bounds.Min.X = seg.Args[i].X
+			}
+			if bounds.Max.Y < seg.Args[i].Y {
+				bounds.Max.Y = seg.Args[i].Y
+			}
+			if bounds.Min.Y > seg.Args[i].Y {
+				bounds.Min.Y = seg.Args[i].Y
+			}
+		}
+	}
+
+	return bounds
+}
 
 // translateArgs applies a translation to args.
 func translateArgs(args *[3]fixed.Point26_6, dx, dy fixed.Int26_6) {

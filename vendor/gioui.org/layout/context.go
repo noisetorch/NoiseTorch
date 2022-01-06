@@ -5,6 +5,7 @@ package layout
 import (
 	"time"
 
+	"gioui.org/f32"
 	"gioui.org/io/event"
 	"gioui.org/io/system"
 	"gioui.org/op"
@@ -39,15 +40,30 @@ type Context struct {
 //     Constraints: Exact(e.Size),
 //   }
 //
-// NewContext calls ops.Reset.
+// NewContext calls ops.Reset and adjusts ops for e.Insets.
 func NewContext(ops *op.Ops, e system.FrameEvent) Context {
 	ops.Reset()
+
+	size := e.Size
+
+	if e.Insets != (system.Insets{}) {
+		left := e.Metric.Px(e.Insets.Left)
+		top := e.Metric.Px(e.Insets.Top)
+		op.Offset(f32.Point{
+			X: float32(left),
+			Y: float32(top),
+		}).Add(ops)
+
+		size.X -= left + e.Metric.Px(e.Insets.Right)
+		size.Y -= top + e.Metric.Px(e.Insets.Bottom)
+	}
+
 	return Context{
 		Ops:         ops,
 		Now:         e.Now,
 		Queue:       e.Queue,
 		Metric:      e.Metric,
-		Constraints: Exact(e.Size),
+		Constraints: Exact(size),
 	}
 }
 

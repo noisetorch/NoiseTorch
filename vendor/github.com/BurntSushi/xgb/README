@@ -1,3 +1,8 @@
+Note that this project is largely unmaintained as I don't have the time to do
+or support more development. Please consider using this fork instead:
+https://github.com/jezek/xgb
+
+
 XGB is the X Go Binding, which is a low-level API to communicate with the
 core X protocol and many of the X extensions. It is closely modeled after
 XCB and xpyb.
@@ -20,7 +25,7 @@ BurntSushi's Fork
 I've forked the XGB repository from Google Code due to inactivty upstream.
 
 Godoc documentation can be found here:
-http://godoc.burntsushi.net/pkg/github.com/BurntSushi/xgb/
+https://godoc.org/github.com/BurntSushi/xgb
 
 Much of the code has been rewritten in an effort to support thread safety
 and multiple extensions. Namely, go_client.py has been thrown away in favor

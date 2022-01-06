@@ -6,6 +6,8 @@
 
 #include "_cgo_export.h"
 #include <EGL/egl.h>
+#include <X11/Xlib.h>   // for Atom, Colormap, Display, Window
+#include <X11/Xutil.h>  // for XVisualInfo
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

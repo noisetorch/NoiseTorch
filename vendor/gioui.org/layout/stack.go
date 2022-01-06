@@ -50,14 +50,14 @@ func Expanded(w Widget) StackChild {
 func (s Stack) Layout(gtx Context, children ...StackChild) Dimensions {
 	var maxSZ image.Point
 	// First lay out Stacked children.
+	cgtx := gtx
+	cgtx.Constraints.Min = image.Point{}
 	for i, w := range children {
 		if w.expanded {
 			continue
 		}
 		macro := op.Record(gtx.Ops)
-		gtx := gtx
-		gtx.Constraints.Min = image.Pt(0, 0)
-		dims := w.widget(gtx)
+		dims := w.widget(cgtx)
 		call := macro.Stop()
 		if w := dims.Size.X; w > maxSZ.X {
 			maxSZ.X = w
@@ -74,11 +74,8 @@ func (s Stack) Layout(gtx Context, children ...StackChild) Dimensions {
 			continue
 		}
 		macro := op.Record(gtx.Ops)
-		gtx := gtx
-		gtx.Constraints = Constraints{
-			Min: maxSZ, Max: gtx.Constraints.Max,
-		}
-		dims := w.widget(gtx)
+		cgtx.Constraints.Min = maxSZ
+		dims := w.widget(cgtx)
 		call := macro.Stop()
 		if w := dims.Size.X; w > maxSZ.X {
 			maxSZ.X = w
@@ -107,10 +104,9 @@ func (s Stack) Layout(gtx Context, children ...StackChild) Dimensions {
 		case SW, S, SE:
 			p.Y = maxSZ.Y - sz.Y
 		}
-		stack := op.Push(gtx.Ops)
-		op.Offset(FPt(p)).Add(gtx.Ops)
+		trans := op.Offset(FPt(p)).Push(gtx.Ops)
 		ch.call.Add(gtx.Ops)
-		stack.Pop()
+		trans.Pop()
 		if baseline == 0 {
 			if b := ch.dims.Baseline; b != 0 {
 				baseline = b + maxSZ.Y - sz.Y - p.Y

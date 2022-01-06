@@ -16,9 +16,12 @@ import (
 	"github.com/BurntSushi/xgb/render"
 	"github.com/BurntSushi/xgb/shm"
 	"github.com/BurntSushi/xgb/xproto"
-
 	"golang.org/x/exp/shiny/driver/internal/swizzle"
 )
+
+type bufferUploader interface {
+	upload(xd xproto.Drawable, xg xproto.Gcontext, depth uint8, dp image.Point, sr image.Rectangle)
+}
 
 type bufferImpl struct {
 	s *screenImpl

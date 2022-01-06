@@ -3,11 +3,8 @@
 package router
 
 import (
-	"gioui.org/internal/opconst"
-	"gioui.org/internal/ops"
 	"gioui.org/io/event"
 	"gioui.org/io/key"
-	"gioui.org/op"
 )
 
 type TextInputState uint8
@@ -15,22 +12,25 @@ type TextInputState uint8
 type keyQueue struct {
 	focus    event.Tag
 	handlers map[event.Tag]*keyHandler
-	reader   ops.Reader
 	state    TextInputState
+	hint     key.InputHint
 }
 
 type keyHandler struct {
-	active bool
+	// visible will be true if the InputOp is present
+	// in the current frame.
+	visible bool
+	new     bool
+	hint    key.InputHint
 }
 
-type listenerPriority uint8
-
-const (
-	priNone listenerPriority = iota
-	priDefault
-	priCurrentFocus
-	priNewFocus
-)
+// keyCollector tracks state required to update a keyQueue
+// from key ops.
+type keyCollector struct {
+	q       *keyQueue
+	focus   event.Tag
+	changed bool
+}
 
 const (
 	TextInputKeep TextInputState = iota
@@ -44,42 +44,59 @@ func (q *keyQueue) InputState() TextInputState {
 	return q.state
 }
 
-func (q *keyQueue) Frame(root *op.Ops, events *handlerEvents) {
+// InputHint returns the input mode from the most recent key.InputOp.
+func (q *keyQueue) InputHint() (key.InputHint, bool) {
+	if q.focus == nil {
+		return q.hint, false
+	}
+	focused, ok := q.handlers[q.focus]
+	if !ok {
+		return q.hint, false
+	}
+	old := q.hint
+	q.hint = focused.hint
+	return q.hint, old != q.hint
+}
+
+func (q *keyQueue) Reset() {
 	if q.handlers == nil {
 		q.handlers = make(map[event.Tag]*keyHandler)
 	}
 	for _, h := range q.handlers {
-		h.active = false
+		h.visible, h.new = false, false
 	}
-	q.reader.Reset(root)
-	focus, pri, hide := q.resolveFocus(events)
+	q.state = TextInputKeep
+}
+
+func (q *keyQueue) Frame(events *handlerEvents, collector keyCollector) {
 	for k, h := range q.handlers {
-		if !h.active {
+		if !h.visible {
 			delete(q.handlers, k)
 			if q.focus == k {
+				// Remove the focus from the handler that is no longer visible.
 				q.focus = nil
-				hide = true
+				q.state = TextInputClose
 			}
+		} else if h.new && k != collector.focus {
+			// Reset the handler on (each) first appearance, but don't trigger redraw.
+			events.AddNoRedraw(k, key.FocusEvent{Focus: false})
 		}
 	}
-	if focus != q.focus {
+	if collector.changed && collector.focus != nil {
+		if _, exists := q.handlers[collector.focus]; !exists {
+			collector.focus = nil
+		}
+	}
+	if collector.changed && collector.focus != q.focus {
 		if q.focus != nil {
 			events.Add(q.focus, key.FocusEvent{Focus: false})
 		}
-		q.focus = focus
+		q.focus = collector.focus
 		if q.focus != nil {
 			events.Add(q.focus, key.FocusEvent{Focus: true})
 		} else {
-			hide = true
+			q.state = TextInputClose
 		}
-	}
-	switch {
-	case pri == priNewFocus:
-		q.state = TextInputOpen
-	case hide:
-		q.state = TextInputClose
-	default:
-		q.state = TextInputKeep
 	}
 }
 
@@ -89,62 +106,38 @@ func (q *keyQueue) Push(e event.Event, events *handlerEvents) {
 	}
 }
 
-func (q *keyQueue) resolveFocus(events *handlerEvents) (event.Tag, listenerPriority, bool) {
-	var k event.Tag
-	var pri listenerPriority
-	var hide bool
-loop:
-	for encOp, ok := q.reader.Decode(); ok; encOp, ok = q.reader.Decode() {
-		switch opconst.OpType(encOp.Data[0]) {
-		case opconst.TypeKeyInput:
-			op := decodeKeyInputOp(encOp.Data, encOp.Refs)
-			var newPri listenerPriority
-			switch {
-			case op.Focus:
-				newPri = priNewFocus
-			case op.Tag == q.focus:
-				newPri = priCurrentFocus
-			default:
-				newPri = priDefault
-			}
-			// Switch focus if higher priority or if focus requested.
-			if newPri.replaces(pri) {
-				k, pri = op.Tag, newPri
-			}
-			h, ok := q.handlers[op.Tag]
-			if !ok {
-				h = new(keyHandler)
-				q.handlers[op.Tag] = h
-				// Reset the handler on (each) first appearance.
-				events.Add(op.Tag, key.FocusEvent{Focus: false})
-			}
-			h.active = true
-		case opconst.TypeHideInput:
-			hide = true
-		case opconst.TypePush:
-			newK, newPri, h := q.resolveFocus(events)
-			hide = hide || h
-			if newPri.replaces(pri) {
-				k, pri = newK, newPri
-			}
-		case opconst.TypePop:
-			break loop
-		}
-	}
-	return k, pri, hide
+func (k *keyCollector) focusOp(tag event.Tag) {
+	k.focus = tag
+	k.changed = true
 }
 
-func (p listenerPriority) replaces(p2 listenerPriority) bool {
-	// Favor earliest default focus or latest requested focus.
-	return p > p2 || p == p2 && p == priNewFocus
+func (k *keyCollector) softKeyboard(show bool) {
+	if show {
+		k.q.state = TextInputOpen
+	} else {
+		k.q.state = TextInputClose
+	}
 }
 
-func decodeKeyInputOp(d []byte, refs []interface{}) key.InputOp {
-	if opconst.OpType(d[0]) != opconst.TypeKeyInput {
-		panic("invalid op")
+func (k *keyCollector) inputOp(op key.InputOp) {
+	h, ok := k.q.handlers[op.Tag]
+	if !ok {
+		h = &keyHandler{new: true}
+		k.q.handlers[op.Tag] = h
 	}
-	return key.InputOp{
-		Tag:   refs[0].(event.Tag),
-		Focus: d[1] != 0,
+	h.visible = true
+	h.hint = op.Hint
+}
+
+func (t TextInputState) String() string {
+	switch t {
+	case TextInputKeep:
+		return "Keep"
+	case TextInputClose:
+		return "Close"
+	case TextInputOpen:
+		return "Open"
+	default:
+		panic("unexpected value")
 	}
 }

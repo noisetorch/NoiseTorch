@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Unlicense OR MIT
 
+//go:build darwin && ios
 // +build darwin,ios
 
 package log
@@ -7,7 +8,11 @@ package log
 /*
 #cgo CFLAGS: -Werror -fmodules -fobjc-arc -x objective-c
 
-__attribute__ ((visibility ("hidden"))) void nslog(char *str);
+@import Foundation;
+
+static void nslog(char *str) {
+	NSLog(@"%@", @(str));
+}
 */
 import "C"
 
@@ -17,7 +22,7 @@ import (
 	"log"
 	"unsafe"
 
-	_ "gioui.org/app/internal/cocoainit"
+	_ "gioui.org/internal/cocoainit"
 )
 
 func init() {

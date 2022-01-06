@@ -17,7 +17,7 @@ import (
 
 type Face struct {
 	fnt     *opentype.Font
-	shaper  *text.FontRegistry
+	shaper  *text.Cache
 	size    int
 	fsize   fixed.Int26_6
 	metrics font.Metrics
@@ -40,8 +40,7 @@ func NewFace(ttf []byte, size int) (Face, error) {
 		}
 	}
 
-	shaper := &text.FontRegistry{}
-	shaper.Register(text.Font{}, fnt)
+	shaper := text.NewCache([]text.FontFace{{text.Font{}, fnt}})
 
 	face := Face{fnt, shaper, size, fixed.I(size), font.Metrics{}}
 	metricsTxt, _ := face.shaper.Layout(text.Font{}, fixed.I(size), 1e6, strings.NewReader("metrics"))

@@ -152,9 +152,10 @@ func loadGlyf(f *Font, b *Buffer, x GlyphIndex, stackBottom, recursionDepth uint
 		xIndex:    xIndex,
 		yIndex:    yIndex,
 		endIndex:  glyfHeaderLen,
-		// The -1 is because the contour-end index in the file format is
-		// inclusive, but Go's slice[:index] semantics are exclusive.
+		// The -1 on prevEnd and finalEnd are because the contour-end index in
+		// the file format is inclusive, but Go's slice[:index] is exclusive.
 		prevEnd:     -1,
+		finalEnd:    int32(numPoints - 1),
 		numContours: int32(numContours),
 	}
 	for g.nextContour() {
@@ -304,18 +305,18 @@ func loadCompoundGlyf(f *Font, b *Buffer, data []byte, stackBottom, recursionDep
 			return err
 		}
 		dx, dy := fixed.Int26_6(elem.dx), fixed.Int26_6(elem.dy)
-		segs := b.segments[base:]
+		segments := b.segments[base:]
 		if elem.hasTransform {
 			txx := elem.transformXX
 			txy := elem.transformXY
 			tyx := elem.transformYX
 			tyy := elem.transformYY
-			for j := range segs {
-				transformArgs(&segs[j].Args, txx, txy, tyx, tyy, dx, dy)
+			for j := range segments {
+				transformArgs(&segments[j].Args, txx, txy, tyx, tyy, dx, dy)
 			}
 		} else {
-			for j := range segs {
-				translateArgs(&segs[j].Args, dx, dy)
+			for j := range segments {
+				translateArgs(&segments[j].Args, dx, dy)
 			}
 		}
 	}
@@ -334,9 +335,11 @@ type glyfIter struct {
 	yIndex    int32
 
 	// endIndex points to the uint16 that is the inclusive point index of the
-	// current contour's end. prevEnd is the previous contour's end.
+	// current contour's end. prevEnd is the previous contour's end. finalEnd
+	// should match the final contour's end.
 	endIndex int32
 	prevEnd  int32
+	finalEnd int32
 
 	// c and p count the current contour and point, up to numContours and
 	// numPoints.
@@ -386,13 +389,16 @@ type glyfIter struct {
 
 func (g *glyfIter) nextContour() (ok bool) {
 	if g.c == g.numContours {
+		if g.prevEnd != g.finalEnd {
+			g.err = errInvalidGlyphData
+		}
 		return false
 	}
 	g.c++
 
 	end := int32(u16(g.data[g.endIndex:]))
 	g.endIndex += 2
-	if end <= g.prevEnd {
+	if (end <= g.prevEnd) || (g.finalEnd < end) {
 		g.err = errInvalidGlyphData
 		return false
 	}

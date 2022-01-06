@@ -5,18 +5,18 @@ package gpu
 import (
 	"time"
 
-	"gioui.org/gpu/backend"
+	"gioui.org/gpu/internal/driver"
 )
 
 type timers struct {
-	backend backend.Device
+	backend driver.Device
 	timers  []*timer
 }
 
 type timer struct {
 	Elapsed time.Duration
-	backend backend.Device
-	timer   backend.Timer
+	backend driver.Device
+	timer   driver.Timer
 	state   timerState
 }
 
@@ -28,7 +28,7 @@ const (
 	timerWaiting
 )
 
-func newTimers(b backend.Device) *timers {
+func newTimers(b driver.Device) *timers {
 	return &timers{
 		backend: b,
 	}
@@ -83,7 +83,7 @@ func (t *timers) ready() bool {
 	return t.backend.IsTimeContinuous()
 }
 
-func (t *timers) release() {
+func (t *timers) Release() {
 	if t == nil {
 		return
 	}

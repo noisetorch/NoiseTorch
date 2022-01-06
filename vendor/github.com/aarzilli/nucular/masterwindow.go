@@ -23,6 +23,7 @@ type MasterWindow interface {
 	Changed()
 	Close()
 	Closed() bool
+	OnClose(func())
 	ActivateEditor(ed *TextEditor)
 
 	Style() *nstyle.Style
