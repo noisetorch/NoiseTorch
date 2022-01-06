@@ -35,9 +35,10 @@ gioui.org/op/clip
 gioui.org/op/paint
 gioui.org/text
 gioui.org/unit
-# github.com/BurntSushi/toml v0.3.1
+# github.com/BurntSushi/toml v0.4.1
 ## explicit
 github.com/BurntSushi/toml
+github.com/BurntSushi/toml/internal
 # github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802
 github.com/BurntSushi/xgb
 github.com/BurntSushi/xgb/render

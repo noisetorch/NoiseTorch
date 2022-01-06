@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	gioui.org v0.0.0-20200630184602-223f8fd40ae4 // indirect
-	github.com/BurntSushi/toml v0.3.1
+	github.com/BurntSushi/toml v0.4.1
 	github.com/BurntSushi/xgbutil v0.0.0-20190907113008-ad855c713046
 	github.com/aarzilli/nucular v0.0.0-20200615134801-81910c722bba
 	github.com/lawl/pulseaudio v0.0.0-20210928141934-ed754c0c6618
