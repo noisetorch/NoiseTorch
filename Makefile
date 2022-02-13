@@ -27,6 +27,4 @@ release: rnnoise
 	go run scripts/signer.go -s
 	git describe --tags > bin/version.txt
 rnnoise:
-	cd c/ladspa; \
-	make
-
+	$(MAKE) -C c/ladspa
