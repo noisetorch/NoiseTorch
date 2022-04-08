@@ -18,7 +18,7 @@ release: rnnoise
 
 	mkdir -p tmp/.local/bin/
 	go generate
-	CGO_ENABLED=0 GOOS=linux go build -tags release -a -ldflags '-s -w -extldflags "-static" -X main.version=${VERSION} -X main.distribution=official -X main.updateURL=${UPDATE_URL} -X main.publicKeyString=${UPDATE_PUBKEY}' .
+	CGO_ENABLED=0 GOOS=linux go build -trimpath -tags release -a -ldflags '-s -w -extldflags "-static" -X main.version=${VERSION} -X main.distribution=official -X main.updateURL=${UPDATE_URL} -X main.publicKeyString=${UPDATE_PUBKEY}' .
 	upx noisetorch
 	mv noisetorch tmp/.local/bin/
 	cd tmp/; \
