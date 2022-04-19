@@ -28,3 +28,5 @@ release: rnnoise
 	git describe --tags > bin/version.txt
 rnnoise:
 	$(MAKE) -C c/ladspa
+appimage:
+	VERSION=${VERSION} ./build-appimage.sh
