@@ -80,6 +80,27 @@ Please keep in mind that you will need to reload NoiseTorch for these changes to
 
 Once NoiseTorch has been loaded, feel free to close the window, the virtual microphone will continue working until you explicitly unload it. The NoiseTorch process is not required anymore once it has been loaded.
 
+### Command Line Interface
+
+Noisetorch provides a command line interface to simplify the process of loading the audio supressor:
+```
+~/noisetorch --help
+Usage of .local/bin/noisetorch:
+  -i	Load supressor for input. If no source device ID is specified the default pulse audio source is used.
+  -l	List available PulseAudio devices
+  -log
+    	Print debugging output to stdout
+  -o	Load supressor for output. If no source device ID is specified the default pulse audio source is used.
+  -s string
+    	Use the specified source/sink device ID
+  -setcap
+    	for internal use only
+  -t int
+    	Voice activation threshold (default -1)
+  -u	Unload supressor
+
+```
+
 ## Latency
 
 NoiseTorch may introduce a small amount of latency for microphone filtering. The amount of inherent latency introduced by noise supression is 10ms, this is very low and should not be a problem. Additionally PulseAudio currently introduces a variable amount of latency that depends on your system. Lowering this latency [requires a change in PulseAudio](https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/issues/120).
