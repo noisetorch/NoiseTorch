@@ -7,4 +7,6 @@
 
 At least one of my sytems has probably been compromised, dont use the source either. One could hide things in a large diff.
 
-This project is dead, i've failed you. Sorry.
+If the community can help review ALL of the code, maybe we can trust the codw again and work from there.
+
+To help go here: https://github.com/lawl/NoiseTorch/issues/254#issuecomment-1130763165
