@@ -11,7 +11,7 @@
 #include "ladspa.h"
 #include "utils.h"
 
-#include "../ringbuf.h"
+#include "../c-ringbuf/ringbuf.h"
 #include "../rnnoise/include/rnnoise.h"
 
 #define SF_INPUT 0
