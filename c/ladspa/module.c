@@ -12,7 +12,7 @@
 #include "utils.h"
 
 #include "../ringbuf.h"
-#include "../rnnoise/rnnoise.h"
+#include "../rnnoise/include/rnnoise.h"
 
 #define SF_INPUT 0
 #define SF_OUTPUT 1
