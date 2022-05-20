@@ -1,7 +1,0 @@
-language: go
-os:
-  - linux
-  - osx
-install: true
-script: go build
-go: 1.13.x
