@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func main() {
+func main() { //nolint
 	cwd, err := os.Getwd()
 	if err != nil {
 		panic(err)
