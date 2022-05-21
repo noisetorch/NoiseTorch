@@ -21,9 +21,8 @@ release: rnnoise
 	CGO_ENABLED=0 GOOS=linux go build -trimpath -tags release -a -ldflags '-s -w -extldflags "-static" -X main.version=${VERSION} -X main.distribution=official' .
 	mv noisetorch tmp/.local/bin/
 	cd tmp/; \
-	tar cvzf ../bin/NoiseTorch_x64.tgz .
+	tar cvzf ../bin/NoiseTorch_x64_${VERSION}.tgz .
 	rm -rf tmp/
-	go run scripts/signer.go -s
-	git describe --tags > bin/version.txt
+	go run scripts/signer.go -s -f bin/NoiseTorch_x64_${VERSION}.tgz
 rnnoise:
 	$(MAKE) -C c/ladspa
