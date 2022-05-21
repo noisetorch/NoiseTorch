@@ -7,7 +7,7 @@
 
 ## Probable insecurity / remove NoiseTorch
 
-At least one of my sytems has probably been compromised, dont use the source either. One could hide things in a large diff.
+At least one of the original developers' (@lawl) systems has probably been compromised. Due to that we currently can not expect the source code NOR the binaries to be secure.
 Therefore you should for now remove NoiseTorch from your systems, until this issue is cleared up:
 
 ~~~
@@ -20,4 +20,5 @@ rm ~/.local/share/icons/hicolor/256x256/apps/noisetorch.png
 
 If the community can help review ALL of the code, maybe we can trust the code again and work from there.
 
-To help go here: https://github.com/lawl/NoiseTorch/issues/254#issuecomment-1130763165
+To help go here to read up on the history: https://github.com/lawl/NoiseTorch/issues/254#issuecomment-1130763165
+... and here to check what still needs to be done: https://github.com/noisetorch/NoiseTorch/discussions/275
