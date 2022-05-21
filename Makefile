@@ -19,7 +19,6 @@ release: rnnoise
 	mkdir -p tmp/.local/bin/
 	go generate
 	CGO_ENABLED=0 GOOS=linux go build -trimpath -tags release -a -ldflags '-s -w -extldflags "-static" -X main.version=${VERSION} -X main.distribution=official' .
-	upx noisetorch
 	mv noisetorch tmp/.local/bin/
 	cd tmp/; \
 	tar cvzf ../bin/NoiseTorch_x64.tgz .
