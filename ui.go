@@ -379,7 +379,7 @@ func licenseView(ctx *ntcontext, w *nucular.Window) {
 	field := &ctx.licenseTextArea
 	field.Flags |= nucular.EditMultiline
 	if len(field.Buffer) < 1 {
-		field.Buffer = []rune(licenseString)
+		field.Buffer = []rune(licenseString) // nolint
 	}
 	field.Edit(w)
 
