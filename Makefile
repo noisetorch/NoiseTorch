@@ -27,4 +27,5 @@ release: rnnoise
 	go run scripts/signer.go -s
 	git describe --tags > bin/version.txt
 rnnoise:
+	git submodule update --init --recursive
 	$(MAKE) -C c/ladspa
