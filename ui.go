@@ -1,12 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"image"
 	"image/color"
-	"image/draw"
-	"image/png"
 	"log"
 	"os"
 	"os/exec"
@@ -56,8 +52,6 @@ var green = color.RGBA{34, 187, 69, 255}
 var red = color.RGBA{255, 70, 70, 255}
 var orange = color.RGBA{255, 140, 0, 255}
 
-var patreonImg *image.RGBA
-
 func updatefn(ctx *ntcontext, w *nucular.Window) {
 	currView := ctx.views.Peek()
 	currView(ctx, w)
@@ -84,14 +78,7 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 
 	w.MenubarEnd()
 
-	w.Row(25).Dynamic(2)
-	if patreonImg == nil {
-		patreonImg = loadPatreonImg()
-	}
-
-	if imageButton(w, patreonImg) {
-		exec.Command("xdg-open", "https://patreon.com/lawl").Run()
-	}
+	w.Row(25).Dynamic(1)
 
 	if ctx.noiseSupressorState == loaded {
 		w.LabelColored("NoiseTorch active", "RC", green)
@@ -505,26 +492,4 @@ func resetUI(ctx *ntcontext) {
 			fmt.Sprintf("Your PipeWire version is too old. Detected %d.%d.%d. Require at least 0.3.28.",
 				ctx.serverInfo.major, ctx.serverInfo.minor, ctx.serverInfo.patch)))
 	}
-}
-
-func loadPatreonImg() *image.RGBA {
-	var pat *image.RGBA
-	img, _ := png.Decode(bytes.NewReader(patreonPNG))
-	pat = image.NewRGBA(img.Bounds())
-	draw.Draw(pat, img.Bounds(), img, image.Point{}, draw.Src)
-	return pat
-}
-
-func imageButton(w *nucular.Window, img *image.RGBA) bool {
-	style := w.Master().Style()
-	origButtonStyle := style.Button
-	style.Button.Border = 0
-	style.Button.Normal.Data.Color = style.NormalWindow.Background
-	style.Button.Hover.Data.Color = style.NormalWindow.Background
-	style.Button.Active.Data.Color = style.NormalWindow.Background
-
-	defer (func() { style.Button = origButtonStyle })()
-
-	return w.Button(label.I(patreonImg), false)
-
 }

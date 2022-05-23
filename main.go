@@ -29,9 +29,6 @@ import (
 //go:embed c/ladspa/rnnoise_ladspa.so
 var libRNNoise []byte
 
-//go:embed assets/patreon.png
-var patreonPNG []byte
-
 type device struct {
 	ID             string
 	Name           string
