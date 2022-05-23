@@ -1,5 +1,5 @@
 UPDATE_URL=
-UPDATE_PUBKEY=
+UPDATE_PUBKEY=Md2rdsS+b6W0trgcqa5lAWP978Zj0sFmubJ252OPKwc=
 VERSION := $(shell git describe --tags)
 
 dev: rnnoise

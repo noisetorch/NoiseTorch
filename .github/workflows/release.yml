@@ -19,12 +19,15 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build release artifact
         run: |
+          mkdir -p ~/.config/noisetorch
+          echo '${{ secrets.NOISETORCH_SIGNER_PRIVKEY_BASE64 }}' | base64 -d > ~/.config/noisetorch/private.key
           make release
-          git describe --tags > version.txt
+          rm -rf ~/.config/noisetorch/
+          for f in bin/NoiseTorch_x64_*.tgz ; do md5sum ${f} | tee ${f}.md5sum ; done
       - name: Release
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
             ${{ github.workspace }}/bin/NoiseTorch_x64_*.tgz
             ${{ github.workspace }}/bin/NoiseTorch_x64_*.tgz.sig
+            ${{ github.workspace }}/bin/NoiseTorch_x64_*.tgz.md5sum
