@@ -1,2 +1,4 @@
 bin/
 licenses.go
+*.sublime-workspace
+*.sublime-project
