@@ -14,7 +14,6 @@ type config struct {
 	Threshold             int
 	DisplayMonitorSources bool
 	EnableUpdates         bool
-	GuiltTripped          bool
 	FilterInput           bool
 	FilterOutput          bool
 	LastUsedInput         string
@@ -33,7 +32,6 @@ func initializeConfigIfNot() {
 		Threshold:             95,
 		DisplayMonitorSources: false,
 		EnableUpdates:         true,
-		GuiltTripped:          false,
 		FilterInput:           true,
 		FilterOutput:          false,
 		LastUsedInput:         "",

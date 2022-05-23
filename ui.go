@@ -176,45 +176,26 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 	}
 
 	if ctx.config.FilterOutput && w.TreePush(nucular.TreeTab, "Select Headphones", true) {
-		if ctx.config.GuiltTripped {
-			w.Row(15).Dynamic(1)
-			w.Label("Select an output device below:", "LC")
+		w.Row(15).Dynamic(1)
+		w.Label("Select an output device below:", "LC")
 
-			for i := range ctx.outputList {
-				el := &ctx.outputList[i]
+		for i := range ctx.outputList {
+			el := &ctx.outputList[i]
 
-				if el.isMonitor && !ctx.config.DisplayMonitorSources {
-					continue
-				}
-				w.Row(15).Static()
-				w.LayoutFitWidth(0, 0)
-				if w.CheckboxText("", &el.checked) {
-					ensureOnlyOneInputSelected(&ctx.outputList, el)
-				}
-
-				w.LayoutFitWidth(ctx.sourceListColdWidthIndex, 0)
-				if el.dynamicLatency {
-					w.Label(el.Name, "LC")
-				} else {
-					w.LabelColored("(incompatible?) "+el.Name, "LC", orange)
-				}
-
+			if el.isMonitor && !ctx.config.DisplayMonitorSources {
+				continue
 			}
-		} else {
-			w.Row(15).Dynamic(1)
-			w.Label("This feature is only for patrons.", "LC")
-			w.Row(15).Dynamic(1)
-			w.Label("You can still use it eitherway, but you are legally required to feel bad.", "LC")
-			w.Row(25).Dynamic(2)
-			if w.ButtonText("Become a patron") {
-				exec.Command("xdg-open", "https://patreon.com/lawl").Run()
-				ctx.config.GuiltTripped = true
-				go writeConfig(ctx.config)
+			w.Row(15).Static()
+			w.LayoutFitWidth(0, 0)
+			if w.CheckboxText("", &el.checked) {
+				ensureOnlyOneInputSelected(&ctx.outputList, el)
 			}
 
-			if w.ButtonText("Feel bad") {
-				ctx.config.GuiltTripped = true
-				go writeConfig(ctx.config)
+			w.LayoutFitWidth(ctx.sourceListColdWidthIndex, 0)
+			if el.dynamicLatency {
+				w.Label(el.Name, "LC")
+			} else {
+				w.LabelColored("(incompatible?) "+el.Name, "LC", orange)
 			}
 		}
 
@@ -254,7 +235,6 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 	if (!ctx.config.FilterInput || (ctx.config.FilterInput && inpOk)) &&
 		(!ctx.config.FilterOutput || (ctx.config.FilterOutput && outOk)) &&
 		(ctx.config.FilterInput || ctx.config.FilterOutput) &&
-		((ctx.config.FilterOutput && ctx.config.GuiltTripped) || !ctx.config.FilterOutput) &&
 		ctx.noiseSupressorState != inconsistent {
 		if w.ButtonText(txt) {
 			ctx.reloadRequired = false
