@@ -1,0 +1,6 @@
+[submodule "c/rnnoise"]
+	path = c/rnnoise
+	url = https://github.com/noisetorch/rnnoise
+[submodule "c/c-ringbuf"]
+	path = c/c-ringbuf
+	url = https://github.com/noisetorch/c-ringbuf

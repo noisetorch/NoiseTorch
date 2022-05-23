@@ -69,7 +69,7 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 		}
 		w.Row(10).Dynamic(1)
 		if w.MenuItem(label.T("Source code")) {
-			exec.Command("xdg-open", "https://github.com/lawl/NoiseTorch").Run()
+			exec.Command("xdg-open", "https://github.com/noisetorch/NoiseTorch").Run()
 		}
 		if w.MenuItem(label.T("Version")) {
 			ctx.views.Push(versionView)
@@ -346,7 +346,7 @@ func licenseView(ctx *ntcontext, w *nucular.Window) {
 	field := &ctx.licenseTextArea
 	field.Flags |= nucular.EditMultiline
 	if len(field.Buffer) < 1 {
-		field.Buffer = []rune(licenseString)
+		field.Buffer = []rune(licenseString) // nolint
 	}
 	field.Edit(w)
 
