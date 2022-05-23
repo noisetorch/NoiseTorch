@@ -12,7 +12,7 @@ import (
 	"golang.org/x/crypto/ed25519"
 )
 
-func main() {
+func main() { //nolint
 	var doGenerate bool
 	flag.BoolVar(&doGenerate, "g", false, "Generate a keypair")
 
