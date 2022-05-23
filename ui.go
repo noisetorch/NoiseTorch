@@ -78,7 +78,7 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 
 	w.MenubarEnd()
 
-	w.Row(25).Dynamic(1)
+	w.Row(15).Dynamic(1)
 
 	if ctx.noiseSupressorState == loaded {
 		w.LabelColored("NoiseTorch active", "RC", green)
