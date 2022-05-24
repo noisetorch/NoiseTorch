@@ -55,6 +55,7 @@ const (
 var green = color.RGBA{34, 187, 69, 255}
 var red = color.RGBA{255, 70, 70, 255}
 var orange = color.RGBA{255, 140, 0, 255}
+var lightBlue = color.RGBA{173, 216, 230, 255}
 
 var patreonImg *image.RGBA
 
@@ -94,7 +95,11 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 	}
 
 	if ctx.noiseSupressorState == loaded {
-		w.LabelColored("NoiseTorch active", "RC", green)
+		if (ctx.virtualDeviceInUse) {
+			w.LabelColored("NoiseTorch active", "RC", green)
+		} else {
+			w.LabelColored("NoiseTorch unconfigured", "RC", lightBlue)
+		}
 	} else if ctx.noiseSupressorState == unloaded {
 		w.LabelColored("NoiseTorch inactive", "RC", red)
 	} else if ctx.noiseSupressorState == inconsistent {
