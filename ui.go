@@ -1,12 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"image"
 	"image/color"
-	"image/draw"
-	"image/png"
 	"log"
 	"os"
 	"os/exec"
@@ -57,8 +53,6 @@ var red = color.RGBA{255, 70, 70, 255}
 var orange = color.RGBA{255, 140, 0, 255}
 var lightBlue = color.RGBA{173, 216, 230, 255}
 
-var patreonImg *image.RGBA
-
 func updatefn(ctx *ntcontext, w *nucular.Window) {
 	currView := ctx.views.Peek()
 	currView(ctx, w)
@@ -85,14 +79,7 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 
 	w.MenubarEnd()
 
-	w.Row(25).Dynamic(2)
-	if patreonImg == nil {
-		patreonImg = loadPatreonImg()
-	}
-
-	if imageButton(w, patreonImg) {
-		exec.Command("xdg-open", "https://patreon.com/lawl").Run()
-	}
+	w.Row(15).Dynamic(1)
 
 	if ctx.noiseSupressorState == loaded {
 		if (ctx.virtualDeviceInUse) {
@@ -194,45 +181,26 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 	}
 
 	if ctx.config.FilterOutput && w.TreePush(nucular.TreeTab, "Select Headphones", true) {
-		if ctx.config.GuiltTripped {
-			w.Row(15).Dynamic(1)
-			w.Label("Select an output device below:", "LC")
+		w.Row(15).Dynamic(1)
+		w.Label("Select an output device below:", "LC")
 
-			for i := range ctx.outputList {
-				el := &ctx.outputList[i]
+		for i := range ctx.outputList {
+			el := &ctx.outputList[i]
 
-				if el.isMonitor && !ctx.config.DisplayMonitorSources {
-					continue
-				}
-				w.Row(15).Static()
-				w.LayoutFitWidth(0, 0)
-				if w.CheckboxText("", &el.checked) {
-					ensureOnlyOneInputSelected(&ctx.outputList, el)
-				}
-
-				w.LayoutFitWidth(ctx.sourceListColdWidthIndex, 0)
-				if el.dynamicLatency {
-					w.Label(el.Name, "LC")
-				} else {
-					w.LabelColored("(incompatible?) "+el.Name, "LC", orange)
-				}
-
+			if el.isMonitor && !ctx.config.DisplayMonitorSources {
+				continue
 			}
-		} else {
-			w.Row(15).Dynamic(1)
-			w.Label("This feature is only for patrons.", "LC")
-			w.Row(15).Dynamic(1)
-			w.Label("You can still use it eitherway, but you are legally required to feel bad.", "LC")
-			w.Row(25).Dynamic(2)
-			if w.ButtonText("Become a patron") {
-				exec.Command("xdg-open", "https://patreon.com/lawl").Run()
-				ctx.config.GuiltTripped = true
-				go writeConfig(ctx.config)
+			w.Row(15).Static()
+			w.LayoutFitWidth(0, 0)
+			if w.CheckboxText("", &el.checked) {
+				ensureOnlyOneInputSelected(&ctx.outputList, el)
 			}
 
-			if w.ButtonText("Feel bad") {
-				ctx.config.GuiltTripped = true
-				go writeConfig(ctx.config)
+			w.LayoutFitWidth(ctx.sourceListColdWidthIndex, 0)
+			if el.dynamicLatency {
+				w.Label(el.Name, "LC")
+			} else {
+				w.LabelColored("(incompatible?) "+el.Name, "LC", orange)
 			}
 		}
 
@@ -272,7 +240,6 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 	if (!ctx.config.FilterInput || (ctx.config.FilterInput && inpOk)) &&
 		(!ctx.config.FilterOutput || (ctx.config.FilterOutput && outOk)) &&
 		(ctx.config.FilterInput || ctx.config.FilterOutput) &&
-		((ctx.config.FilterOutput && ctx.config.GuiltTripped) || !ctx.config.FilterOutput) &&
 		ctx.noiseSupressorState != inconsistent {
 		if w.ButtonText(txt) {
 			ctx.reloadRequired = false
@@ -510,26 +477,4 @@ func resetUI(ctx *ntcontext) {
 			fmt.Sprintf("Your PipeWire version is too old. Detected %d.%d.%d. Require at least 0.3.28.",
 				ctx.serverInfo.major, ctx.serverInfo.minor, ctx.serverInfo.patch)))
 	}
-}
-
-func loadPatreonImg() *image.RGBA {
-	var pat *image.RGBA
-	img, _ := png.Decode(bytes.NewReader(patreonPNG))
-	pat = image.NewRGBA(img.Bounds())
-	draw.Draw(pat, img.Bounds(), img, image.Point{}, draw.Src)
-	return pat
-}
-
-func imageButton(w *nucular.Window, img *image.RGBA) bool {
-	style := w.Master().Style()
-	origButtonStyle := style.Button
-	style.Button.Border = 0
-	style.Button.Normal.Data.Color = style.NormalWindow.Background
-	style.Button.Hover.Data.Color = style.NormalWindow.Background
-	style.Button.Active.Data.Color = style.NormalWindow.Background
-
-	defer (func() { style.Button = origButtonStyle })()
-
-	return w.Button(label.I(patreonImg), false)
-
 }
