@@ -1,5 +1,5 @@
-UPDATE_URL=https://noisetorch.epicgamer.org
-UPDATE_PUBKEY=3mL+rBi4yBZ1wGimQ/oSQCjxELzgTh+673H4JdzQBOk=
+UPDATE_URL=
+UPDATE_PUBKEY=Md2rdsS+b6W0trgcqa5lAWP978Zj0sFmubJ252OPKwc=
 VERSION := $(shell git describe --tags)
 
 dev: rnnoise
@@ -18,14 +18,12 @@ release: rnnoise
 
 	mkdir -p tmp/.local/bin/
 	go generate
-	CGO_ENABLED=0 GOOS=linux go build -trimpath -tags release -a -ldflags '-s -w -extldflags "-static" -X main.version=${VERSION} -X main.distribution=official -X main.updateURL=${UPDATE_URL} -X main.publicKeyString=${UPDATE_PUBKEY}' .
-	upx noisetorch
+	CGO_ENABLED=0 GOOS=linux go build -trimpath -tags release -a -ldflags '-s -w -extldflags "-static" -X main.version=${VERSION} -X main.distribution=official' .
 	mv noisetorch tmp/.local/bin/
 	cd tmp/; \
-	tar cvzf ../bin/NoiseTorch_x64.tgz .
+	tar cvzf ../bin/NoiseTorch_x64_${VERSION}.tgz .
 	rm -rf tmp/
-	go run scripts/signer.go -s
-	git describe --tags > bin/version.txt
+	go run scripts/signer.go -s -f bin/NoiseTorch_x64_${VERSION}.tgz
 rnnoise:
 	git submodule update --init --recursive
 	$(MAKE) -C c/ladspa

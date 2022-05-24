@@ -25,7 +25,12 @@ func main() { //nolint
 	var publicKeyString string
 	flag.StringVar(&publicKeyString, "k", "", "Public key to verify against (runs verifier if set)")
 
+	var artifactFile string
+	flag.StringVar(&artifactFile, "f", "", "Artifact file name and path that should be signed")
+
 	flag.Parse()
+
+	signatureFile := artifactFile + ".sig"
 
 	if doGenerate {
 		generateKeypair()
@@ -38,10 +43,10 @@ func main() { //nolint
 		os.Exit(0)
 	}
 
-	if doSign {
+	if doSign && artifactFile != "" {
 		_, priv := loadKeys()
 
-		file, err := ioutil.ReadFile("bin/NoiseTorch_x64.tgz")
+		file, err := ioutil.ReadFile(artifactFile)
 		if err != nil {
 			panic(err)
 		}
@@ -50,24 +55,26 @@ func main() { //nolint
 		if err != nil {
 			panic(err)
 		}
-		if err := ioutil.WriteFile("bin/NoiseTorch_x64.tgz.sig", sig, 0644); err != nil {
+
+		err = ioutil.WriteFile(signatureFile, sig, 0640)
+		if err != nil {
 			panic(err)
 		}
 		os.Exit(0)
 	}
 
-	if publicKeyString != "" {
+	if publicKeyString != "" && artifactFile != "" && signatureFile != "" {
 		pub, err := base64.StdEncoding.DecodeString(publicKeyString)
 		if err != nil {
 			panic(err)
 		}
 
-		file, err := ioutil.ReadFile("bin/NoiseTorch_x64.tgz")
+		file, err := ioutil.ReadFile(artifactFile)
 		if err != nil {
 			panic(err)
 		}
 
-		sig, err := ioutil.ReadFile("bin/NoiseTorch_x64.tgz.sig")
+		sig, err := ioutil.ReadFile(signatureFile)
 		if err != nil {
 			panic(err)
 		}

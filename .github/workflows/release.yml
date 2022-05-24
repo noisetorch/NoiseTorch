@@ -1,0 +1,34 @@
+---
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+      - uses: actions/checkout@v3
+      - name: Build release artifact
+        run: |
+          mkdir -p ~/.config/noisetorch
+          echo '${{ secrets.NOISETORCH_SIGNER_PRIVKEY_BASE64 }}' | base64 -d > ~/.config/noisetorch/private.key
+          make release
+          rm -rf ~/.config/noisetorch/
+          for f in bin/NoiseTorch_x64_*.tgz ; do md5sum ${f} | tee ${f}.md5sum ; sha512sum ${f} | tee ${f}.sha512sum ; done
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ${{ github.workspace }}/bin/NoiseTorch_x64_*.tgz
+            ${{ github.workspace }}/bin/NoiseTorch_x64_*.tgz.sig
+            ${{ github.workspace }}/bin/NoiseTorch_x64_*.tgz.md5sum
+            ${{ github.workspace }}/bin/NoiseTorch_x64_*.tgz.sha512sum
