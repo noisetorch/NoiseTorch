@@ -1,7 +1,10 @@
 ---
-name: build dev artifact
+name: Build Dev Artifact
 
 on:
+  push:
+    branches:
+      - 'master'
   pull_request:
 
 permissions:
