@@ -319,7 +319,7 @@ func inputSelection(ctx *ntcontext) (device, bool) {
 	}
 
 	for _, in := range ctx.inputList {
-		if in.checked && !(in.isMonitor && !ctx.config.DisplayMonitorSources) {
+		if in.checked && (!in.isMonitor || ctx.config.DisplayMonitorSources) {
 			return in, true
 		}
 	}
