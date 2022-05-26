@@ -82,7 +82,7 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 	w.Row(15).Dynamic(1)
 
 	if ctx.noiseSupressorState == loaded {
-		if (ctx.virtualDeviceInUse) {
+		if ctx.virtualDeviceInUse {
 			w.LabelColored("NoiseTorch active", "RC", green)
 		} else {
 			w.LabelColored("NoiseTorch unconfigured", "RC", lightBlue)
@@ -319,7 +319,7 @@ func inputSelection(ctx *ntcontext) (device, bool) {
 	}
 
 	for _, in := range ctx.inputList {
-		if in.checked {
+		if in.checked && (!in.isMonitor || ctx.config.DisplayMonitorSources) {
 			return in, true
 		}
 	}
