@@ -88,7 +88,13 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 			w.LabelColored("NoiseTorch unconfigured", "RC", lightBlue)
 		}
 	} else if ctx.noiseSupressorState == unloaded {
-		w.LabelColored("NoiseTorch inactive", "RC", red)
+		_, inpOk := inputSelection(ctx)
+		_, outOk := outputSelection(ctx)
+		if validConfiguration(ctx, inpOk, outOk) {
+			w.LabelColored("NoiseTorch inactive", "RC", red)
+		} else {
+			w.LabelColored("NoiseTorch unconfigured", "RC", lightBlue)
+		}
 	} else if ctx.noiseSupressorState == inconsistent {
 		w.LabelColored("Inconsistent state, please unload first.", "RC", orange)
 	}
@@ -237,10 +243,7 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 
 	inp, inpOk := inputSelection(ctx)
 	out, outOk := outputSelection(ctx)
-	if (!ctx.config.FilterInput || (ctx.config.FilterInput && inpOk)) &&
-		(!ctx.config.FilterOutput || (ctx.config.FilterOutput && outOk)) &&
-		(ctx.config.FilterInput || ctx.config.FilterOutput) &&
-		ctx.noiseSupressorState != inconsistent {
+	if validConfiguration(ctx, inpOk, outOk) {
 		if w.ButtonText(txt) {
 			ctx.reloadRequired = false
 
@@ -337,6 +340,13 @@ func outputSelection(ctx *ntcontext) (device, bool) {
 		}
 	}
 	return device{}, false
+}
+
+func validConfiguration(ctx *ntcontext, inpOk bool, outOk bool) (bool) {
+	return (!ctx.config.FilterInput || (ctx.config.FilterInput && inpOk)) &&
+		(!ctx.config.FilterOutput || (ctx.config.FilterOutput && outOk)) &&
+		(ctx.config.FilterInput || ctx.config.FilterOutput) &&
+		ctx.noiseSupressorState != inconsistent
 }
 
 func loadingView(ctx *ntcontext, w *nucular.Window) {
