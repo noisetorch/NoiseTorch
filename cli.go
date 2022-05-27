@@ -5,18 +5,20 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/blang/semver/v4"
 	"github.com/lawl/pulseaudio"
 )
 
 type CLIOpts struct {
-	doLog      bool
-	setcap     bool
-	sinkName   string
-	unload     bool
-	loadInput  bool
-	loadOutput bool
-	threshold  int
-	list       bool
+	doLog       bool
+	setcap      bool
+	sinkName    string
+	unload      bool
+	loadInput   bool
+	loadOutput  bool
+	threshold   int
+	list        bool
+	checkUpdate bool
 }
 
 func parseCLIOpts() CLIOpts {
@@ -29,12 +31,24 @@ func parseCLIOpts() CLIOpts {
 	flag.BoolVar(&opt.unload, "u", false, "Unload supressor")
 	flag.IntVar(&opt.threshold, "t", -1, "Voice activation threshold")
 	flag.BoolVar(&opt.list, "l", false, "List available PulseAudio devices")
+	flag.BoolVar(&opt.checkUpdate, "c", false, "Check if update is available (but do not update)")
 	flag.Parse()
 
 	return opt
 }
 
 func doCLI(opt CLIOpts, config *config, librnnoise string) {
+	if opt.checkUpdate {
+		latestRelease := getLatestRelease()
+		latestVersion, _ := semver.Make(latestRelease)
+		currentVersion, _ := semver.Make(version)
+		if currentVersion.Compare(latestVersion) == -1 {
+			fmt.Println("New version available: " + latestRelease)
+		} else {
+			fmt.Println("No update available")
+		}
+		cleanupExit(librnnoise, 0)
+	}
 
 	if opt.setcap {
 		err := makeBinarySetcapped()
@@ -150,6 +164,7 @@ func doCLI(opt CLIOpts, config *config, librnnoise string) {
 		cleanupExit(librnnoise, 1)
 
 	}
+
 }
 
 func cleanupExit(librnnoise string, exitCode int) {
