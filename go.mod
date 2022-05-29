@@ -8,6 +8,7 @@ require (
 	github.com/BurntSushi/xgb v0.0.0-20210121224620-deaf085860bc // indirect
 	github.com/BurntSushi/xgbutil v0.0.0-20190907113008-ad855c713046
 	github.com/aarzilli/nucular v0.0.0-20210408133902-d3dd7b05a80a
+	github.com/blang/semver/v4 v4.0.0
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20211213063430-748e38ca8aec // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
