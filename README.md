@@ -91,7 +91,7 @@ Output filtering currently introduces something on the order of ~100ms with puls
 Install the Go compiler from [golang.org](https://golang.org/). And make sure you have a working C++ compiler.
 
 ```shell
- git clone https://github.com/lawl/NoiseTorch # Clone the repository
+ git clone https://github.com/noisetorch/NoiseTorch # Clone the repository
  cd NoiseTorch # cd into the cloned repository
  make # build it
  ```
