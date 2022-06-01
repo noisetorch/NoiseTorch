@@ -2,7 +2,20 @@
 <h3 align="center"> Noise Supression Application for PulseAudio or Pipewire</h3>
 <p align="center"><img src="https://raw.githubusercontent.com/noisetorch/NoiseTorch/master/assets/icon/noisetorch.png" width="100" height="100"></p> 
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![Last Release](https://img.shields.io/github/v/release/noisetorch/NoiseTorch?label=latest&style=flat-square)](https://github.com/noisetorch/NoiseTorch/releases)
+
+<div align="center">
+    
+  <a href="">[![Licence][licence]][licence-url]</a>
+  <a href="">[![Latest][version]][version-url]</a>
+    
+</div>
+
+[licence]: https://img.shields.io/badge/License-GPLv3-blue.svg
+[licence-url]: https://www.gnu.org/licenses/gpl-3.0
+[version]: https://img.shields.io/github/v/release/noisetorch/NoiseTorch?label=Latest&style=flat-square
+[version-url]: https://github.com/noisetorch/NoiseTorch/releases
+[stars-shield]: https://img.shields.io/github/stars/othneildrew/Best-README-Template.svg
+[stars-url]: https://example.com
 
 NoiseTorch is an easy to use open source application for Linux with PulseAudio or PipeWire. It creates a virtual microphone that suppresses noise, in any application. Use whichever conferencing or VOIP application you like and simply select the NoiseTorch Virtual Microphone as input to torch the sound of your mechanical keyboard, computer fans, trains and the likes.
 
@@ -44,7 +57,7 @@ Linux For Everyone has a good demo video [here](https://www.youtube.com/watch?v=
 
 Unpack the `tgz` file, into your home directory.
 
-    tar -C $HOME -xzf NoiseTorch_x64.tgz
+    tar -C $HOME -xzf NoiseTorch_x64_v0.12.0.tgz
 
 This will unpack the application, icon and desktop entry to the correct place.  
 Depending on your desktop environment you may need to wait for it to rescan for applications, or tell it to do a refresh now.
