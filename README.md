@@ -2,12 +2,25 @@
 <h3 align="center"> Noise Supression Application for PulseAudio or Pipewire</h3>
 <p align="center"><img src="https://raw.githubusercontent.com/noisetorch/NoiseTorch/master/assets/icon/noisetorch.png" width="100" height="100"></p> 
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![Last Release](https://img.shields.io/github/v/release/noisetorch/NoiseTorch?label=latest&style=flat-square)](https://github.com/noisetorch/NoiseTorch/releases) 
-
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![Last Release](https://img.shields.io/github/v/release/noisetorch/NoiseTorch?label=latest&style=flat-square)](https://github.com/noisetorch/NoiseTorch/releases)
 
 NoiseTorch is an easy to use open source application for Linux with PulseAudio or PipeWire. It creates a virtual microphone that suppresses noise, in any application. Use whichever conferencing or VOIP application you like and simply select the NoiseTorch Virtual Microphone as input to torch the sound of your mechanical keyboard, computer fans, trains and the likes.
 
 Don't forget to leave a star ⭐ if this sounds useful to you! 
+
+## Regarding the recent security incident
+
+Due to a suspected security breach of the update server and code repository, there's
+ been a concerted effort by the NoiseTorch community to ensure the source code and
+ binaries are free from malicious code.
+ 
+ > No malicious code has been found.
+ 
+ You can read more about the audit that was done [here](https://github.com/noisetorch/NoiseTorch/discussions/275)
+ and [here](https://github.com/noisetorch/NoiseTorch/discussions/264).
+ Updates will now be retrieved from the project's releases page to avoid any risk
+ of this reoccurring. We thank everyone for their trust and the love that they've
+ shown towards the project in this unpleasant time. 
 
 ## Screenshot
 
