@@ -12,7 +12,7 @@
 
 [licence]: https://img.shields.io/badge/License-GPLv3-blue.svg
 [licence-url]: https://www.gnu.org/licenses/gpl-3.0
-[version]: https://img.shields.io/github/v/release/noisetorch/NoiseTorch?label=Latest&style=flat-square
+[version]: https://img.shields.io/github/v/release/noisetorch/NoiseTorch?label=Latest&style=flat
 [version-url]: https://github.com/noisetorch/NoiseTorch/releases
 [stars-shield]: https://img.shields.io/github/stars/othneildrew/Best-README-Template.svg
 [stars-url]: https://example.com
