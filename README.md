@@ -15,7 +15,7 @@
 [version]: https://img.shields.io/github/v/release/noisetorch/NoiseTorch?label=Latest&style=flat
 [version-url]: https://github.com/noisetorch/NoiseTorch/releases
 [stars-shield]: https://img.shields.io/github/stars/othneildrew/Best-README-Template.svg
-[stars-url]: https://example.com
+[stars-url]: https://github.com/noisetorch/NoiseTorch/stargazers/
 
 NoiseTorch is an easy to use open source application for Linux with PulseAudio or PipeWire. It creates a virtual microphone that suppresses noise, in any application. Use whichever conferencing or VOIP application you like and simply select the NoiseTorch Virtual Microphone as input to torch the sound of your mechanical keyboard, computer fans, trains and the likes.
 
