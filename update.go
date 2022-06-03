@@ -74,12 +74,12 @@ type updateui struct {
 	updatingText  string
 }
 
-var latestRelease string = getLatestRelease()
+var latestRelease, releaseError = getLatestRelease()
 var latestVersion, _ = semver.Make(latestRelease)
 var currentVersion, _ = semver.Make(version)
 
 func updateable() bool {
-	return updateURL != "" && publicKeyString != ""
+	return updateURL != "" && publicKeyString != "" && releaseError == nil
 }
 
 func updateCheck(ctx *ntcontext) {
@@ -159,7 +159,7 @@ func publickey() []byte {
 	return pub
 }
 
-func getLatestRelease() string {
+func getLatestRelease() (string, error) {
 	url := "https://api.github.com/repos/noisetorch/NoiseTorch/releases?per_page=1&page=1"
 
 	httpclient := http.Client{
@@ -176,6 +176,8 @@ func getLatestRelease() string {
 	res, err := httpclient.Do(req)
 	if err != nil {
 		log.Println("Couldn't fetch latest release", err)
+		// Return an empty string when the latest release is unknown
+		return "", err
 	}
 
 	if res.Body != nil {
@@ -196,5 +198,5 @@ func getLatestRelease() string {
 		log.Println("Reading JSON for latest_release failed", err)
 	}
 
-	return latest_release[0].TagName
+	return latest_release[0].TagName, nil
 }
