@@ -169,6 +169,7 @@ func getLatestRelease() (string, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		log.Println("Could not create http requester", err)
+		return "", err
 	}
 
 	req.Header.Set("User-Agent", "NoiseTorch/"+version)
@@ -196,6 +197,8 @@ func getLatestRelease() (string, error) {
 	err = json.Unmarshal(respBytes, &latest_release)
 	if err != nil {
 		log.Println("Reading JSON for latest_release failed", err)
+		// Return an empty string when the JSON is something unexpected, for example: when rate limited
+		return "", err
 	}
 
 	return latest_release[0].TagName, nil

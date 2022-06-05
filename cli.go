@@ -49,7 +49,7 @@ func doCLI(opt CLIOpts, config *config, librnnoise string) {
 				fmt.Println("No update available")
 			}
 		} else {
-			fmt.Println("Cannot look for updates. Check your internet connection.")
+			fmt.Println("Cannot look for updates right now.")
 		}
 		cleanupExit(librnnoise, 0)
 	}
