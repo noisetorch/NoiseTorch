@@ -120,7 +120,15 @@ Install the Go compiler from [golang.org](https://golang.org/). And make sure yo
  git clone https://github.com/noisetorch/NoiseTorch # Clone the repository
  cd NoiseTorch # cd into the cloned repository
  make # build it
- ```
+```
+
+To install it:
+
+```shell
+cp ./bin/noisetorch ~/.local/bin
+cp ./assets/noisetorch.desktop ~/.local/share/applications
+cp ./assets/icon/noisetorch.png ~/.local/share/icons/hicolor/256x256/apps
+```
 
 ## Special thanks to
 
