@@ -39,13 +39,17 @@ func parseCLIOpts() CLIOpts {
 
 func doCLI(opt CLIOpts, config *config, librnnoise string) {
 	if opt.checkUpdate {
-		latestRelease := getLatestRelease()
-		latestVersion, _ := semver.Make(latestRelease)
-		currentVersion, _ := semver.Make(version)
-		if currentVersion.Compare(latestVersion) == -1 {
-			fmt.Println("New version available: " + latestRelease)
+		latestRelease, err := getLatestRelease()
+		if err == nil {
+			latestVersion, _ := semver.Make(latestRelease)
+			currentVersion, _ := semver.Make(version)
+			if currentVersion.Compare(latestVersion) == -1 {
+				fmt.Println("New version available: " + latestRelease)
+			} else {
+				fmt.Println("No update available")
+			}
 		} else {
-			fmt.Println("No update available")
+			fmt.Println("Cannot look for updates right now.")
 		}
 		cleanupExit(librnnoise, 0)
 	}
