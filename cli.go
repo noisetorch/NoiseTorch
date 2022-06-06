@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/blang/semver/v4"
-	"github.com/noisetorch/pulseaudio"
+	"github.com/lawl/pulseaudio"
 )
 
 type CLIOpts struct {
