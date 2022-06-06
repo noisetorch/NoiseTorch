@@ -12,7 +12,7 @@ require (
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20211213063430-748e38ca8aec // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
-	github.com/lawl/pulseaudio v0.0.0-20210928141934-ed754c0c6618
+	github.com/noisetorch/pulseaudio v0.0.0-20220603053345-9303200c3861
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	golang.org/x/exp v0.0.0-20220104160115-025e73f80486 // indirect

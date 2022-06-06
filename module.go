@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/lawl/pulseaudio"
+	"github.com/noisetorch/pulseaudio"
 )
 
 const (
