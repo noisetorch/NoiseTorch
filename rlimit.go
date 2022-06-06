@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/noisetorch/pulseaudio"
+	"github.com/lawl/pulseaudio"
 )
 
 const rlimitRTTime = 15
