@@ -28,6 +28,7 @@ If applicable, add the link to a pastebin with the output of `noisetorch -log` a
 
 **Desktop (please complete the following information):**
  - Distribution [e.g. Ubuntu 22.04, Arch]: 
+ - DE [e.g. Plasma 5.24.5, GNOME 42.0]: 
  - Pulseaudio/Pipewire Version: 
  - NoiseTorch Version [e.g. v0.12.0]:
 
