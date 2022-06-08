@@ -15,7 +15,7 @@ import (
 	"github.com/blang/semver/v4"
 )
 
-type github_releases []struct {
+type github_release struct {
 	Assets    []interface{} `json:"assets"`
 	AssetsURL string        `json:"assets_url"`
 	Author    struct {
@@ -92,7 +92,6 @@ func updateCheck(ctx *ntcontext) {
 	if currentVersion.Compare(latestVersion) == -1 {
 		ctx.update.available = true
 	}
-
 }
 
 func update(ctx *ntcontext) {
@@ -147,7 +146,6 @@ func fetchFile(file string) ([]byte, error) {
 		return nil, err
 	}
 	return body, nil
-
 }
 
 func publickey() []byte {
@@ -160,7 +158,7 @@ func publickey() []byte {
 }
 
 func getLatestRelease() (string, error) {
-	url := "https://api.github.com/repos/noisetorch/NoiseTorch/releases?per_page=1&page=1"
+	url := "https://api.github.com/repos/noisetorch/NoiseTorch/releases/latest"
 
 	httpclient := http.Client{
 		Timeout: time.Second * 2, // Timeout after 2 seconds
@@ -190,16 +188,14 @@ func getLatestRelease() (string, error) {
 		log.Fatal(readErr)
 	}
 
-	respBytes := []byte(body)
+	var latest_release github_release
 
-	var latest_release github_releases
-
-	err = json.Unmarshal(respBytes, &latest_release)
+	err = json.Unmarshal(body, &latest_release)
 	if err != nil {
 		log.Println("Reading JSON for latest_release failed", err)
 		// Return an empty string when the JSON is something unexpected, for example: when rate limited
 		return "", err
 	}
 
-	return latest_release[0].TagName, nil
+	return latest_release.TagName, nil
 }

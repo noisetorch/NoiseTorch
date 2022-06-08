@@ -16,7 +16,7 @@ import (
 	"github.com/BurntSushi/xgbutil/icccm"
 	"github.com/aarzilli/nucular/font"
 
-	"github.com/lawl/pulseaudio"
+	"github.com/noisetorch/pulseaudio"
 
 	_ "embed"
 
