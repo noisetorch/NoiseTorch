@@ -11,7 +11,7 @@ import (
 
 	"github.com/aarzilli/nucular"
 	"github.com/aarzilli/nucular/label"
-	"github.com/lawl/pulseaudio"
+	"github.com/noisetorch/pulseaudio"
 )
 
 type ntcontext struct {
