@@ -75,7 +75,7 @@ func writeConfig(conf *config) {
 	if err := toml.NewEncoder(&buffer).Encode(&conf); err != nil {
 		log.Fatalf("Couldn't write config file: %v\n", err)
 	}
-	ioutil.WriteFile(f, []byte(buffer.String()), 0644)
+	ioutil.WriteFile(f, buffer.Bytes(), 0644)
 }
 
 func configDir() string {
