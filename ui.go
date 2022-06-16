@@ -306,7 +306,7 @@ func uiReloadNoisetorch(ctx *ntcontext, inp, out device) {
 }
 
 func ensureOnlyOneInputSelected(inps *[]device, current *device) {
-	if current.checked != true {
+	if !current.checked {
 		return
 	}
 	for i := range *inps {
@@ -342,7 +342,7 @@ func outputSelection(ctx *ntcontext) (device, bool) {
 	return device{}, false
 }
 
-func validConfiguration(ctx *ntcontext, inpOk bool, outOk bool) (bool) {
+func validConfiguration(ctx *ntcontext, inpOk bool, outOk bool) bool {
 	return (!ctx.config.FilterInput || (ctx.config.FilterInput && inpOk)) &&
 		(!ctx.config.FilterOutput || (ctx.config.FilterOutput && outOk)) &&
 		(ctx.config.FilterInput || ctx.config.FilterOutput) &&
