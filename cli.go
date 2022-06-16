@@ -41,8 +41,8 @@ func doCLI(opt CLIOpts, config *config, librnnoise string) {
 	if opt.checkUpdate {
 		latestRelease, err := getLatestRelease()
 		if err == nil {
-			latestVersion, _ := semver.Make(latestRelease)
-			currentVersion, _ := semver.Make(version)
+			latestVersion, _ := semver.Make(latestRelease[1:])
+			currentVersion, _ := semver.Make(version[1:])
 			if currentVersion.Compare(latestVersion) == -1 {
 				fmt.Println("New version available: " + latestRelease)
 			} else {

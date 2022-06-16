@@ -75,8 +75,8 @@ type updateui struct {
 }
 
 var latestRelease, releaseError = getLatestRelease()
-var latestVersion, _ = semver.Make(latestRelease)
-var currentVersion, _ = semver.Make(version)
+var latestVersion, _ = semver.Make(latestRelease[1:])
+var currentVersion, _ = semver.Make(version[1:])
 
 func updateable() bool {
 	return updateURL != "" && publicKeyString != "" && releaseError == nil
