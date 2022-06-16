@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"sync"
+	"log"
 
 	"github.com/aarzilli/nucular"
 )
@@ -10,41 +9,34 @@ import (
 type ViewFunc func(ctx *ntcontext, w *nucular.Window)
 
 type ViewStack struct {
-	stack [100]ViewFunc
-	sp    int8
-	mu    sync.Mutex
+	items []ViewFunc
 }
 
 func NewViewStack() *ViewStack {
-	return &ViewStack{sp: -1}
+	return &ViewStack{make([]ViewFunc, 0)}
 }
 
 func (v *ViewStack) Push(f ViewFunc) {
-	v.mu.Lock()
-	defer v.mu.Unlock()
-
-	v.stack[v.sp+1] = f
-	v.sp++
+	v.items = append(v.items, f)
 }
 
-func (v *ViewStack) Pop() (ViewFunc, error) {
-	v.mu.Lock()
-
-	if v.sp <= 0 {
-		return nil, fmt.Errorf("Cannot pop root element from ViewStack")
+func (v *ViewStack) Pop() ViewFunc {
+	if len(v.items) == 0 {
+		log.Fatal("Tried to Pop an empty ViewStack")
 	}
 
-	defer (func() {
-		v.stack[v.sp] = nil
-		v.sp--
-		v.mu.Unlock()
-	})()
+	item := v.items[len(v.items)-1]
 
-	return v.stack[v.sp], nil
+	// The last item gets removed
+	v.items = v.items[:len(v.items)-1]
+
+	return item
 }
 
 func (v *ViewStack) Peek() ViewFunc {
-	v.mu.Lock()
-	defer v.mu.Unlock()
-	return v.stack[v.sp]
+	if len(v.items) == 0 {
+		log.Fatal("Tried to Peek an empty ViewStack")
+	}
+
+	return v.items[len(v.items)-1]
 }
