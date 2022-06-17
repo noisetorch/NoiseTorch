@@ -57,7 +57,7 @@ Linux For Everyone has a good demo video [here](https://www.youtube.com/watch?v=
 
 Unpack the `tgz` file, into your home directory.
 
-    tar -C $HOME -xzf NoiseTorch_x64_v0.12.2.tgz
+    tar -C $HOME -h -xzf NoiseTorch_x64_v0.12.2.tgz
 
 This will unpack the application, icon and desktop entry to the correct place.  
 Depending on your desktop environment you may need to wait for it to rescan for applications, or tell it to do a refresh now.
