@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/blang/semver/v4"
@@ -75,8 +76,8 @@ type updateui struct {
 }
 
 var latestRelease, releaseError = getLatestRelease()
-var latestVersion, _ = semver.Make(latestRelease[1:])
-var currentVersion, _ = semver.Make(version[1:])
+var latestVersion, _ = semver.Make(strings.TrimLeft(latestRelease, "v"))
+var currentVersion, _ = semver.Make(strings.TrimLeft(version, "v"))
 
 func updateable() bool {
 	return updateURL != "" && publicKeyString != "" && releaseError == nil
