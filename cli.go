@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/blang/semver/v4"
 	"github.com/noisetorch/pulseaudio"
@@ -41,8 +42,8 @@ func doCLI(opt CLIOpts, config *config, librnnoise string) {
 	if opt.checkUpdate {
 		latestRelease, err := getLatestRelease()
 		if err == nil {
-			latestVersion, _ := semver.Make(latestRelease)
-			currentVersion, _ := semver.Make(version)
+			latestVersion, _ := semver.Make(strings.TrimLeft(latestRelease, "v"))
+			currentVersion, _ := semver.Make(strings.TrimLeft(version, "v"))
 			if currentVersion.Compare(latestVersion) == -1 {
 				fmt.Println("New version available: " + latestRelease)
 			} else {
