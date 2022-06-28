@@ -45,6 +45,7 @@ var version = "unknown"     // ditto
 var distribution = "custom" // ditto
 var updateURL = ""          // ditto
 var publicKeyString = ""    // ditto
+var websiteURL = ""         // ditto
 
 
 func main() {

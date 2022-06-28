@@ -69,8 +69,8 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 			ctx.views.Push(licenseView)
 		}
 		w.Row(10).Dynamic(1)
-		if w.MenuItem(label.T("Source code")) {
-			exec.Command("xdg-open", "https://github.com/noisetorch/NoiseTorch").Run()
+		if w.MenuItem(label.T("Website")) {
+			exec.Command("xdg-open", websiteURL).Run()
 		}
 		if w.MenuItem(label.T("Version")) {
 			ctx.views.Push(versionView)
