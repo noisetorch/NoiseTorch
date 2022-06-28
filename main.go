@@ -38,14 +38,20 @@ type device struct {
 	rate           uint32
 }
 
-const appName = "NoiseTorch"
+var appName = "NoiseTorch"
 
-var version = "unknown"     // will be changed by build
+var nameSuffix = ""         // will be changed by build
+var version = "unknown"     // ditto
 var distribution = "custom" // ditto
 var updateURL = ""          // ditto
 var publicKeyString = ""    // ditto
 
+
 func main() {
+	if (nameSuffix != "") {
+		appName += strings.Replace(nameSuffix, "_", " ", -1)
+	}
+
 	opt := parseCLIOpts()
 
 	if opt.doLog {
