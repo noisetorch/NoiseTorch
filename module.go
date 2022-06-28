@@ -40,7 +40,7 @@ func supressorState(ctx *ntcontext) (int, bool) {
 	var virtualDeviceInUse bool = false
 	if ctx.config.FilterInput {
 		if ctx.serverInfo.servertype == servertype_pipewire {
-			module, ladspasource, err := findModule(c, "module-ladspa-source", "source_name='NoiseTorch Microphone")
+			module, ladspasource, err := findModule(c, "module-ladspa-source", "source_name='Filtered Microphone")
 			if err != nil {
 				log.Printf("Couldn't fetch module list to check for module-ladspa-source: %v\n", err)
 			}
@@ -79,7 +79,7 @@ func supressorState(ctx *ntcontext) (int, bool) {
 
 	if ctx.config.FilterOutput {
 		if ctx.serverInfo.servertype == servertype_pipewire {
-			module, ladspasink, err := findModule(c, "module-ladspa-sink", "sink_name='NoiseTorch Headphones'")
+			module, ladspasink, err := findModule(c, "module-ladspa-sink", "sink_name='Filtered Headphones'")
 			if err != nil {
 				log.Printf("Couldn't fetch module list to check for module-ladspa-sink: %v\n", err)
 			}
@@ -195,9 +195,9 @@ func loadModule(ctx *ntcontext, module, args string) (uint32, error) {
 func loadPipeWireInput(ctx *ntcontext, inp *device) error {
 	log.Printf("Loading supressor for pipewire\n")
 	idx, err := loadModule(ctx, "module-ladspa-source",
-		fmt.Sprintf("source_name='NoiseTorch Microphone for %s' master=%s "+
+		fmt.Sprintf("source_name='Filtered Microphone for %s' master=%s "+
 			"rate=48000 channels=1 "+
-			"label=noisetorch plugin=%s control=%d", inp.Name, inp.ID, ctx.librnnoise, ctx.config.Threshold))
+			"label=changemelater plugin=%s control=%d", inp.Name, inp.ID, ctx.librnnoise, ctx.config.Threshold))
 
 	if err != nil {
 		return err
@@ -209,9 +209,9 @@ func loadPipeWireInput(ctx *ntcontext, inp *device) error {
 func loadPipeWireOutput(ctx *ntcontext, out *device) error {
 	log.Printf("Loading supressor for pipewire\n")
 	idx, err := loadModule(ctx, "module-ladspa-sink",
-		fmt.Sprintf("sink_name='NoiseTorch Headphones' master=%s "+
+		fmt.Sprintf("sink_name='Filtered Headphones' master=%s "+
 			"rate=48000 channels=1 "+
-			"label=noisetorch plugin=%s control=%d", out.ID, ctx.librnnoise, ctx.config.Threshold))
+			"label=changemelater plugin=%s control=%d", out.ID, ctx.librnnoise, ctx.config.Threshold))
 
 	if err != nil {
 		return err
@@ -230,7 +230,7 @@ func loadPulseInput(ctx *ntcontext, inp *device) error {
 
 	idx, err = loadModule(ctx, "module-ladspa-sink",
 		fmt.Sprintf("sink_name=nui_mic_raw_in sink_master=nui_mic_denoised_out "+
-			"label=noisetorch plugin=%s control=%d", ctx.librnnoise, ctx.config.Threshold))
+			"label=changemelater plugin=%s control=%d", ctx.librnnoise, ctx.config.Threshold))
 	if err != nil {
 		return err
 	}
@@ -253,7 +253,7 @@ func loadPulseInput(ctx *ntcontext, inp *device) error {
 	}
 
 	idx, err = loadModule(ctx, "module-remap-source", fmt.Sprintf(`master=nui_mic_denoised_out.monitor `+
-		`source_name=nui_mic_remap source_properties="device.description='NoiseTorch Microphone for %s'"`, inp.Name))
+		`source_name=nui_mic_remap source_properties="device.description='Filtered Microphone for %s'"`, inp.Name))
 	if err != nil {
 		return err
 	}
@@ -267,13 +267,13 @@ func loadPulseOutput(ctx *ntcontext, out *device) error {
 		return err
 	}
 
-	_, err = loadModule(ctx, "module-null-sink", `sink_name=nui_out_in_sink sink_properties="device.description='NoiseTorch Headphones'"`)
+	_, err = loadModule(ctx, "module-null-sink", `sink_name=nui_out_in_sink sink_properties="device.description='Filtered Headphones'"`)
 	if err != nil {
 		return err
 	}
 
 	_, err = loadModule(ctx, "module-ladspa-sink", fmt.Sprintf(`sink_name=nui_out_ladspa sink_master=nui_out_out_sink `+
-		`label=noisetorch channels=1 plugin=%s control=%d rate=%d`,
+		`label=changemelater channels=1 plugin=%s control=%d rate=%d`,
 		ctx.librnnoise, ctx.config.Threshold, 48000))
 	if err != nil {
 		return err
@@ -306,7 +306,7 @@ func unloadSupressorPipeWire(ctx *ntcontext) error {
 
 	log.Printf("Searching for module-ladspa-source\n")
 	c := ctx.paClient
-	m, found, err := findModule(c, "module-ladspa-source", "source_name='NoiseTorch Microphone")
+	m, found, err := findModule(c, "module-ladspa-source", "source_name='Filtered Microphone")
 	if err != nil {
 		return err
 	}
@@ -316,7 +316,7 @@ func unloadSupressorPipeWire(ctx *ntcontext) error {
 	}
 
 	log.Printf("Searching for module-ladspa-sink\n")
-	m, found, err = findModule(c, "module-ladspa-sink", "sink_name='NoiseTorch Headphones'")
+	m, found, err = findModule(c, "module-ladspa-sink", "sink_name='Filtered Headphones'")
 	if err != nil {
 		return err
 	}

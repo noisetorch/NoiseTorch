@@ -130,7 +130,7 @@ func update(ctx *ntcontext) {
 	pkexecSetcapSelf()
 
 	log.Printf("Update installed!\n")
-	ctx.update.updatingText = "Update installed! (Restart NoiseTorch to apply)"
+	ctx.update.updatingText = "Update installed! (Restart the program to apply)"
 	(*ctx.masterWindow).Changed()
 }
 

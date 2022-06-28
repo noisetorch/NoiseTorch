@@ -83,17 +83,17 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 
 	if ctx.noiseSupressorState == loaded {
 		if ctx.virtualDeviceInUse {
-			w.LabelColored("NoiseTorch active", "RC", green)
+			w.LabelColored("Filtering active", "RC", green)
 		} else {
-			w.LabelColored("NoiseTorch unconfigured", "RC", lightBlue)
+			w.LabelColored("Filtering unconfigured", "RC", lightBlue)
 		}
 	} else if ctx.noiseSupressorState == unloaded {
 		_, inpOk := inputSelection(ctx)
 		_, outOk := outputSelection(ctx)
 		if validConfiguration(ctx, inpOk, outOk) {
-			w.LabelColored("NoiseTorch inactive", "RC", red)
+			w.LabelColored("Filtering inactive", "RC", red)
 		} else {
-			w.LabelColored("NoiseTorch unconfigured", "RC", lightBlue)
+			w.LabelColored("Filtering unconfigured", "RC", lightBlue)
 		}
 	} else if ctx.noiseSupressorState == inconsistent {
 		w.LabelColored("Inconsistent state, please unload first.", "RC", orange)
@@ -141,7 +141,7 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 
 		if ctx.reloadRequired {
 			w.Row(20).Dynamic(1)
-			w.LabelColored("Reloading NoiseTorch is required to apply these changes.", "LC", orange)
+			w.LabelColored("Reloading the filter(s) is required to apply these changes.", "LC", orange)
 		}
 
 		w.Row(15).Dynamic(2)
@@ -218,7 +218,7 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 
 	w.Row(25).Dynamic(2)
 	if ctx.noiseSupressorState != unloaded {
-		if w.ButtonText("Unload NoiseTorch") {
+		if w.ButtonText("Unload Filter(s)") {
 			ctx.reloadRequired = false
 			if ctx.virtualDeviceInUse {
 				confirm := makeConfirmView(ctx,
@@ -226,19 +226,19 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 					"Some applications may behave weirdly when you remove a device they're currently using",
 					"Unload",
 					"Go back",
-					func() { uiUnloadNoisetorch(ctx) },
+					func() { uiUnloadFilters(ctx) },
 					func() {})
 				ctx.views.Push(confirm)
 			} else {
-				go uiUnloadNoisetorch(ctx)
+				go uiUnloadFilters(ctx)
 			}
 		}
 	} else {
 		w.Spacing(1)
 	}
-	txt := "Load NoiseTorch"
+	txt := "Load Filter(s)"
 	if ctx.noiseSupressorState == loaded {
-		txt = "Reload NoiseTorch"
+		txt = "Reload Filter(s)"
 	}
 
 	inp, inpOk := inputSelection(ctx)
@@ -253,11 +253,11 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 					"Some applications may behave weirdly when you reload a device they're currently using",
 					"Reload",
 					"Go back",
-					func() { uiReloadNoisetorch(ctx, inp, out) },
+					func() { uiReloadFilters(ctx, inp, out) },
 					func() {})
 				ctx.views.Push(confirm)
 			} else {
-				go uiReloadNoisetorch(ctx, inp, out)
+				go uiReloadFilters(ctx, inp, out)
 			}
 		}
 	} else {
@@ -266,7 +266,7 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 
 }
 
-func uiUnloadNoisetorch(ctx *ntcontext) {
+func uiUnloadFilters(ctx *ntcontext) {
 	ctx.views.Push(loadingView)
 	if err := unloadSupressor(ctx); err != nil {
 		log.Println(err)
@@ -281,7 +281,7 @@ func uiUnloadNoisetorch(ctx *ntcontext) {
 	(*ctx.masterWindow).Changed()
 }
 
-func uiReloadNoisetorch(ctx *ntcontext, inp, out device) {
+func uiReloadFilters(ctx *ntcontext, inp, out device) {
 	ctx.views.Push(loadingView)
 	if ctx.noiseSupressorState == loaded {
 		if err := unloadSupressor(ctx); err != nil {
@@ -393,7 +393,7 @@ func connectView(ctx *ntcontext, w *nucular.Window) {
 
 func capabilitiesView(ctx *ntcontext, w *nucular.Window) {
 	w.Row(15).Dynamic(1)
-	w.Label("NoiseTorch currently does not have the capabilities to function properly.", "CB")
+	w.Label("This program does not have the capabilities to function properly.", "CB")
 	w.Row(15).Dynamic(1)
 	w.Label("We require CAP_SYS_RESOURCE. If that doesn't mean anything to you, don't worry. I'll fix it for you.", "CB")
 	if ctx.capsMismatch {
