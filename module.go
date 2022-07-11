@@ -197,7 +197,7 @@ func loadPipeWireInput(ctx *ntcontext, inp *device) error {
 	idx, err := loadModule(ctx, "module-ladspa-source",
 		fmt.Sprintf("source_name='Filtered Microphone for %s' master=%s "+
 			"rate=48000 channels=1 "+
-			"label=changemelater plugin=%s control=%d", inp.Name, inp.ID, ctx.librnnoise, ctx.config.Threshold))
+			"label=nt-filter plugin=%s control=%d", inp.Name, inp.ID, ctx.librnnoise, ctx.config.Threshold))
 
 	if err != nil {
 		return err
@@ -211,7 +211,7 @@ func loadPipeWireOutput(ctx *ntcontext, out *device) error {
 	idx, err := loadModule(ctx, "module-ladspa-sink",
 		fmt.Sprintf("sink_name='Filtered Headphones' master=%s "+
 			"rate=48000 channels=1 "+
-			"label=changemelater plugin=%s control=%d", out.ID, ctx.librnnoise, ctx.config.Threshold))
+			"label=nt-filter plugin=%s control=%d", out.ID, ctx.librnnoise, ctx.config.Threshold))
 
 	if err != nil {
 		return err
@@ -230,7 +230,7 @@ func loadPulseInput(ctx *ntcontext, inp *device) error {
 
 	idx, err = loadModule(ctx, "module-ladspa-sink",
 		fmt.Sprintf("sink_name=nui_mic_raw_in sink_master=nui_mic_denoised_out "+
-			"label=changemelater plugin=%s control=%d", ctx.librnnoise, ctx.config.Threshold))
+			"label=nt-filter plugin=%s control=%d", ctx.librnnoise, ctx.config.Threshold))
 	if err != nil {
 		return err
 	}
@@ -273,7 +273,7 @@ func loadPulseOutput(ctx *ntcontext, out *device) error {
 	}
 
 	_, err = loadModule(ctx, "module-ladspa-sink", fmt.Sprintf(`sink_name=nui_out_ladspa sink_master=nui_out_out_sink `+
-		`label=changemelater channels=1 plugin=%s control=%d rate=%d`,
+		`label=nt-filter channels=1 plugin=%s control=%d rate=%d`,
 		ctx.librnnoise, ctx.config.Threshold, 48000))
 	if err != nil {
 		return err
