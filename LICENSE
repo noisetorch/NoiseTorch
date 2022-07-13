@@ -5,10 +5,13 @@ This software is distributed under the GNU General Public License Version 3 ("GP
 
 In accordance with Section 7, subsection `c` of the GPLv3 the following additional term(s) apply:
 
-  * Conveying modified versions of this program ("NoiseTorch") must be marked as modified in a reasonable way.
-    Modified versions may not be conveyed to others under same name as the original program.
+  * Conveying modified versions of the program "NoiseTorch" must be marked as modified in a reasonable way.
+    Modified versions may not be conveyed to others under the name "NoiseTorch".
     Package names, source code, user interfaces and other visible appearances of the program name should make it obvious for users
     and potential users that the modified version differs from the original version of NoiseTorch it is based upon.
+
+  * The above term does not apply to this program's name ("NoiseTorch-ng") as it is a different name.
+    You may convey modified versions of this program under the name "NoiseTorch-ng".
 
 
 
