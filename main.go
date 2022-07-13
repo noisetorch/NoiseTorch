@@ -47,9 +47,8 @@ var updateURL = ""          // ditto
 var publicKeyString = ""    // ditto
 var websiteURL = ""         // ditto
 
-
 func main() {
-	if (nameSuffix != "") {
+	if nameSuffix != "" {
 		appName += strings.Replace(nameSuffix, "_", " ", -1)
 	}
 
