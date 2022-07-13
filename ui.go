@@ -53,6 +53,8 @@ var red = color.RGBA{255, 70, 70, 255}
 var orange = color.RGBA{255, 140, 0, 255}
 var lightBlue = color.RGBA{173, 216, 230, 255}
 
+const notice = "NoiseTorch Next Gen (stylized NoiseTorch-ng) is a continuation of the NoiseTorch\nproject after it was abandonned by its original author. Please do not confuse\nboth programs. You may convey modified versions of this program under its name."
+
 func updatefn(ctx *ntcontext, w *nucular.Window) {
 	currView := ctx.views.Peek()
 	currView(ctx, w)
@@ -357,7 +359,10 @@ func loadingView(ctx *ntcontext, w *nucular.Window) {
 }
 
 func licenseView(ctx *ntcontext, w *nucular.Window) {
-	w.Row(255).Dynamic(1)
+	w.Row(40).Dynamic(1) // space above notice
+	w.Label(notice, "CB")
+	w.Row(40).Dynamic(1)  // space below notice
+	w.Row(255).Dynamic(1) // space for license text area
 	field := &ctx.licenseTextArea
 	field.Flags |= nucular.EditMultiline
 	if len(field.Buffer) < 1 {
@@ -375,6 +380,8 @@ func licenseView(ctx *ntcontext, w *nucular.Window) {
 func versionView(ctx *ntcontext, w *nucular.Window) {
 	w.Row(50).Dynamic(1)
 	w.Label("Version", "CB")
+	w.Row(50).Dynamic(1)
+	w.Label(notice, "CB")
 	w.Row(50).Dynamic(1)
 	w.Label(fmt.Sprintf("%s (%s)", version, distribution), "CB")
 	w.Row(50).Dynamic(1)

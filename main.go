@@ -38,7 +38,7 @@ type device struct {
 	rate           uint32
 }
 
-var appName = "NoiseTorch"
+var appName = "NoiseTorch-ng"
 
 var nameSuffix = ""         // will be changed by build
 var version = "unknown"     // ditto
