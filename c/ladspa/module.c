@@ -164,10 +164,10 @@ ON_LOAD_ROUTINE {
   if (g_psDescriptor != NULL) {
 
     g_psDescriptor->UniqueID = 16682994;
-    g_psDescriptor->Label = strdup("noisetorch");
+    g_psDescriptor->Label = strdup("nt-filter");
     g_psDescriptor->Properties = LADSPA_PROPERTY_HARD_RT_CAPABLE;
-    g_psDescriptor->Name = strdup("NoiseTorch rnnoise ladspa module");
-    g_psDescriptor->Maker = strdup("lawl");
+    g_psDescriptor->Name = strdup("nt-filter rnnoise ladspa module");
+    g_psDescriptor->Maker = strdup("nt-org");
     g_psDescriptor->Copyright = strdup("GPL3+");
     g_psDescriptor->PortCount = 3;
     piPortDescriptors =

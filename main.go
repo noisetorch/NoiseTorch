@@ -1,3 +1,6 @@
+// This file is part of the program "NoiseTorch-ng".
+// Please see the LICENSE file for copyright information.
+
 package main
 
 import (
@@ -38,14 +41,20 @@ type device struct {
 	rate           uint32
 }
 
-const appName = "NoiseTorch"
+var appName = "NoiseTorch-ng"
 
-var version = "unknown"     // will be changed by build
+var nameSuffix = ""         // will be changed by build
+var version = "unknown"     // ditto
 var distribution = "custom" // ditto
 var updateURL = ""          // ditto
 var publicKeyString = ""    // ditto
+var websiteURL = ""         // ditto
 
 func main() {
+	if nameSuffix != "" {
+		appName += strings.Replace(nameSuffix, "_", " ", -1)
+	}
+
 	opt := parseCLIOpts()
 
 	if opt.doLog {
@@ -122,7 +131,7 @@ func getSources(client *pulseaudio.Client) []device {
 
 	outputs := make([]device, 0)
 	for i := range sources {
-		if strings.Contains(sources[i].Name, "nui_") || strings.Contains(sources[i].Name, "NoiseTorch") {
+		if strings.Contains(sources[i].Name, "nui_") || strings.Contains(sources[i].Name, "Filtered") {
 			continue
 		}
 
@@ -150,7 +159,7 @@ func getSinks(client *pulseaudio.Client) []device {
 
 	inputs := make([]device, 0)
 	for i := range sources {
-		if strings.Contains(sources[i].Name, "nui_") || strings.Contains(sources[i].Name, "NoiseTorch") {
+		if strings.Contains(sources[i].Name, "nui_") || strings.Contains(sources[i].Name, "Filtered") {
 			continue
 		}
 

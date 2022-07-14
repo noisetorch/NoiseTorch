@@ -1,4 +1,4 @@
-<h1 align="center"> NoiseTorch</h1>
+<h1 align="center"> NoiseTorch-ng</h1>
 <h3 align="center"> Noise Supression Application for PulseAudio or Pipewire</h3>
 <p align="center"><img src="https://raw.githubusercontent.com/noisetorch/NoiseTorch/master/assets/icon/noisetorch.png" width="100" height="100"></p> 
 
@@ -17,7 +17,7 @@
 [stars-shield]: https://img.shields.io/github/stars/noisetorch/NoiseTorch?maxAge=2592000
 [stars-url]: https://github.com/noisetorch/NoiseTorch/stargazers/
 
-NoiseTorch is an easy to use open source application for Linux with PulseAudio or PipeWire. It creates a virtual microphone that suppresses noise, in any application. Use whichever conferencing or VOIP application you like and simply select the NoiseTorch Virtual Microphone as input to torch the sound of your mechanical keyboard, computer fans, trains and the likes.
+NoiseTorch-ng is an easy to use open source application for Linux with PulseAudio or PipeWire. It creates a virtual microphone that suppresses noise, in any application. Use whichever conferencing or VOIP application you like and simply select the filtered Virtual Microphone as input to torch the sound of your mechanical keyboard, computer fans, trains and the likes.
 
 Don't forget to leave a star ⭐ if this sounds useful to you! 
 
@@ -39,7 +39,7 @@ Due to a suspected security breach of the update server and code repository, the
 
 ![](https://i.imgur.com/T2wH0bl.png)
 
-Then simply select NoiseTorch as your microphone in any application. OBS, Mumble, Discord, anywhere.
+Then simply select "Filtered" as your microphone in any application. OBS, Mumble, Discord, anywhere.
 
 ![](https://i.imgur.com/nimi7Ne.png)
 
@@ -72,7 +72,7 @@ Give it the required permissions with `setcap`:
 
     sudo setcap 'CAP_SYS_RESOURCE=+ep' ~/.local/bin/noisetorch
 
-If noisetorch doesn't start after installation, you may also have to make sure that `~/.local/bin` is in your PATH. On most distributions e.g. Ubuntu, this should be the case by default. If it's not, make sure to append
+If NoiseTorch-ng doesn't start after installation, you may also have to make sure that `~/.local/bin` is in your PATH. On most distributions e.g. Ubuntu, this should be the case by default. If it's not, make sure to append
 
 ```
 if [ -d "$HOME/.local/bin" ] ; then
@@ -94,21 +94,21 @@ Please see the [Troubleshooting](https://github.com/noisetorch/NoiseTorch/wiki/T
 
 ## Usage
 
-Select the microphone you want to denoise, and click "Load NoiseTorch", NoiseTorch will create a virtual microphone called "NoiseTorch Microphone" that you can select in any application. Output filtering works the same way, simply output the applications you want to filter to "NoiseTorch Headphones".
+Select the microphone you want to denoise, and click "Load", NoiseTorch-ng will create a virtual microphone called "Filtered Microphone" that you can select in any application. Output filtering works the same way, simply output the applications you want to filter to "Filtered Headphones".
 
-When you're done using it, simply click "Unload NoiseTorch" to remove it again, until you need it next time.
+When you're done using it, simply click "Unload" to remove it again, until you need it next time.
 
-The slider "Voice Activation Threshold" under settings, allows you to choose how strict NoiseTorch should be in only allowing your microphone to send sounds when it detects voice.. Generally you want this up as high as possible. With a decent microphone, you can turn this to the maximum of 95%. If you cut out during talking, slowly lower this strictness until you find a value that works for you.
+The slider "Voice Activation Threshold" under settings, allows you to choose how strict NoiseTorch-ng should be in only allowing your microphone to send sounds when it detects voice.. Generally you want this up as high as possible. With a decent microphone, you can turn this to the maximum of 95%. If you cut out during talking, slowly lower this strictness until you find a value that works for you.
 
-If you set this to 0%, NoiseTorch will still dampen noise, but not deactivate your microphone if it doesn't detect voice.
+If you set this to 0%, NoiseTorch-ng will still dampen noise, but not deactivate your microphone if it doesn't detect voice.
 
-Please keep in mind that you will need to reload NoiseTorch for these changes to apply.
+Please keep in mind that you will need to reload NoiseTorch-ng for these changes to apply.
 
-Once NoiseTorch has been loaded, feel free to close the window, the virtual microphone will continue working until you explicitly unload it. The NoiseTorch process is not required anymore once it has been loaded.
+Once NoiseTorch-ng has been loaded, feel free to close the window, the virtual microphone will continue working until you explicitly unload it. The NoiseTorch-ng process is not required anymore once it has been loaded.
 
 ## Latency
 
-NoiseTorch may introduce a small amount of latency for microphone filtering. The amount of inherent latency introduced by noise supression is 10ms, this is very low and should not be a problem. Additionally PulseAudio currently introduces a variable amount of latency that depends on your system. Lowering this latency [requires a change in PulseAudio](https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/issues/120).
+NoiseTorch-ng may introduce a small amount of latency for microphone filtering. The amount of inherent latency introduced by noise supression is 10ms, this is very low and should not be a problem. Additionally PulseAudio currently introduces a variable amount of latency that depends on your system. Lowering this latency [requires a change in PulseAudio](https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/issues/120).
 
 Output filtering currently introduces something on the order of ~100ms with pulseaudio. This should still be fine for regular conferences, VOIPing and gaming. Maybe not for competitive gaming teams.
 

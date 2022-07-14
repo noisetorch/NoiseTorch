@@ -1,3 +1,6 @@
+// This file is part of the program "NoiseTorch-ng".
+// Please see the LICENSE file for copyright information.
+
 package main
 
 import (
@@ -53,6 +56,8 @@ var red = color.RGBA{255, 70, 70, 255}
 var orange = color.RGBA{255, 140, 0, 255}
 var lightBlue = color.RGBA{173, 216, 230, 255}
 
+const notice = "NoiseTorch Next Gen (stylized NoiseTorch-ng) is a continuation of the NoiseTorch\nproject after it was abandoned by its original author. Please do not confuse\nboth programs. You may convey modified versions of this program under its name."
+
 func updatefn(ctx *ntcontext, w *nucular.Window) {
 	currView := ctx.views.Peek()
 	currView(ctx, w)
@@ -69,8 +74,8 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 			ctx.views.Push(licenseView)
 		}
 		w.Row(10).Dynamic(1)
-		if w.MenuItem(label.T("Source code")) {
-			exec.Command("xdg-open", "https://github.com/noisetorch/NoiseTorch").Run()
+		if w.MenuItem(label.T("Website")) {
+			exec.Command("xdg-open", websiteURL).Run()
 		}
 		if w.MenuItem(label.T("Version")) {
 			ctx.views.Push(versionView)
@@ -83,17 +88,17 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 
 	if ctx.noiseSupressorState == loaded {
 		if ctx.virtualDeviceInUse {
-			w.LabelColored("NoiseTorch active", "RC", green)
+			w.LabelColored("Filtering active", "RC", green)
 		} else {
-			w.LabelColored("NoiseTorch unconfigured", "RC", lightBlue)
+			w.LabelColored("Filtering unconfigured", "RC", lightBlue)
 		}
 	} else if ctx.noiseSupressorState == unloaded {
 		_, inpOk := inputSelection(ctx)
 		_, outOk := outputSelection(ctx)
 		if validConfiguration(ctx, inpOk, outOk) {
-			w.LabelColored("NoiseTorch inactive", "RC", red)
+			w.LabelColored("Filtering inactive", "RC", red)
 		} else {
-			w.LabelColored("NoiseTorch unconfigured", "RC", lightBlue)
+			w.LabelColored("Filtering unconfigured", "RC", lightBlue)
 		}
 	} else if ctx.noiseSupressorState == inconsistent {
 		w.LabelColored("Inconsistent state, please unload first.", "RC", orange)
@@ -141,7 +146,7 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 
 		if ctx.reloadRequired {
 			w.Row(20).Dynamic(1)
-			w.LabelColored("Reloading NoiseTorch is required to apply these changes.", "LC", orange)
+			w.LabelColored("Reloading the filter(s) is required to apply these changes.", "LC", orange)
 		}
 
 		w.Row(15).Dynamic(2)
@@ -218,7 +223,7 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 
 	w.Row(25).Dynamic(2)
 	if ctx.noiseSupressorState != unloaded {
-		if w.ButtonText("Unload NoiseTorch") {
+		if w.ButtonText("Unload Filter(s)") {
 			ctx.reloadRequired = false
 			if ctx.virtualDeviceInUse {
 				confirm := makeConfirmView(ctx,
@@ -226,19 +231,19 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 					"Some applications may behave weirdly when you remove a device they're currently using",
 					"Unload",
 					"Go back",
-					func() { uiUnloadNoisetorch(ctx) },
+					func() { uiUnloadFilters(ctx) },
 					func() {})
 				ctx.views.Push(confirm)
 			} else {
-				go uiUnloadNoisetorch(ctx)
+				go uiUnloadFilters(ctx)
 			}
 		}
 	} else {
 		w.Spacing(1)
 	}
-	txt := "Load NoiseTorch"
+	txt := "Load Filter(s)"
 	if ctx.noiseSupressorState == loaded {
-		txt = "Reload NoiseTorch"
+		txt = "Reload Filter(s)"
 	}
 
 	inp, inpOk := inputSelection(ctx)
@@ -253,11 +258,11 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 					"Some applications may behave weirdly when you reload a device they're currently using",
 					"Reload",
 					"Go back",
-					func() { uiReloadNoisetorch(ctx, inp, out) },
+					func() { uiReloadFilters(ctx, inp, out) },
 					func() {})
 				ctx.views.Push(confirm)
 			} else {
-				go uiReloadNoisetorch(ctx, inp, out)
+				go uiReloadFilters(ctx, inp, out)
 			}
 		}
 	} else {
@@ -266,7 +271,7 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 
 }
 
-func uiUnloadNoisetorch(ctx *ntcontext) {
+func uiUnloadFilters(ctx *ntcontext) {
 	ctx.views.Push(loadingView)
 	if err := unloadSupressor(ctx); err != nil {
 		log.Println(err)
@@ -281,7 +286,7 @@ func uiUnloadNoisetorch(ctx *ntcontext) {
 	(*ctx.masterWindow).Changed()
 }
 
-func uiReloadNoisetorch(ctx *ntcontext, inp, out device) {
+func uiReloadFilters(ctx *ntcontext, inp, out device) {
 	ctx.views.Push(loadingView)
 	if ctx.noiseSupressorState == loaded {
 		if err := unloadSupressor(ctx); err != nil {
@@ -357,7 +362,10 @@ func loadingView(ctx *ntcontext, w *nucular.Window) {
 }
 
 func licenseView(ctx *ntcontext, w *nucular.Window) {
-	w.Row(255).Dynamic(1)
+	w.Row(40).Dynamic(1) // space above notice
+	w.Label(notice, "CB")
+	w.Row(40).Dynamic(1)  // space below notice
+	w.Row(255).Dynamic(1) // space for license text area
 	field := &ctx.licenseTextArea
 	field.Flags |= nucular.EditMultiline
 	if len(field.Buffer) < 1 {
@@ -376,6 +384,8 @@ func versionView(ctx *ntcontext, w *nucular.Window) {
 	w.Row(50).Dynamic(1)
 	w.Label("Version", "CB")
 	w.Row(50).Dynamic(1)
+	w.Label(notice, "CB")
+	w.Row(50).Dynamic(1)
 	w.Label(fmt.Sprintf("%s (%s)", version, distribution), "CB")
 	w.Row(50).Dynamic(1)
 	w.Spacing(1)
@@ -393,7 +403,7 @@ func connectView(ctx *ntcontext, w *nucular.Window) {
 
 func capabilitiesView(ctx *ntcontext, w *nucular.Window) {
 	w.Row(15).Dynamic(1)
-	w.Label("NoiseTorch currently does not have the capabilities to function properly.", "CB")
+	w.Label("This program does not have the capabilities to function properly.", "CB")
 	w.Row(15).Dynamic(1)
 	w.Label("We require CAP_SYS_RESOURCE. If that doesn't mean anything to you, don't worry. I'll fix it for you.", "CB")
 	if ctx.capsMismatch {

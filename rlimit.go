@@ -1,3 +1,6 @@
+// This file is part of the program "NoiseTorch-ng".
+// Please see the LICENSE file for copyright information.
+
 package main
 
 import (
