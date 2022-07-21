@@ -47,7 +47,7 @@ gioui.org/cpu
 gioui.org/shader
 gioui.org/shader/gio
 gioui.org/shader/piet
-# github.com/BurntSushi/toml v1.1.0
+# github.com/BurntSushi/toml v1.2.0
 ## explicit
 github.com/BurntSushi/toml
 github.com/BurntSushi/toml/internal
