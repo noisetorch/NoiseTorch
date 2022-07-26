@@ -185,14 +185,6 @@ func loadSupressor(ctx *ntcontext, inp *device, out *device) error {
 }
 
 func loadModule(ctx *ntcontext, module, args string) (uint32, error) {
-	idx, err := ctx.paClient.LoadModule(module, args)
-
-	//14 = module initialisation failed
-	if paErr, ok := err.(*pulseaudio.Error); ok && paErr.Code == 14 {
-		resetUI(ctx)
-		ctx.views.Push(makeErrorView(ctx, fmt.Sprintf("Could not load module '%s'. This is likely a problem with your system or distribution.", module)))
-	}
-	return idx, err
 }
 
 func loadPipeWireInput(ctx *ntcontext, inp *device) error {

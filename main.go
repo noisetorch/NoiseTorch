@@ -57,11 +57,6 @@ func main() {
 
 	opt := parseCLIOpts()
 
-	if opt.doLog {
-		log.SetOutput(os.Stdout)
-	} else {
-		log.SetOutput(ioutil.Discard)
-	}
 	log.Printf("Application starting. Version: %s (%s)\n", version, distribution)
 	log.Printf("CAP_SYS_RESOURCE: %t\n", hasCapSysResource(getCurrentCaps()))
 

@@ -59,9 +59,6 @@ var lightBlue = color.RGBA{173, 216, 230, 255}
 const notice = "NoiseTorch Next Gen (stylized NoiseTorch-ng) is a continuation of the NoiseTorch\nproject after it was abandoned by its original author. Please do not confuse\nboth programs. You may convey modified versions of this program under its name."
 
 func updatefn(ctx *ntcontext, w *nucular.Window) {
-	currView := ctx.views.Peek()
-	currView(ctx, w)
-}
 
 func mainView(ctx *ntcontext, w *nucular.Window) {
 
@@ -435,66 +432,21 @@ func capabilitiesView(ctx *ntcontext, w *nucular.Window) {
 
 func makeErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 	return func(ctx *ntcontext, w *nucular.Window) {
-		w.Row(15).Dynamic(1)
-		w.Label("Error", "CB")
-		w.Row(15).Dynamic(1)
-		w.Label(errorMsg, "CB")
-		w.Row(40).Dynamic(1)
-		w.Row(25).Dynamic(1)
-		if w.ButtonText("OK") {
-			ctx.views.Pop()
-			return
-		}
 	}
 }
 
 func makeFatalErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 	return func(ctx *ntcontext, w *nucular.Window) {
-		w.Row(15).Dynamic(1)
-		w.Label("Fatal Error", "CB")
-		w.Row(15).Dynamic(1)
-		w.Label(errorMsg, "CB")
-		w.Row(40).Dynamic(1)
-		w.Row(25).Dynamic(1)
-		if w.ButtonText("Quit") {
-			os.Exit(1)
-			return
-		}
 	}
 }
 
-func makeConfirmView(ctx *ntcontext, title, text, confirmText, denyText string, confirmfunc, denyfunc func()) ViewFunc {
-	return func(ctx *ntcontext, w *nucular.Window) {
-		w.Row(15).Dynamic(1)
-		w.Label(title, "CB")
-		w.Row(15).Dynamic(1)
-		w.Label(text, "CB")
-		w.Row(40).Dynamic(1)
-		w.Row(25).Dynamic(2)
-		if w.ButtonText(denyText) {
-			ctx.views.Pop()
-			go denyfunc()
-			return
-		}
-		if w.ButtonText(confirmText) {
-			ctx.views.Pop()
-			go confirmfunc()
-			return
-		}
 	}
 }
 
 func resetUI(ctx *ntcontext) {
-	ctx.views = NewViewStack()
-	ctx.views.Push(mainView)
 
 	if !ctx.haveCapabilities {
 		ctx.views.Push(capabilitiesView)
 	}
 
-	if ctx.serverInfo.outdatedPipeWire {
-		ctx.views.Push(makeFatalErrorView(ctx,
-			fmt.Sprintf("Your PipeWire version is too old. Detected %d.%d.%d. Require at least 0.3.28.",
-				ctx.serverInfo.major, ctx.serverInfo.minor, ctx.serverInfo.patch)))
-	}
 }
