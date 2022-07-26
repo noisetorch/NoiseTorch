@@ -59,6 +59,10 @@ var lightBlue = color.RGBA{173, 216, 230, 255}
 const notice = "NoiseTorch Next Gen (stylized NoiseTorch-ng) is a continuation of the NoiseTorch\nproject after it was abandoned by its original author. Please do not confuse\nboth programs. You may convey modified versions of this program under its name."
 
 func updatefn(ctx *ntcontext, w *nucular.Window) {
+	// TODO: CODE REMOVED
+	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+	// Description:
+	// Must display the view that's on top of the view stack
 
 func mainView(ctx *ntcontext, w *nucular.Window) {
 
@@ -432,21 +436,50 @@ func capabilitiesView(ctx *ntcontext, w *nucular.Window) {
 
 func makeErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 	return func(ctx *ntcontext, w *nucular.Window) {
+		// TODO: CODE REMOVED
+		// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+		// Description:
+		// Indicates that there is an error and display "errorMsg"
+		// The user is allowed to continue using the program
 	}
 }
 
 func makeFatalErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 	return func(ctx *ntcontext, w *nucular.Window) {
+		// TODO: CODE REMOVED
+		// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+		// Description:
+		// Indicates that there is a fatal error and display "errorMsg"
+		// The user is not allowed to continue using the program
+		// The program will exit
 	}
 }
 
+func makeConfirmView(ctx *ntcontext, title, text, ?, ? string, ?, ? func()) ViewFunc {
+	return func(ctx *ntcontext, ? *nucular.Window) {
+		// TODO: CODE REMOVED
+		// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+		// Description:
+		// Confirmation dialog
+		// You should deduce some of the variable names its implementation
+		// from looking at its usage in the code
 	}
 }
 
 func resetUI(ctx *ntcontext) {
+	// TODO: CODE REMOVED
+	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+	// Description:
+	// Create a new viewstack and push the main view
 
 	if !ctx.haveCapabilities {
 		ctx.views.Push(capabilitiesView)
 	}
 
+
+	// TODO: CODE REMOVED
+	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+	// Description:
+	// Check the server info for an outdated pipewire
+	// Then display and error message if it's too old (0.3.28 required)
 }

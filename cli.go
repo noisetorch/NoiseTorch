@@ -14,10 +14,18 @@ import (
 )
 
 type CLIOpts struct {
+	// TODO: CODE REMOVED
+	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+	// Description:
+	// Add the required variable for CLI parsing here
 }
 
 func parseCLIOpts() CLIOpts {
 	var opt CLIOpts
+	// TODO: CODE REMOVED
+	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+	// Description:
+	// Add a parameter for logs
 	flag.BoolVar(&opt.setcap, "setcap", false, "for internal use only")
 	flag.StringVar(&opt.sinkName, "s", "", "Use the specified source/sink device ID")
 	flag.BoolVar(&opt.loadInput, "i", false, "Load supressor for input. If no source device ID is specified the default pulse audio source is used.")
@@ -48,6 +56,11 @@ func doCLI(opt CLIOpts, config *config, librnnoise string) {
 		cleanupExit(librnnoise, 0)
 	}
 
+	// TODO: CODE REMOVED
+	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+	// Description:
+	// Check for setcap parameter and handle it.
+	// The function makeBinarySetcapped will be called.
 
 	paClient, err := pulseaudio.NewClient()
 	if err != nil {
@@ -159,4 +172,8 @@ func doCLI(opt CLIOpts, config *config, librnnoise string) {
 }
 
 func cleanupExit(librnnoise string, exitCode int) {
+	// TODO: CODE REMOVED
+	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+	// Description:
+	// Unloads the specified library then exit with the specified exit code
 }
