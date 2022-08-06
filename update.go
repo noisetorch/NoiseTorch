@@ -78,9 +78,16 @@ type updateui struct {
 	updatingText  string
 }
 
-var latestRelease, releaseError = getLatestRelease()
-var latestVersion, _ = semver.Make(strings.TrimLeft(latestRelease, "v"))
-var currentVersion, _ = semver.Make(strings.TrimLeft(version, "v"))
+var latestRelease string
+var releaseError error
+
+func init() {
+	if !updateable() {
+		return
+	}
+
+	latestRelease, releaseError = getLatestRelease()
+}
 
 func updateable() bool {
 	return updateURL != "" && publicKeyString != "" && releaseError == nil
@@ -91,6 +98,9 @@ func updateCheck(ctx *ntcontext) {
 		return
 	}
 	log.Println("Checking for updates")
+
+	var latestVersion, _ = semver.Make(strings.TrimLeft(latestRelease, "v"))
+	var currentVersion, _ = semver.Make(strings.TrimLeft(version, "v"))
 
 	ctx.update.serverVersion = latestRelease
 	if currentVersion.Compare(latestVersion) == -1 {
