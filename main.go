@@ -123,7 +123,7 @@ func removeLib(file string) {
 	log.Printf("Deleted temp librnnoise: %s\n", file)
 }
 
-func getSources(client *pulseaudio.Client) []device {
+func getSources(ctx *ntcontext, client *pulseaudio.Client) []device {
 	sources, err := client.Sources()
 	if err != nil {
 		log.Printf("Couldn't fetch sources from pulseaudio\n")
@@ -138,7 +138,11 @@ func getSources(client *pulseaudio.Client) []device {
 		var inp device
 
 		inp.ID = sources[i].Name
-		inp.Name = sources[i].PropList["device.description"]
+		if ctx.serverInfo.servertype == servertype_pulse {
+			inp.Name = sources[i].PropList["device.description"]
+		} else {
+			inp.Name = sources[i].Description
+		}
 		inp.isMonitor = (sources[i].MonitorSourceIndex != 0xffffffff)
 		inp.rate = sources[i].SampleSpec.Rate
 
@@ -151,7 +155,7 @@ func getSources(client *pulseaudio.Client) []device {
 	return outputs
 }
 
-func getSinks(client *pulseaudio.Client) []device {
+func getSinks(ctx *ntcontext, client *pulseaudio.Client) []device {
 	sources, err := client.Sinks()
 	if err != nil {
 		log.Printf("Couldn't fetch sources from pulseaudio\n")
@@ -168,7 +172,11 @@ func getSinks(client *pulseaudio.Client) []device {
 		var inp device
 
 		inp.ID = sources[i].Name
-		inp.Name = sources[i].PropList["device.description"]
+		if ctx.serverInfo.servertype == servertype_pulse {
+			inp.Name = sources[i].PropList["device.description"]
+		} else {
+			inp.Name = sources[i].Description
+		}
 		inp.rate = sources[i].SampleSpec.Rate
 
 		// PA_SINK_DYNAMIC_LATENCY = 0x0080U
@@ -207,8 +215,8 @@ func paConnectionWatchdog(ctx *ntcontext) {
 		ctx.paClient = paClient
 		go updateNoiseSupressorLoaded(ctx)
 
-		ctx.inputList = preselectDevice(ctx, getSources(ctx.paClient), ctx.config.LastUsedInput, getDefaultSourceID)
-		ctx.outputList = preselectDevice(ctx, getSinks(paClient), ctx.config.LastUsedOutput, getDefaultSinkID)
+		ctx.inputList = preselectDevice(ctx, getSources(ctx, paClient), ctx.config.LastUsedInput, getDefaultSourceID)
+		ctx.outputList = preselectDevice(ctx, getSinks(ctx, paClient), ctx.config.LastUsedOutput, getDefaultSinkID)
 
 		resetUI(ctx)
 		(*ctx.masterWindow).Changed()

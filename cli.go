@@ -88,13 +88,13 @@ func doCLI(opt CLIOpts, config *config, librnnoise string) {
 
 	if opt.list {
 		fmt.Println("Sources:")
-		sources := getSources(paClient)
+		sources := getSources(&ctx, paClient)
 		for i := range sources {
 			fmt.Printf("\tDevice Name: %s\n\tDevice ID: %s\n\n", sources[i].Name, sources[i].ID)
 		}
 
 		fmt.Println("Sinks:")
-		sinks := getSinks(paClient)
+		sinks := getSinks(&ctx, paClient)
 		for i := range sinks {
 			fmt.Printf("\tDevice Name: %s\n\tDevice ID: %s\n\n", sinks[i].Name, sinks[i].ID)
 		}
@@ -121,7 +121,7 @@ func doCLI(opt CLIOpts, config *config, librnnoise string) {
 	}
 
 	if opt.loadInput {
-		sources := getSources(paClient)
+		sources := getSources(&ctx, paClient)
 
 		if opt.sinkName == "" {
 			defaultSource, err := getDefaultSourceID(paClient)
@@ -147,7 +147,7 @@ func doCLI(opt CLIOpts, config *config, librnnoise string) {
 
 	}
 	if opt.loadOutput {
-		sinks := getSinks(paClient)
+		sinks := getSinks(&ctx, paClient)
 
 		if opt.sinkName == "" {
 			defaultSink, err := getDefaultSinkID(paClient)
