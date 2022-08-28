@@ -184,13 +184,12 @@ func loadSupressor(ctx *ntcontext, inp *device, out *device) error {
 	return nil
 }
 
-func loadModule(ctx *ntcontext, module, args string) (uint32, error) {
-	// TODO: CODE REMOVED
-	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-	// Description:
-	// Loads a module using pcClient.
-	// Then checks if it loaded correctly.
-	// Will display an error if any.
+func loadModule(ctx *ntcontext, module string, args string) (uint32, error) {
+	index, err := ctx.paClient.LoadModule(module, args)
+	if err != nil {
+		ctx.views.Push(makeErrorView(ctx, err.Error()))
+	}
+	return index, err
 }
 
 func loadPipeWireInput(ctx *ntcontext, inp *device) error {
