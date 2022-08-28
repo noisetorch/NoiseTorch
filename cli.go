@@ -176,8 +176,6 @@ func doCLI(opt CLIOpts, config *config, librnnoise string) {
 }
 
 func cleanupExit(librnnoise string, exitCode int) {
-	// TODO: CODE REMOVED
-	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-	// Description:
-	// Unloads the specified library then exit with the specified exit code
+	removeLib(librnnoise)
+	os.Exit(exitCode)
 }
