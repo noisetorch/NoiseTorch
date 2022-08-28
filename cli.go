@@ -60,11 +60,13 @@ func doCLI(opt CLIOpts, config *config, librnnoise string) {
 		cleanupExit(librnnoise, 0)
 	}
 
-	// TODO: CODE REMOVED
-	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-	// Description:
-	// Check for setcap parameter and handle it.
-	// The function makeBinarySetcapped will be called.
+	if opt.setcap {
+		exitCode := 0
+		if err := makeBinarySetcapped(); err != nil {
+			exitCode = 1
+		}
+		cleanupExit(librnnoise, exitCode)
+	}
 
 	paClient, err := pulseaudio.NewClient()
 	if err != nil {
