@@ -14,10 +14,14 @@ import (
 )
 
 type CLIOpts struct {
-	// TODO: CODE REMOVED
-	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-	// Description:
-	// Add the required variable for CLI parsing here
+	setcap      bool
+	sinkName    string
+	loadInput   bool
+	loadOutput  bool
+	unload      bool
+	threshold   int
+	list        bool
+	checkUpdate bool
 }
 
 func parseCLIOpts() CLIOpts {
