@@ -6,6 +6,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 
@@ -14,6 +16,7 @@ import (
 )
 
 type CLIOpts struct {
+	verbose     bool
 	setcap      bool
 	sinkName    string
 	loadInput   bool
@@ -26,10 +29,7 @@ type CLIOpts struct {
 
 func parseCLIOpts() CLIOpts {
 	var opt CLIOpts
-	// TODO: CODE REMOVED
-	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-	// Description:
-	// Add a parameter for logs
+	flag.BoolVar(&opt.verbose, "v", false, "Verbose output (print logs to stderr)")
 	flag.BoolVar(&opt.setcap, "setcap", false, "for internal use only")
 	flag.StringVar(&opt.sinkName, "s", "", "Use the specified source/sink device ID")
 	flag.BoolVar(&opt.loadInput, "i", false, "Load supressor for input. If no source device ID is specified the default pulse audio source is used.")
@@ -44,6 +44,12 @@ func parseCLIOpts() CLIOpts {
 }
 
 func doCLI(opt CLIOpts, config *config, librnnoise string) {
+	if opt.verbose {
+		log.SetOutput(os.Stderr)
+	} else {
+		log.SetOutput(ioutil.Discard)
+	}
+
 	if opt.checkUpdate {
 		latestRelease, err := getLatestRelease()
 		if err == nil {

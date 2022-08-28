@@ -57,11 +57,6 @@ func main() {
 
 	opt := parseCLIOpts()
 
-	// TODO: CODE REMOVED
-	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-	// Description:
-	// Check for the log parameter and decide what
-	// will the std output be
 	log.Printf("Application starting. Version: %s (%s)\n", version, distribution)
 	log.Printf("CAP_SYS_RESOURCE: %t\n", hasCapSysResource(getCurrentCaps()))
 
