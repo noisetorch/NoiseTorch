@@ -439,7 +439,7 @@ func capabilitiesView(ctx *ntcontext, w *nucular.Window) {
 func makeErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 	return func(ctx *ntcontext, w *nucular.Window) {
 		w.Row(15).Dynamic(1)
-		w.LabelColored("Error", "CB", color.RGBA{255, 0, 0, 255});
+		w.LabelColored("Error", "CB", red);
 		w.Row(15).Dynamic(1)
 		// this should probably use LabelWrap to avoid cutting off long
 		// messages, but when I tried, it made the text not appear at all
@@ -458,7 +458,7 @@ func makeErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 func makeFatalErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 	return func(ctx *ntcontext, w *nucular.Window) {
 		w.Row(15).Dynamic(1)
-		w.LabelColored("Fatal Error", "CB", color.RGBA{255, 0, 0, 255});
+		w.LabelColored("Fatal Error", "CB", red);
 		w.Row(15).Dynamic(1)
 		// this should probably use LabelWrap to avoid cutting off long
 		// messages, but when I tried, it made the text not appear at all
@@ -478,7 +478,7 @@ func makeFatalErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 func makeConfirmView(ctx *ntcontext, title, text, proceedText, cancelText string, proceedFunc, cancelFunc func()) ViewFunc {
 	return func(ctx *ntcontext, w *nucular.Window) {
 		w.Row(15).Dynamic(1)
-		w.LabelColored(title, "CB", color.RGBA{255, 255, 0, 255});
+		w.LabelColored(title, "CB", orange);
 		w.Row(15).Dynamic(1)
 		// this should probably use LabelWrap to avoid cutting off long
 		// messages, but when I tried, it made the text not appear at all
