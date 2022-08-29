@@ -34,6 +34,7 @@ type ntcontext struct {
 	views                    *ViewStack
 	serverInfo               audioserverinfo
 	virtualDeviceInUse       bool
+	appName                  string
 }
 
 //TODO pull some of these strucs out of UI, they don't belong here

@@ -65,6 +65,7 @@ func main() {
 	defer removeLib(rnnoisefile)
 
 	ctx := ntcontext{}
+	ctx.appName = appName
 	ctx.config = readConfig()
 	ctx.librnnoise = rnnoisefile
 
