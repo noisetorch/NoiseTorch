@@ -437,22 +437,40 @@ func capabilitiesView(ctx *ntcontext, w *nucular.Window) {
 
 func makeErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 	return func(ctx *ntcontext, w *nucular.Window) {
-		// TODO: CODE REMOVED
-		// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-		// Description:
-		// Indicates that there is an error and display "errorMsg"
-		// The user is allowed to continue using the program
+		w.Row(15).Dynamic(1)
+		w.LabelColored("Error", "CB", color.RGBA{255, 0, 0, 255});
+		w.Row(15).Dynamic(1)
+		// this should probably use LabelWrap to avoid cutting off long
+		// messages, but when I tried, it made the text not appear at all
+		w.Label(errorMsg, "CB");
+
+		// whitespace
+		w.Row(40).Dynamic(1)
+
+		w.Row(25).Dynamic(1)
+		if w.ButtonText("OK") {
+			ctx.views.Pop()
+		}
 	}
 }
 
 func makeFatalErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 	return func(ctx *ntcontext, w *nucular.Window) {
-		// TODO: CODE REMOVED
-		// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-		// Description:
-		// Indicates that there is a fatal error and display "errorMsg"
-		// The user is not allowed to continue using the program
-		// The program will exit
+		w.Row(15).Dynamic(1)
+		w.LabelColored("Fatal Error", "CB", color.RGBA{255, 0, 0, 255});
+		w.Row(15).Dynamic(1)
+		// this should probably use LabelWrap to avoid cutting off long
+		// messages, but when I tried, it made the text not appear at all
+		w.Label(errorMsg, "CB");
+
+		// whitespace
+		w.Row(40).Dynamic(1)
+
+		w.Row(25).Dynamic(1)
+		if w.ButtonText("Exit") {
+			ctx.views.Pop()
+			os.Exit(1)
+		}
 	}
 }
 
