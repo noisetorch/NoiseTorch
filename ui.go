@@ -407,15 +407,14 @@ func connectView(ctx *ntcontext, w *nucular.Window) {
 func capabilitiesView(ctx *ntcontext, w *nucular.Window) {
 	w.Row(15).Dynamic(1)
 	w.Label("This program does not have the capabilities to function properly.", "CB")
-	w.Row(15).Dynamic(1)
-	w.Label("We require CAP_SYS_RESOURCE. If that doesn't mean anything to you, don't worry. I'll fix it for you.", "CB")
+	w.Row(100).Dynamic(1)
+	w.LabelWrap("We require CAP_SYS_RESOURCE. If that doesn't mean anything to you, don't worry. I'll fix it for you.")
 	if ctx.capsMismatch {
 		w.Row(15).Dynamic(1)
 		w.LabelColored("Warning: File has CAP_SYS_RESOURCE but our process doesn't.", "CB", orange)
 		w.Row(15).Dynamic(1)
 		w.LabelColored("Check if your filesystem has nosuid set or check the troubleshooting page.", "CB", orange)
 	}
-	w.Row(40).Dynamic(1)
 	w.Row(25).Dynamic(1)
 	if w.ButtonText("Grant capability (requires root)") {
 		err := pkexecSetcapSelf()
@@ -440,13 +439,8 @@ func makeErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 	return func(ctx *ntcontext, w *nucular.Window) {
 		w.Row(15).Dynamic(1)
 		w.LabelColored("Error", "CB", red);
-		w.Row(15).Dynamic(1)
-		// this should probably use LabelWrap to avoid cutting off long
-		// messages, but when I tried, it made the text not appear at all
-		w.Label(errorMsg, "CB");
-
-		// whitespace
-		w.Row(40).Dynamic(1)
+		w.Row(100).Dynamic(1)
+		w.LabelWrap(errorMsg);
 
 		w.Row(25).Dynamic(1)
 		if w.ButtonText("OK") {
@@ -459,13 +453,8 @@ func makeFatalErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 	return func(ctx *ntcontext, w *nucular.Window) {
 		w.Row(15).Dynamic(1)
 		w.LabelColored("Fatal Error", "CB", red);
-		w.Row(15).Dynamic(1)
-		// this should probably use LabelWrap to avoid cutting off long
-		// messages, but when I tried, it made the text not appear at all
-		w.Label(errorMsg, "CB");
-
-		// whitespace
-		w.Row(40).Dynamic(1)
+		w.Row(100).Dynamic(1)
+		w.LabelWrap(errorMsg);
 
 		w.Row(25).Dynamic(1)
 		if w.ButtonText("Exit") {
@@ -479,13 +468,8 @@ func makeConfirmView(ctx *ntcontext, title, text, proceedText, cancelText string
 	return func(ctx *ntcontext, w *nucular.Window) {
 		w.Row(15).Dynamic(1)
 		w.LabelColored(title, "CB", orange);
-		w.Row(15).Dynamic(1)
-		// this should probably use LabelWrap to avoid cutting off long
-		// messages, but when I tried, it made the text not appear at all
-		w.Label(text, "CB");
-
-		// whitespace
-		w.Row(40).Dynamic(1)
+		w.Row(100).Dynamic(1)
+		w.LabelWrap(text);
 
 		w.Row(25).Dynamic(2)
 		if w.ButtonText(cancelText) {
