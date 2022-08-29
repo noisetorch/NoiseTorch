@@ -58,11 +58,12 @@ var lightBlue = color.RGBA{173, 216, 230, 255}
 
 const notice = "NoiseTorch Next Gen (stylized NoiseTorch-ng) is a continuation of the NoiseTorch\nproject after it was abandoned by its original author. Please do not confuse\nboth programs. You may convey modified versions of this program under its name."
 
+// updatefn() is run whenever the window needs to be re-drawn.
+// This is usually only after user input.
 func updatefn(ctx *ntcontext, w *nucular.Window) {
-	// TODO: CODE REMOVED
-	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-	// Description:
-	// Must display the view that's on top of the view stack
+	// Call view at the top of the stack
+	ctx.views.Peek()(ctx, w)
+}
 
 func mainView(ctx *ntcontext, w *nucular.Window) {
 
