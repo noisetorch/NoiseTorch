@@ -474,14 +474,27 @@ func makeFatalErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 	}
 }
 
-func makeConfirmView(ctx *ntcontext, title, text, ?, ? string, ?, ? func()) ViewFunc {
-	return func(ctx *ntcontext, ? *nucular.Window) {
-		// TODO: CODE REMOVED
-		// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-		// Description:
-		// Confirmation dialog
-		// You should deduce some of the variable names its implementation
-		// from looking at its usage in the code
+func makeConfirmView(ctx *ntcontext, title, text, proceedText, cancelText string, proceedFunc, cancelFunc func()) ViewFunc {
+	return func(ctx *ntcontext, w *nucular.Window) {
+		w.Row(15).Dynamic(1)
+		w.LabelColored(title, "CB", color.RGBA{255, 255, 0, 255});
+		w.Row(15).Dynamic(1)
+		// this should probably use LabelWrap to avoid cutting off long
+		// messages, but when I tried, it made the text not appear at all
+		w.Label(text, "CB");
+
+		// whitespace
+		w.Row(40).Dynamic(1)
+
+		w.Row(25).Dynamic(2)
+		if w.ButtonText(cancelText) {
+			ctx.views.Pop()
+			cancelFunc()
+		}
+		if w.ButtonText(proceedText) {
+			ctx.views.Pop()
+			proceedFunc()
+		}
 	}
 }
 
