@@ -500,19 +500,16 @@ func makeConfirmView(ctx *ntcontext, title, text, proceedText, cancelText string
 }
 
 func resetUI(ctx *ntcontext) {
-	// TODO: CODE REMOVED
-	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-	// Description:
-	// Create a new viewstack and push the main view
+	ctx.views = NewViewStack()
+	ctx.views.Push(mainView)
 
 	if !ctx.haveCapabilities {
 		ctx.views.Push(capabilitiesView)
 	}
 
-
-	// TODO: CODE REMOVED
-	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-	// Description:
-	// Check the server info for an outdated pipewire
-	// Then display and error message if it's too old (0.3.28 required)
+	if ctx.serverInfo.outdatedPipeWire {
+		ctx.views.Push(makeFatalErrorView(ctx,
+			fmt.Sprintf("Detected outdated version of PipeWire. %s requires PipeWire v0.3.28 or newer.",
+				ctx.appName)))
+	}
 }
