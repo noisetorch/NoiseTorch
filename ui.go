@@ -493,7 +493,7 @@ func resetUI(ctx *ntcontext) {
 
 	if ctx.serverInfo.outdatedPipeWire {
 		ctx.views.Push(makeFatalErrorView(ctx,
-			fmt.Sprintf("Detected outdated version of PipeWire. %s requires PipeWire v0.3.28 or newer.",
-				ctx.appName)))
+			fmt.Sprintf("Detected outdated version of PipeWire (v%d.%d.%d). %s requires PipeWire v0.3.28 or newer.",
+				ctx.serverInfo.major, ctx.serverInfo.minor, ctx.serverInfo.patch, ctx.appName)))
 	}
 }
