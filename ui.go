@@ -406,9 +406,11 @@ func connectView(ctx *ntcontext, w *nucular.Window) {
 
 func capabilitiesView(ctx *ntcontext, w *nucular.Window) {
 	w.Row(15).Dynamic(1)
-	w.Label("This program does not have the capabilities to function properly.", "CB")
-	w.Row(100).Dynamic(1)
-	w.LabelWrap("We require CAP_SYS_RESOURCE. If that doesn't mean anything to you, don't worry. I'll fix it for you.")
+	w.LabelColored("Missing capabilities", "CB", orange)
+	w.Row(50).Dynamic(1)
+	w.LabelWrap("This program does not have the capabilities to function properly.")
+	w.Row(60).Dynamic(1)
+	w.LabelWrap("We require CAP_SYS_RESOURCE. If that doesn't mean anything to you, don't worry. We'll fix it for you.")
 	if ctx.capsMismatch {
 		w.Row(15).Dynamic(1)
 		w.LabelColored("Warning: File has CAP_SYS_RESOURCE but our process doesn't.", "CB", orange)
