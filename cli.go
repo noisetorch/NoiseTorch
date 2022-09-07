@@ -6,6 +6,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 
@@ -14,18 +16,20 @@ import (
 )
 
 type CLIOpts struct {
-	// TODO: CODE REMOVED
-	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-	// Description:
-	// Add the required variable for CLI parsing here
+	verbose     bool
+	setcap      bool
+	sinkName    string
+	loadInput   bool
+	loadOutput  bool
+	unload      bool
+	threshold   int
+	list        bool
+	checkUpdate bool
 }
 
 func parseCLIOpts() CLIOpts {
 	var opt CLIOpts
-	// TODO: CODE REMOVED
-	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-	// Description:
-	// Add a parameter for logs
+	flag.BoolVar(&opt.verbose, "v", false, "Verbose output (print logs to stderr)")
 	flag.BoolVar(&opt.setcap, "setcap", false, "for internal use only")
 	flag.StringVar(&opt.sinkName, "s", "", "Use the specified source/sink device ID")
 	flag.BoolVar(&opt.loadInput, "i", false, "Load supressor for input. If no source device ID is specified the default pulse audio source is used.")
@@ -40,6 +44,12 @@ func parseCLIOpts() CLIOpts {
 }
 
 func doCLI(opt CLIOpts, config *config, librnnoise string) {
+	if opt.verbose {
+		log.SetOutput(os.Stderr)
+	} else {
+		log.SetOutput(ioutil.Discard)
+	}
+
 	if opt.checkUpdate {
 		latestRelease, err := getLatestRelease()
 		if err == nil {
@@ -56,11 +66,13 @@ func doCLI(opt CLIOpts, config *config, librnnoise string) {
 		cleanupExit(librnnoise, 0)
 	}
 
-	// TODO: CODE REMOVED
-	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-	// Description:
-	// Check for setcap parameter and handle it.
-	// The function makeBinarySetcapped will be called.
+	if opt.setcap {
+		exitCode := 0
+		if err := makeBinarySetcapped(); err != nil {
+			exitCode = 1
+		}
+		cleanupExit(librnnoise, exitCode)
+	}
 
 	paClient, err := pulseaudio.NewClient()
 	if err != nil {
@@ -172,8 +184,6 @@ func doCLI(opt CLIOpts, config *config, librnnoise string) {
 }
 
 func cleanupExit(librnnoise string, exitCode int) {
-	// TODO: CODE REMOVED
-	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-	// Description:
-	// Unloads the specified library then exit with the specified exit code
+	removeLib(librnnoise)
+	os.Exit(exitCode)
 }

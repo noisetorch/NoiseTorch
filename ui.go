@@ -34,6 +34,7 @@ type ntcontext struct {
 	views                    *ViewStack
 	serverInfo               audioserverinfo
 	virtualDeviceInUse       bool
+	appName                  string
 }
 
 //TODO pull some of these strucs out of UI, they don't belong here
@@ -58,11 +59,12 @@ var lightBlue = color.RGBA{173, 216, 230, 255}
 
 const notice = "NoiseTorch Next Gen (stylized NoiseTorch-ng) is a continuation of the NoiseTorch\nproject after it was abandoned by its original author. Please do not confuse\nboth programs. You may convey modified versions of this program under its name."
 
+// updatefn() is run whenever the window needs to be re-drawn.
+// This is usually only after user input.
 func updatefn(ctx *ntcontext, w *nucular.Window) {
-	// TODO: CODE REMOVED
-	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-	// Description:
-	// Must display the view that's on top of the view stack
+	// Call view at the top of the stack
+	ctx.views.Peek()(ctx, w)
+}
 
 func mainView(ctx *ntcontext, w *nucular.Window) {
 
@@ -404,16 +406,17 @@ func connectView(ctx *ntcontext, w *nucular.Window) {
 
 func capabilitiesView(ctx *ntcontext, w *nucular.Window) {
 	w.Row(15).Dynamic(1)
-	w.Label("This program does not have the capabilities to function properly.", "CB")
-	w.Row(15).Dynamic(1)
-	w.Label("We require CAP_SYS_RESOURCE. If that doesn't mean anything to you, don't worry. I'll fix it for you.", "CB")
+	w.LabelColored("Missing capabilities", "CB", orange)
+	w.Row(50).Dynamic(1)
+	w.LabelWrap("This program does not have the capabilities to function properly.")
+	w.Row(60).Dynamic(1)
+	w.LabelWrap("We require CAP_SYS_RESOURCE. If that doesn't mean anything to you, don't worry. We'll fix it for you.")
 	if ctx.capsMismatch {
 		w.Row(15).Dynamic(1)
 		w.LabelColored("Warning: File has CAP_SYS_RESOURCE but our process doesn't.", "CB", orange)
 		w.Row(15).Dynamic(1)
 		w.LabelColored("Check if your filesystem has nosuid set or check the troubleshooting page.", "CB", orange)
 	}
-	w.Row(40).Dynamic(1)
 	w.Row(25).Dynamic(1)
 	if w.ButtonText("Grant capability (requires root)") {
 		err := pkexecSetcapSelf()
@@ -436,50 +439,63 @@ func capabilitiesView(ctx *ntcontext, w *nucular.Window) {
 
 func makeErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 	return func(ctx *ntcontext, w *nucular.Window) {
-		// TODO: CODE REMOVED
-		// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-		// Description:
-		// Indicates that there is an error and display "errorMsg"
-		// The user is allowed to continue using the program
+		w.Row(15).Dynamic(1)
+		w.LabelColored("Error", "CB", red);
+		w.Row(100).Dynamic(1)
+		w.LabelWrap(errorMsg);
+
+		w.Row(25).Dynamic(1)
+		if w.ButtonText("OK") {
+			ctx.views.Pop()
+		}
 	}
 }
 
 func makeFatalErrorView(ctx *ntcontext, errorMsg string) ViewFunc {
 	return func(ctx *ntcontext, w *nucular.Window) {
-		// TODO: CODE REMOVED
-		// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-		// Description:
-		// Indicates that there is a fatal error and display "errorMsg"
-		// The user is not allowed to continue using the program
-		// The program will exit
+		w.Row(15).Dynamic(1)
+		w.LabelColored("Fatal Error", "CB", red);
+		w.Row(100).Dynamic(1)
+		w.LabelWrap(errorMsg);
+
+		w.Row(25).Dynamic(1)
+		if w.ButtonText("Exit") {
+			ctx.views.Pop()
+			os.Exit(1)
+		}
 	}
 }
 
-func makeConfirmView(ctx *ntcontext, title, text, ?, ? string, ?, ? func()) ViewFunc {
-	return func(ctx *ntcontext, ? *nucular.Window) {
-		// TODO: CODE REMOVED
-		// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-		// Description:
-		// Confirmation dialog
-		// You should deduce some of the variable names its implementation
-		// from looking at its usage in the code
+func makeConfirmView(ctx *ntcontext, title, text, proceedText, cancelText string, proceedFunc, cancelFunc func()) ViewFunc {
+	return func(ctx *ntcontext, w *nucular.Window) {
+		w.Row(15).Dynamic(1)
+		w.LabelColored(title, "CB", orange);
+		w.Row(100).Dynamic(1)
+		w.LabelWrap(text);
+
+		w.Row(25).Dynamic(2)
+		if w.ButtonText(cancelText) {
+			ctx.views.Pop()
+			cancelFunc()
+		}
+		if w.ButtonText(proceedText) {
+			ctx.views.Pop()
+			proceedFunc()
+		}
 	}
 }
 
 func resetUI(ctx *ntcontext) {
-	// TODO: CODE REMOVED
-	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-	// Description:
-	// Create a new viewstack and push the main view
+	ctx.views = NewViewStack()
+	ctx.views.Push(mainView)
 
 	if !ctx.haveCapabilities {
 		ctx.views.Push(capabilitiesView)
 	}
 
-
-	// TODO: CODE REMOVED
-	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
-	// Description:
-	// Check the server info for an outdated pipewire
-	// Then display and error message if it's too old (0.3.28 required)
+	if ctx.serverInfo.outdatedPipeWire {
+		ctx.views.Push(makeFatalErrorView(ctx,
+			fmt.Sprintf("Detected outdated version of PipeWire (v%d.%d.%d). %s requires PipeWire v0.3.28 or newer.",
+				ctx.serverInfo.major, ctx.serverInfo.minor, ctx.serverInfo.patch, ctx.appName)))
+	}
 }
