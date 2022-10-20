@@ -9,8 +9,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -192,13 +190,6 @@ func paConnectionWatchdog(ctx *ntcontext) {
 			fmt.Fprintf(os.Stderr, "Couldn't create pulseaudio client: %v\n", err)
 		}
 
-		info, err := serverInfo(paClient)
-		if err != nil {
-			log.Printf("Couldn't fetch audio server info: %s\n", err)
-		}
-		ctx.serverInfo = info
-
-		log.Printf("Connected to audio server. Server name '%s'\n", info.name)
 
 		ctx.paClient = paClient
 		go updateNoiseSupressorLoaded(ctx)
@@ -214,68 +205,8 @@ func paConnectionWatchdog(ctx *ntcontext) {
 }
 
 func serverInfo(paClient *pulseaudio.Client) (audioserverinfo, error) {
-	info, err := paClient.ServerInfo()
-	if err != nil {
-		log.Printf("Couldn't fetch pulse server info: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Couldn't fetch pulse server info: %v\n", err)
-	}
 
-	pkgname := info.PackageName
-	log.Printf("Audioserver package name: %s\n", pkgname)
-	log.Printf("Audioserver package version: %s\n", info.PackageVersion)
-	isPipewire := strings.Contains(pkgname, "PipeWire")
 
-	var servername string
-	var servertype uint
-	var major, minor, patch int
-	var versionRegex *regexp.Regexp
-	var versionString string
-
-	var outdatedPipeWire bool
-
-	if isPipewire {
-		servername = "PipeWire"
-		servertype = servertype_pipewire
-		versionRegex = regexp.MustCompile(`.*?on PipeWire (\d+)\.(\d+)\.(\d+).*?`)
-		versionString = pkgname
-		log.Printf("Detected PipeWire\n")
-	} else {
-		servername = "PulseAudio"
-		servertype = servertype_pulse
-		versionRegex = regexp.MustCompile(`.*?(\d+)\.(\d+)\.(\d+).*?`)
-		versionString = info.PackageVersion
-		log.Printf("Detected PulseAudio\n")
-	}
-
-	res := versionRegex.FindStringSubmatch(versionString)
-	if len(res) != 4 {
-		log.Printf("couldn't parse server version, regexp didn't match version: %s\n", versionString)
-		return audioserverinfo{servertype: servertype}, nil
-	}
-	major, err = strconv.Atoi(res[1])
-	if err != nil {
-		return audioserverinfo{servertype: servertype}, err
-	}
-	minor, err = strconv.Atoi(res[2])
-	if err != nil {
-		return audioserverinfo{servertype: servertype}, err
-	}
-	patch, err = strconv.Atoi(res[3])
-	if err != nil {
-		return audioserverinfo{servertype: servertype}, err
-	}
-	if isPipewire && major <= 0 && minor <= 3 && patch < 28 {
-		log.Printf("pipewire version %d.%d.%d too old.\n", major, minor, patch)
-		outdatedPipeWire = true
-	}
-
-	return audioserverinfo{
-		servertype:       servertype,
-		name:             servername,
-		major:            major,
-		minor:            minor,
-		patch:            patch,
-		outdatedPipeWire: outdatedPipeWire}, nil
 }
 
 func preselectDevice(ctx *ntcontext, devices []device, preselectID string,

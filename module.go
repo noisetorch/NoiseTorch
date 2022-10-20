@@ -42,14 +42,7 @@ func supressorState(ctx *ntcontext) (int, bool) {
 	var inpLoaded, outLoaded, inputInc, outputInc bool
 	var virtualDeviceInUse bool = false
 	if ctx.config.FilterInput {
-		if ctx.serverInfo.servertype == servertype_pipewire {
 			module, ladspasource, err := findModule(c, "module-ladspa-source", "source_name='Filtered Microphone")
-			if err != nil {
-				log.Printf("Couldn't fetch module list to check for module-ladspa-source: %v\n", err)
-			}
-			virtualDeviceInUse = virtualDeviceInUse || (module.NUsed != 0)
-			inpLoaded = ladspasource
-			inputInc = false
 		} else {
 			_, nullsink, err := findModule(c, "module-null-sink", "sink_name=nui_mic_denoised_out")
 			if err != nil {
@@ -68,7 +61,6 @@ func supressorState(ctx *ntcontext) (int, bool) {
 				log.Printf("Couldn't fetch module list to check for module-remap-source: %v\n", err)
 			}
 
-			virtualDeviceInUse = virtualDeviceInUse || (module.NUsed != 0)
 
 			if nullsink && ladspasink && loopback && remap {
 				inpLoaded = true
@@ -81,14 +73,7 @@ func supressorState(ctx *ntcontext) (int, bool) {
 	}
 
 	if ctx.config.FilterOutput {
-		if ctx.serverInfo.servertype == servertype_pipewire {
 			module, ladspasink, err := findModule(c, "module-ladspa-sink", "sink_name='Filtered Headphones'")
-			if err != nil {
-				log.Printf("Couldn't fetch module list to check for module-ladspa-sink: %v\n", err)
-			}
-			virtualDeviceInUse = virtualDeviceInUse || (module.NUsed != 0)
-			outLoaded = ladspasink
-			outputInc = false
 		} else {
 			_, out, err := findModule(c, "module-null-sink", "sink_name=nui_out_out_sink")
 			if err != nil {
@@ -106,7 +91,6 @@ func supressorState(ctx *ntcontext) (int, bool) {
 			if err != nil {
 				log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
 			}
-			virtualDeviceInUse = virtualDeviceInUse || (module.NUsed != 0)
 			_, loop2, err := findModule(c, "module-loopback", "source=nui_out_in_sink.monitor")
 			if err != nil {
 				log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
@@ -157,8 +141,6 @@ func loadSupressor(ctx *ntcontext, inp *device, out *device) error {
 
 	if inp.checked {
 		var err error
-		if ctx.serverInfo.servertype == servertype_pipewire {
-			err = loadPipeWireInput(ctx, inp)
 		} else {
 			err = loadPulseInput(ctx, inp)
 		}
@@ -170,8 +152,6 @@ func loadSupressor(ctx *ntcontext, inp *device, out *device) error {
 
 	if out.checked {
 		var err error
-		if ctx.serverInfo.servertype == servertype_pipewire {
-			err = loadPipeWireOutput(ctx, out)
 		} else {
 			err = loadPulseOutput(ctx, out)
 		}
@@ -193,31 +173,9 @@ func loadModule(ctx *ntcontext, module string, args string) (uint32, error) {
 }
 
 func loadPipeWireInput(ctx *ntcontext, inp *device) error {
-	log.Printf("Loading supressor for pipewire\n")
-	idx, err := loadModule(ctx, "module-ladspa-source",
-		fmt.Sprintf("source_name='Filtered Microphone for %s' master=%s "+
-			"rate=48000 channels=1 "+
-			"label=nt-filter plugin=%s control=%d", inp.Name, inp.ID, ctx.librnnoise, ctx.config.Threshold))
-
-	if err != nil {
-		return err
-	}
-	log.Printf("Loaded ladspa source as idx: %d\n", idx)
-	return nil
 }
 
 func loadPipeWireOutput(ctx *ntcontext, out *device) error {
-	log.Printf("Loading supressor for pipewire\n")
-	idx, err := loadModule(ctx, "module-ladspa-sink",
-		fmt.Sprintf("sink_name='Filtered Headphones' master=%s "+
-			"rate=48000 channels=1 "+
-			"label=nt-filter plugin=%s control=%d", out.ID, ctx.librnnoise, ctx.config.Threshold))
-
-	if err != nil {
-		return err
-	}
-	log.Printf("Loaded ladspa source as idx: %d\n", idx)
-	return nil
 }
 
 func loadPulseInput(ctx *ntcontext, inp *device) error {
@@ -294,37 +252,14 @@ func loadPulseOutput(ctx *ntcontext, out *device) error {
 }
 
 func unloadSupressor(ctx *ntcontext) error {
-	if ctx.serverInfo.servertype == servertype_pipewire {
-		return unloadSupressorPipeWire(ctx)
 	} else {
 		return unloadSupressorPulse(ctx)
 	}
 }
 
 func unloadSupressorPipeWire(ctx *ntcontext) error {
-	log.Printf("Unloading modules for pipewire\n")
 
-	log.Printf("Searching for module-ladspa-source\n")
-	c := ctx.paClient
-	m, found, err := findModule(c, "module-ladspa-source", "source_name='Filtered Microphone")
-	if err != nil {
-		return err
-	}
-	if found {
-		log.Printf("Found module-ladspa-source at id [%d], sending unload command\n", m.Index)
-		c.UnloadModule(m.Index)
-	}
 
-	log.Printf("Searching for module-ladspa-sink\n")
-	m, found, err = findModule(c, "module-ladspa-sink", "sink_name='Filtered Headphones'")
-	if err != nil {
-		return err
-	}
-	if found {
-		log.Printf("Found module-ladspa-sink at id [%d], sending unload command\n", m.Index)
-		c.UnloadModule(m.Index)
-	}
-	return nil
 }
 
 func unloadSupressorPulse(ctx *ntcontext) error {
