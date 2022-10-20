@@ -42,7 +42,16 @@ func supressorState(ctx *ntcontext) (int, bool) {
 	var inpLoaded, outLoaded, inputInc, outputInc bool
 	var virtualDeviceInUse bool = false
 	if ctx.config.FilterInput {
+		if /* TODO: Check server type is PipeWire  */ {
+
 			module, ladspasource, err := findModule(c, "module-ladspa-source", "source_name='Filtered Microphone")
+			// TODO: CODE REMOVED
+			// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+			// Description:
+			// Check for errors.
+			// Check if virtual device is in use.
+			// Set inpLoaded and inputInc to correct value.
+
 		} else {
 			_, nullsink, err := findModule(c, "module-null-sink", "sink_name=nui_mic_denoised_out")
 			if err != nil {
@@ -61,6 +70,10 @@ func supressorState(ctx *ntcontext) (int, bool) {
 				log.Printf("Couldn't fetch module list to check for module-remap-source: %v\n", err)
 			}
 
+			// TODO: CODE REMOVED
+			// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+			// Description:
+			// Check if virtual device is in use. A variable must be set.
 
 			if nullsink && ladspasink && loopback && remap {
 				inpLoaded = true
@@ -73,7 +86,16 @@ func supressorState(ctx *ntcontext) (int, bool) {
 	}
 
 	if ctx.config.FilterOutput {
+		if /* TODO: Check server type is PipeWire  */ {
 			module, ladspasink, err := findModule(c, "module-ladspa-sink", "sink_name='Filtered Headphones'")
+
+			// TODO: CODE REMOVED
+			// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+			// Description:
+			// Check for errors.
+			// Check if virtual device is in use.
+			// Set outLoaded and outputInc to correct value.
+
 		} else {
 			_, out, err := findModule(c, "module-null-sink", "sink_name=nui_out_out_sink")
 			if err != nil {
@@ -91,6 +113,12 @@ func supressorState(ctx *ntcontext) (int, bool) {
 			if err != nil {
 				log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
 			}
+
+			// TODO: CODE REMOVED
+			// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+			// Description:
+			// Check if virtual device is in use. A variable must be set.
+
 			_, loop2, err := findModule(c, "module-loopback", "source=nui_out_in_sink.monitor")
 			if err != nil {
 				log.Printf("Couldn't fetch module list to check for output module-ladspa-sink: %v\n", err)
@@ -141,6 +169,11 @@ func loadSupressor(ctx *ntcontext, inp *device, out *device) error {
 
 	if inp.checked {
 		var err error
+		if /* PipeWire */ {
+			// TODO: CODE REMOVED
+			// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+			// Description:
+			// load PipeWire input similar to PulseAudio
 		} else {
 			err = loadPulseInput(ctx, inp)
 		}
@@ -152,6 +185,11 @@ func loadSupressor(ctx *ntcontext, inp *device, out *device) error {
 
 	if out.checked {
 		var err error
+		if /* PipeWire */ {
+			// TODO: CODE REMOVED
+			// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+			// Description:
+			// load PipeWire output similar to PulseAudio
 		} else {
 			err = loadPulseOutput(ctx, out)
 		}
@@ -173,9 +211,17 @@ func loadModule(ctx *ntcontext, module string, args string) (uint32, error) {
 }
 
 func loadPipeWireInput(ctx *ntcontext, inp *device) error {
+	// TODO: CODE REMOVED
+	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+	// Description:
+	// load module for PipeWire filtered microphone
 }
 
 func loadPipeWireOutput(ctx *ntcontext, out *device) error {
+	// TODO: CODE REMOVED
+	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+	// Description:
+	// load module for PipeWire filtered headphones
 }
 
 func loadPulseInput(ctx *ntcontext, inp *device) error {
@@ -252,6 +298,11 @@ func loadPulseOutput(ctx *ntcontext, out *device) error {
 }
 
 func unloadSupressor(ctx *ntcontext) error {
+	if /* TODO: Pipewire */ {
+		// TODO: CODE REMOVED
+		// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+		// Description:
+		// unload suppressor for PipeWire
 	} else {
 		return unloadSupressorPulse(ctx)
 	}
@@ -259,6 +310,10 @@ func unloadSupressor(ctx *ntcontext) error {
 
 func unloadSupressorPipeWire(ctx *ntcontext) error {
 
+	// TODO: CODE REMOVED
+	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+	// Description:
+	// Unload module for PipeWire
 
 }
 

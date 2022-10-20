@@ -81,6 +81,10 @@ func doCLI(opt CLIOpts, config *config, librnnoise string) {
 	}
 	defer paClient.Close()
 
+	// TODO: CODE REMOVED
+	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+	// Description:
+	// Create context for NoiseTorch. Check if audio server info is available then set it inside the context.
 
 	ctx.config = config
 	ctx.librnnoise = librnnoise

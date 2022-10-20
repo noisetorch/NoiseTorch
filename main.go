@@ -190,6 +190,10 @@ func paConnectionWatchdog(ctx *ntcontext) {
 			fmt.Fprintf(os.Stderr, "Couldn't create pulseaudio client: %v\n", err)
 		}
 
+		// TODO: CODE REMOVED
+		// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+		// Description:
+		// Create context for NoiseTorch. Check if audio server info is available then set it inside the context.
 
 		ctx.paClient = paClient
 		go updateNoiseSupressorLoaded(ctx)
@@ -206,6 +210,13 @@ func paConnectionWatchdog(ctx *ntcontext) {
 
 func serverInfo(paClient *pulseaudio.Client) (audioserverinfo, error) {
 
+	// TODO: CODE REMOVED
+	// MUST BE WRITTEN FROM SCRATCH WITHOUT LOOKING AT THE ORIGINAL CODE
+	// Description:
+	// Fetches the PulseAudio/Pipewire server information
+	// Gets its version and check whether it's Pipewire or PulseAudio
+	// Check if version is older than 0.3.28 in which case it's too old (outdated)
+	// Returns a struct based of its findings
 
 }
 
