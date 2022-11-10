@@ -17,7 +17,7 @@
 [stars-shield]: https://img.shields.io/github/stars/noisetorch/NoiseTorch?maxAge=2592000
 [stars-url]: https://github.com/noisetorch/NoiseTorch/stargazers/
 
-NoiseTorch-ng is an easy to use open source application for Linux with PulseAudio or PipeWire. It creates a virtual microphone that suppresses noise, in any application. Use whichever conferencing or VOIP application you like and simply select the filtered Virtual Microphone as input to torch the sound of your mechanical keyboard, computer fans, trains and the likes.
+NoiseTorch-ng is an easy to use open source application for Linux with PulseAudio or PipeWire. It creates a virtual microphone that suppresses noise in any application using [RNNoise](https://github.com/xiph/rnnoise). Use whichever conferencing or VOIP application you like and simply select the filtered Virtual Microphone as input to torch the sound of your mechanical keyboard, computer fans, trains and the likes.
 
 Don't forget to leave a star ⭐ if this sounds useful to you! 
 
@@ -106,11 +106,19 @@ Please keep in mind that you will need to reload NoiseTorch-ng for these changes
 
 Once NoiseTorch-ng has been loaded, feel free to close the window, the virtual microphone will continue working until you explicitly unload it. The NoiseTorch-ng process is not required anymore once it has been loaded.
 
-## Latency
+## FAQs
+
+### Latency
 
 NoiseTorch-ng may introduce a small amount of latency for microphone filtering. The amount of inherent latency introduced by noise supression is 10ms, this is very low and should not be a problem. Additionally PulseAudio currently introduces a variable amount of latency that depends on your system. Lowering this latency [requires a change in PulseAudio](https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/issues/120).
 
 Output filtering currently introduces something on the order of ~100ms with pulseaudio. This should still be fine for regular conferences, VOIPing and gaming. Maybe not for competitive gaming teams.
+
+### Alternatives
+
+- [noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice): Denoising software which uses rnnoise. More complex to configure but offers more options. Requires more use of the terminal.
+
+- [Easy Effects](https://github.com/wwmm/easyeffects): Package which offers a large number of different audio effects such as echo cancellation or noise removal. More complex to configure and only supports PipeWire. Denoising uses rnnoise.
 
 ## Building from source
 
