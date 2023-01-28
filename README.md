@@ -133,7 +133,8 @@ Install the Go compiler from [golang.org](https://golang.org/). And make sure yo
 To install it:
 
 ```shell
-cp ./bin/noisetorch ~/.local/bin
+mkdir -p  ~/.local/bin
+cp ./bin/noisetorch ~/.local/bin/
 cp ./assets/noisetorch.desktop ~/.local/share/applications
 cp ./assets/icon/noisetorch.png ~/.local/share/icons/hicolor/256x256/apps
 ```
