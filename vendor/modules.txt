@@ -103,10 +103,9 @@ github.com/noisetorch/pulseaudio
 # github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635
 ## explicit
 github.com/syndtr/gocapability/capability
-# golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+# golang.org/x/crypto v0.6.0
 ## explicit
 golang.org/x/crypto/ed25519
-golang.org/x/crypto/ed25519/internal/edwards25519
 # golang.org/x/exp v0.0.0-20220104160115-025e73f80486
 ## explicit
 golang.org/x/exp/shiny/driver
@@ -140,12 +139,11 @@ golang.org/x/mobile/event/paint
 golang.org/x/mobile/event/size
 golang.org/x/mobile/geom
 golang.org/x/mobile/gl
-# golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e
-## explicit
+# golang.org/x/sys v0.5.0
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.3.7
+# golang.org/x/text v0.7.0
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/internal

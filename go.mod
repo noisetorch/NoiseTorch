@@ -14,9 +14,8 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/noisetorch/pulseaudio v0.0.0-20220603053345-9303200c3861
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+	golang.org/x/crypto v0.6.0
 	golang.org/x/exp v0.0.0-20220104160115-025e73f80486 // indirect
 	golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // indirect
 	golang.org/x/mobile v0.0.0-20220104184238-4a8be17bd2e3 // indirect
-	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 )
