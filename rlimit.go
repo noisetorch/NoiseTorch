@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"unsafe"
 
 	"github.com/noisetorch/pulseaudio"
 )
@@ -51,16 +50,4 @@ func removeRlimit(pid int) {
 	if err != nil {
 		log.Printf("Couldn't set rlimit with caps\n")
 	}
-}
-
-func pRlimit(pid int, limit uintptr, new *syscall.Rlimit, old *syscall.Rlimit) error {
-	_, _, errno := syscall.RawSyscall6(syscall.SYS_PRLIMIT64,
-		uintptr(pid),
-		limit,
-		uintptr(unsafe.Pointer(new)),
-		uintptr(unsafe.Pointer(old)), 0, 0)
-	if errno != 0 {
-		return errno
-	}
-	return nil
 }
