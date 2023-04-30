@@ -93,6 +93,24 @@ func NRGBAToLinearRGBA(col color.NRGBA) color.RGBA {
 	}
 }
 
+// NRGBAToRGBA_PostAlpha converts from non-premultiplied sRGB color to premultiplied sRGB color.
+//
+// Each component in the result is `sRGBToLinear(c) * alpha`, where `c`
+// is the linear color.
+func NRGBAToRGBA_PostAlpha(col color.NRGBA) color.RGBA {
+	if col.A == 0xFF {
+		return color.RGBA(col)
+	} else if col.A == 0x00 {
+		return color.RGBA{}
+	}
+	return color.RGBA{
+		R: uint8(uint32(col.R) * uint32(col.A) / 0xFF),
+		G: uint8(uint32(col.G) * uint32(col.A) / 0xFF),
+		B: uint8(uint32(col.B) * uint32(col.A) / 0xFF),
+		A: col.A,
+	}
+}
+
 // RGBAToNRGBA converts from premultiplied sRGB color to non-premultiplied sRGB color.
 func RGBAToNRGBA(col color.RGBA) color.NRGBA {
 	if col.A == 0xFF {

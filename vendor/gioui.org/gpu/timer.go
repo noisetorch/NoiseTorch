@@ -83,7 +83,7 @@ func (t *timers) ready() bool {
 	return t.backend.IsTimeContinuous()
 }
 
-func (t *timers) Release() {
+func (t *timers) release() {
 	if t == nil {
 		return
 	}

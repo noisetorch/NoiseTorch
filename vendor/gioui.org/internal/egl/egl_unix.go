@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Unlicense OR MIT
 
-//go:build linux || freebsd || openbsd
 // +build linux freebsd openbsd
 
 package egl
@@ -102,8 +101,4 @@ func eglGetDisplay(disp NativeDisplayType) _EGLDisplay {
 func eglCreateWindowSurface(disp _EGLDisplay, conf _EGLConfig, win NativeWindowType, attribs []_EGLint) _EGLSurface {
 	eglSurf := C.eglCreateWindowSurface(disp, conf, win, &attribs[0])
 	return eglSurf
-}
-
-func eglWaitClient() bool {
-	return C.eglWaitClient() == C.EGL_TRUE
 }

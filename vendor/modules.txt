@@ -1,10 +1,11 @@
 # dmitri.shuralyov.com/gpu/mtl v0.0.0-20201218220906-28db891af037
 dmitri.shuralyov.com/gpu/mtl
-# gioui.org v0.0.0-20220105104929-8d8aeef66bef
+# gioui.org v0.0.0-20210407072325-abd6e8f9cdd4
 ## explicit
 gioui.org/app
 gioui.org/app/internal/log
 gioui.org/app/internal/windows
+gioui.org/app/internal/wm
 gioui.org/app/internal/xkb
 gioui.org/f32
 gioui.org/font/opentype
@@ -12,9 +13,7 @@ gioui.org/gesture
 gioui.org/gpu
 gioui.org/gpu/internal/d3d11
 gioui.org/gpu/internal/driver
-gioui.org/gpu/internal/metal
 gioui.org/gpu/internal/opengl
-gioui.org/gpu/internal/vulkan
 gioui.org/internal/byteslice
 gioui.org/internal/cocoainit
 gioui.org/internal/d3d11
@@ -22,31 +21,24 @@ gioui.org/internal/egl
 gioui.org/internal/f32color
 gioui.org/internal/fling
 gioui.org/internal/gl
+gioui.org/internal/opconst
 gioui.org/internal/ops
 gioui.org/internal/scene
+gioui.org/internal/srgb
 gioui.org/internal/stroke
-gioui.org/internal/vk
 gioui.org/io/clipboard
 gioui.org/io/event
 gioui.org/io/key
 gioui.org/io/pointer
 gioui.org/io/profile
 gioui.org/io/router
-gioui.org/io/semantic
 gioui.org/io/system
-gioui.org/io/transfer
 gioui.org/layout
 gioui.org/op
 gioui.org/op/clip
 gioui.org/op/paint
 gioui.org/text
 gioui.org/unit
-# gioui.org/cpu v0.0.0-20210817075930-8d6a761490d2
-gioui.org/cpu
-# gioui.org/shader v1.0.6
-gioui.org/shader
-gioui.org/shader/gio
-gioui.org/shader/piet
 # github.com/BurntSushi/toml v1.2.1
 ## explicit
 github.com/BurntSushi/toml

@@ -4,11 +4,11 @@ package clip
 
 import (
 	"encoding/binary"
-	"hash/maphash"
 	"image"
 	"math"
 
 	"gioui.org/f32"
+	"gioui.org/internal/opconst"
 	"gioui.org/internal/ops"
 	"gioui.org/internal/scene"
 	"gioui.org/internal/stroke"
@@ -18,83 +18,121 @@ import (
 // Op represents a clip area. Op intersects the current clip area with
 // itself.
 type Op struct {
-	path PathSpec
+	bounds image.Rectangle
+	path   PathSpec
 
 	outline bool
-	width   float32
+	stroke  StrokeStyle
+	dashes  DashSpec
 }
 
-// Stack represents an Op pushed on the clip stack.
-type Stack struct {
-	ops     *ops.Ops
-	id      ops.StackID
-	macroID int
-}
-
-var pathSeed maphash.Seed
-
-func init() {
-	pathSeed = maphash.MakeSeed()
-}
-
-// Push saves the current clip state on the stack and updates the current
-// state to the intersection of the current p.
-func (p Op) Push(o *op.Ops) Stack {
-	id, macroID := ops.PushOp(&o.Internal, ops.ClipStack)
-	p.add(o)
-	return Stack{ops: &o.Internal, id: id, macroID: macroID}
-}
-
-func (p Op) add(o *op.Ops) {
+func (p Op) Add(o *op.Ops) {
+	str := p.stroke
+	dashes := p.dashes
 	path := p.path
+	outline := p.outline
+	approx := str.Width > 0 && !(dashes == DashSpec{} && str.Miter == 0 && str.Join == RoundJoin && str.Cap == RoundCap)
+	if approx {
+		// If the stroke is not natively supported by the compute renderer, construct a filled path
+		// that approximates it.
+		path = p.approximateStroke(o)
+		dashes = DashSpec{}
+		str = StrokeStyle{}
+		outline = true
+	}
 
-	bo := binary.LittleEndian
 	if path.hasSegments {
-		data := ops.Write(&o.Internal, ops.TypePathLen)
-		data[0] = byte(ops.TypePath)
-		bo.PutUint64(data[1:], path.hash)
+		data := o.Write(opconst.TypePathLen)
+		data[0] = byte(opconst.TypePath)
 		path.spec.Add(o)
 	}
 
-	bounds := path.bounds
-	if p.width > 0 {
-		// Expand bounds to cover stroke.
-		half := int(p.width*.5 + .5)
-		bounds.Min.X -= half
-		bounds.Min.Y -= half
-		bounds.Max.X += half
-		bounds.Max.Y += half
-		data := ops.Write(&o.Internal, ops.TypeStrokeLen)
-		data[0] = byte(ops.TypeStroke)
+	if str.Width > 0 {
+		data := o.Write(opconst.TypeStrokeLen)
+		data[0] = byte(opconst.TypeStroke)
 		bo := binary.LittleEndian
-		bo.PutUint32(data[1:], math.Float32bits(p.width))
+		bo.PutUint32(data[1:], math.Float32bits(str.Width))
 	}
 
-	data := ops.Write(&o.Internal, ops.TypeClipLen)
-	data[0] = byte(ops.TypeClip)
-	bo.PutUint32(data[1:], uint32(bounds.Min.X))
-	bo.PutUint32(data[5:], uint32(bounds.Min.Y))
-	bo.PutUint32(data[9:], uint32(bounds.Max.X))
-	bo.PutUint32(data[13:], uint32(bounds.Max.Y))
-	if p.outline {
+	data := o.Write(opconst.TypeClipLen)
+	data[0] = byte(opconst.TypeClip)
+	bo := binary.LittleEndian
+	bo.PutUint32(data[1:], uint32(p.bounds.Min.X))
+	bo.PutUint32(data[5:], uint32(p.bounds.Min.Y))
+	bo.PutUint32(data[9:], uint32(p.bounds.Max.X))
+	bo.PutUint32(data[13:], uint32(p.bounds.Max.Y))
+	if outline {
 		data[17] = byte(1)
 	}
-	data[18] = byte(path.shape)
 }
 
-func (s Stack) Pop() {
-	ops.PopOp(s.ops, ops.ClipStack, s.id, s.macroID)
-	data := ops.Write(s.ops, ops.TypePopClipLen)
-	data[0] = byte(ops.TypePopClip)
+func (p Op) approximateStroke(o *op.Ops) PathSpec {
+	if !p.path.hasSegments {
+		return PathSpec{}
+	}
+
+	var r ops.Reader
+	// Add path op for us to decode. Use a macro to omit it from later decodes.
+	ignore := op.Record(o)
+	r.ResetAt(o, ops.NewPC(o))
+	p.path.spec.Add(o)
+	ignore.Stop()
+	encOp, ok := r.Decode()
+	if !ok || opconst.OpType(encOp.Data[0]) != opconst.TypeAux {
+		panic("corrupt path data")
+	}
+	pathData := encOp.Data[opconst.TypeAuxLen:]
+
+	// Decode dashes in a similar way.
+	var dashes stroke.DashOp
+	if p.dashes.phase != 0 || p.dashes.size > 0 {
+		ignore := op.Record(o)
+		r.ResetAt(o, ops.NewPC(o))
+		p.dashes.spec.Add(o)
+		ignore.Stop()
+		encOp, ok := r.Decode()
+		if !ok || opconst.OpType(encOp.Data[0]) != opconst.TypeAux {
+			panic("corrupt dash data")
+		}
+		dashes.Dashes = make([]float32, p.dashes.size)
+		dashData := encOp.Data[opconst.TypeAuxLen:]
+		bo := binary.LittleEndian
+		for i := range dashes.Dashes {
+			dashes.Dashes[i] = math.Float32frombits(bo.Uint32(dashData[i*4:]))
+		}
+		dashes.Phase = p.dashes.phase
+	}
+
+	// Approximate and output path data.
+	var outline Path
+	outline.Begin(o)
+	ss := stroke.StrokeStyle{
+		Width: p.stroke.Width,
+		Miter: p.stroke.Miter,
+		Cap:   stroke.StrokeCap(p.stroke.Cap),
+		Join:  stroke.StrokeJoin(p.stroke.Join),
+	}
+	quads := stroke.StrokePathCommands(ss, dashes, pathData)
+	pen := f32.Pt(0, 0)
+	for _, quad := range quads {
+		q := quad.Quad
+		if q.From != pen {
+			pen = q.From
+			outline.MoveTo(pen)
+		}
+		outline.contour = int(quad.Contour)
+		outline.QuadTo(q.Ctrl, q.To)
+	}
+	return outline.End()
 }
 
 type PathSpec struct {
 	spec op.CallOp
+	// open is true if any path contour is not closed. A closed contour starts
+	// and ends in the same point.
+	open bool
 	// hasSegments tracks whether there are any segments in the path.
 	hasSegments bool
-	bounds      image.Rectangle
-	shape       ops.Shape
-	hash        uint64
 }
 
 // Path constructs a Op clip path described by lines and
@@ -105,40 +143,34 @@ type PathSpec struct {
 // Path generates no garbage and can be used for dynamic paths; path
 // data is stored directly in the Ops list supplied to Begin.
 type Path struct {
-	ops         *ops.Ops
+	ops         *op.Ops
+	open        bool
 	contour     int
 	pen         f32.Point
 	macro       op.MacroOp
 	start       f32.Point
 	hasSegments bool
-	bounds      f32.Rectangle
-	hash        maphash.Hash
 }
 
 // Pos returns the current pen position.
 func (p *Path) Pos() f32.Point { return p.pen }
 
 // Begin the path, storing the path data and final Op into ops.
-func (p *Path) Begin(o *op.Ops) {
-	*p = Path{
-		ops:     &o.Internal,
-		macro:   op.Record(o),
-		contour: 1,
-	}
-	p.hash.SetSeed(pathSeed)
-	data := ops.Write(p.ops, ops.TypeAuxLen)
-	data[0] = byte(ops.TypeAux)
+func (p *Path) Begin(ops *op.Ops) {
+	p.ops = ops
+	p.macro = op.Record(ops)
+	// Write the TypeAux opcode
+	data := ops.Write(opconst.TypeAuxLen)
+	data[0] = byte(opconst.TypeAux)
 }
 
 // End returns a PathSpec ready to use in clipping operations.
 func (p *Path) End() PathSpec {
-	p.gap()
 	c := p.macro.Stop()
 	return PathSpec{
 		spec:        c,
+		open:        p.open || p.pen != p.start,
 		hasSegments: p.hasSegments,
-		bounds:      boundRectF(p.bounds),
-		hash:        p.hash.Sum64(),
 	}
 }
 
@@ -150,24 +182,10 @@ func (p *Path) Move(delta f32.Point) {
 
 // MoveTo moves the pen to the specified absolute coordinate.
 func (p *Path) MoveTo(to f32.Point) {
-	if p.pen == to {
-		return
-	}
-	p.gap()
+	p.open = p.open || p.pen != p.start
 	p.end()
 	p.pen = to
 	p.start = to
-}
-
-func (p *Path) gap() {
-	if p.pen != p.start {
-		// A closed contour starts and ends in the same point.
-		// This move creates a gap in the contour, register it.
-		data := ops.Write(p.ops, scene.CommandSize+4)
-		bo := binary.LittleEndian
-		bo.PutUint32(data[0:], uint32(p.contour))
-		p.cmd(data[4:], scene.Gap(p.pen, p.start))
-	}
 }
 
 // end completes the current contour.
@@ -183,61 +201,12 @@ func (p *Path) Line(delta f32.Point) {
 
 // LineTo moves the pen to the absolute point specified, recording a line.
 func (p *Path) LineTo(to f32.Point) {
-	data := ops.Write(p.ops, scene.CommandSize+4)
+	data := p.ops.Write(scene.CommandSize + 4)
 	bo := binary.LittleEndian
 	bo.PutUint32(data[0:], uint32(p.contour))
-	p.cmd(data[4:], scene.Line(p.pen, to))
+	ops.EncodeCommand(data[4:], scene.Line(p.pen, to))
 	p.pen = to
-	p.expand(to)
-}
-
-func (p *Path) cmd(data []byte, c scene.Command) {
-	ops.EncodeCommand(data, c)
-	p.hash.Write(data)
-}
-
-func (p *Path) expand(pt f32.Point) {
-	if !p.hasSegments {
-		p.hasSegments = true
-		p.bounds = f32.Rectangle{Min: pt, Max: pt}
-	} else {
-		b := p.bounds
-		if pt.X < b.Min.X {
-			b.Min.X = pt.X
-		}
-		if pt.Y < b.Min.Y {
-			b.Min.Y = pt.Y
-		}
-		if pt.X > b.Max.X {
-			b.Max.X = pt.X
-		}
-		if pt.Y > b.Max.Y {
-			b.Max.Y = pt.Y
-		}
-		p.bounds = b
-	}
-}
-
-// boundRectF returns a bounding image.Rectangle for a f32.Rectangle.
-func boundRectF(r f32.Rectangle) image.Rectangle {
-	return image.Rectangle{
-		Min: image.Point{
-			X: int(floor(r.Min.X)),
-			Y: int(floor(r.Min.Y)),
-		},
-		Max: image.Point{
-			X: int(ceil(r.Max.X)),
-			Y: int(ceil(r.Max.Y)),
-		},
-	}
-}
-
-func ceil(v float32) int {
-	return int(math.Ceil(float64(v)))
-}
-
-func floor(v float32) int {
-	return int(math.Floor(float64(v)))
+	p.hasSegments = true
 }
 
 // Quad records a quadratic Bézier from the pen to end
@@ -251,21 +220,22 @@ func (p *Path) Quad(ctrl, to f32.Point) {
 // QuadTo records a quadratic Bézier from the pen to end
 // with the control point ctrl, with absolute coordinates.
 func (p *Path) QuadTo(ctrl, to f32.Point) {
-	data := ops.Write(p.ops, scene.CommandSize+4)
+	data := p.ops.Write(scene.CommandSize + 4)
 	bo := binary.LittleEndian
 	bo.PutUint32(data[0:], uint32(p.contour))
-	p.cmd(data[4:], scene.Quad(p.pen, ctrl, to))
+	ops.EncodeCommand(data[4:], scene.Quad(p.pen, ctrl, to))
 	p.pen = to
-	p.expand(ctrl)
-	p.expand(to)
+	p.hasSegments = true
 }
 
-// ArcTo adds an elliptical arc to the path. The implied ellipse is defined
+// Arc adds an elliptical arc to the path. The implied ellipse is defined
 // by its focus points f1 and f2.
 // The arc starts in the current point and ends angle radians along the ellipse boundary.
 // The sign of angle determines the direction; positive being counter-clockwise,
 // negative clockwise.
-func (p *Path) ArcTo(f1, f2 f32.Point, angle float32) {
+func (p *Path) Arc(f1, f2 f32.Point, angle float32) {
+	f1 = f1.Add(p.pen)
+	f2 = f2.Add(p.pen)
 	const segments = 16
 	m := stroke.ArcTransform(p.pen, f1, f2, angle, segments)
 
@@ -276,13 +246,6 @@ func (p *Path) ArcTo(f1, f2 f32.Point, angle float32) {
 		ctl := p1.Mul(2).Sub(p0.Add(p2).Mul(.5))
 		p.QuadTo(ctl, p2)
 	}
-}
-
-// Arc is like ArcTo where f1 and f2 are relative to the current position.
-func (p *Path) Arc(f1, f2 f32.Point, angle float32) {
-	f1 = f1.Add(p.pen)
-	f2 = f2.Add(p.pen)
-	p.ArcTo(f1, f2, angle)
 }
 
 // Cube records a cubic Bézier from the pen through
@@ -297,14 +260,12 @@ func (p *Path) CubeTo(ctrl0, ctrl1, to f32.Point) {
 	if ctrl0 == p.pen && ctrl1 == p.pen && to == p.pen {
 		return
 	}
-	data := ops.Write(p.ops, scene.CommandSize+4)
+	data := p.ops.Write(scene.CommandSize + 4)
 	bo := binary.LittleEndian
 	bo.PutUint32(data[0:], uint32(p.contour))
-	p.cmd(data[4:], scene.Cubic(p.pen, ctrl0, ctrl1, to))
+	ops.EncodeCommand(data[4:], scene.Cubic(p.pen, ctrl0, ctrl1, to))
 	p.pen = to
-	p.expand(ctrl0)
-	p.expand(ctrl1)
-	p.expand(to)
+	p.hasSegments = true
 }
 
 // Close closes the path contour.
@@ -315,21 +276,6 @@ func (p *Path) Close() {
 	p.end()
 }
 
-// Stroke represents a stroked path.
-type Stroke struct {
-	Path PathSpec
-	// Width of the stroked path.
-	Width float32
-}
-
-// Op returns a clip operation representing the stroke.
-func (s Stroke) Op() Op {
-	return Op{
-		path:  s.Path,
-		width: s.Width,
-	}
-}
-
 // Outline represents the area inside of a path, according to the
 // non-zero winding rule.
 type Outline struct {
@@ -338,6 +284,9 @@ type Outline struct {
 
 // Op returns a clip operation representing the outline.
 func (o Outline) Op() Op {
+	if o.Path.open {
+		panic("not all path contours are closed")
+	}
 	return Op{
 		path:    o.Path,
 		outline: true,

@@ -26,8 +26,27 @@ type FrameEvent struct {
 	Size image.Point
 	// Insets is the insets to apply.
 	Insets Insets
-	// Frame completes the FrameEvent by drawing the graphical operations
-	// from ops into the window.
+	// Frame is the callback to supply the list of
+	// operations to complete the FrameEvent.
+	//
+	// Note that the operation list and the operations themselves
+	// may not be mutated until another FrameEvent is received from
+	// the same event source.
+	// That means that calls to frame.Reset and changes to referenced
+	// data such as ImageOp backing images should happen between
+	// receiving a FrameEvent and calling Frame.
+	//
+	// Example:
+	//
+	//  var w *app.Window
+	//  var frame *op.Ops
+	//  for e := range w.Events() {
+	//      if e, ok := e.(system.FrameEvent); ok {
+	//          // Call frame.Reset and manipulate images for ImageOps
+	//          // here.
+	//          e.Frame(frame)
+	//      }
+	//  }
 	Frame func(frame *op.Ops)
 	// Queue supplies the events for event handlers.
 	Queue event.Queue

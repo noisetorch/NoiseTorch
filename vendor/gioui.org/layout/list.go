@@ -6,6 +6,7 @@ import (
 	"image"
 
 	"gioui.org/gesture"
+	"gioui.org/io/pointer"
 	"gioui.org/op"
 	"gioui.org/op/clip"
 )
@@ -73,8 +74,6 @@ type Position struct {
 	OffsetLast int
 	// Count is the number of visible children.
 	Count int
-	// Length is the estimated total size of all children, measured in pixels.
-	Length int
 }
 
 const (
@@ -107,22 +106,11 @@ func (l *List) Layout(gtx Context, len int, w ListElement) Dimensions {
 	crossMin, crossMax := l.Axis.crossConstraint(gtx.Constraints)
 	gtx.Constraints = l.Axis.constraints(0, inf, crossMin, crossMax)
 	macro := op.Record(gtx.Ops)
-	laidOutTotalLength := 0
-	numLaidOut := 0
-
 	for l.next(); l.more(); l.next() {
 		child := op.Record(gtx.Ops)
 		dims := w(gtx, l.index())
 		call := child.Stop()
 		l.end(dims, call)
-		laidOutTotalLength += l.Axis.Convert(dims.Size).X
-		numLaidOut++
-	}
-
-	if numLaidOut > 0 {
-		l.Position.Length = laidOutTotalLength * len / numLaidOut
-	} else {
-		l.Position.Length = 0
 	}
 	return l.layout(gtx.Ops, macro)
 }
@@ -273,12 +261,12 @@ func (l *List) layout(ops *op.Ops, macro op.MacroOp) Dimensions {
 			Min: l.Axis.Convert(image.Pt(min, -inf)),
 			Max: l.Axis.Convert(image.Pt(max, inf)),
 		}
-		cl := clip.Rect(r).Push(ops)
+		stack := op.Save(ops)
+		clip.Rect(r).Add(ops)
 		pt := l.Axis.Convert(image.Pt(pos, cross))
-		trans := op.Offset(FPt(pt)).Push(ops)
+		op.Offset(FPt(pt)).Add(ops)
 		child.call.Add(ops)
-		trans.Pop()
-		cl.Pop()
+		stack.Load()
 		pos += childSize
 	}
 	atStart := l.Position.First == 0 && l.Position.Offset <= 0
@@ -293,14 +281,10 @@ func (l *List) layout(ops *op.Ops, macro op.MacroOp) Dimensions {
 	if pos > mainMax {
 		pos = mainMax
 	}
-	if crossMin, crossMax := l.Axis.crossConstraint(l.cs); maxCross < crossMin {
-		maxCross = crossMin
-	} else if maxCross > crossMax {
-		maxCross = crossMax
-	}
 	dims := l.Axis.Convert(image.Pt(pos, maxCross))
 	call := macro.Stop()
-	defer clip.Rect(image.Rectangle{Max: dims}).Push(ops).Pop()
+	defer op.Save(ops).Load()
+	pointer.Rect(image.Rectangle{Max: dims}).Add(ops)
 
 	var min, max int
 	if o := l.Position.Offset; o > 0 {

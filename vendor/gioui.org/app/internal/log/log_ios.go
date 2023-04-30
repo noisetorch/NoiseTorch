@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Unlicense OR MIT
 
-//go:build darwin && ios
 // +build darwin,ios
 
 package log
@@ -8,11 +7,7 @@ package log
 /*
 #cgo CFLAGS: -Werror -fmodules -fobjc-arc -x objective-c
 
-@import Foundation;
-
-static void nslog(char *str) {
-	NSLog(@"%@", @(str));
-}
+__attribute__ ((visibility ("hidden"))) void nslog(char *str);
 */
 import "C"
 

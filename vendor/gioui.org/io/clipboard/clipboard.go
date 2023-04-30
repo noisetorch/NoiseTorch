@@ -3,7 +3,7 @@
 package clipboard
 
 import (
-	"gioui.org/internal/ops"
+	"gioui.org/internal/opconst"
 	"gioui.org/io/event"
 	"gioui.org/op"
 )
@@ -25,13 +25,13 @@ type WriteOp struct {
 }
 
 func (h ReadOp) Add(o *op.Ops) {
-	data := ops.Write1(&o.Internal, ops.TypeClipboardReadLen, h.Tag)
-	data[0] = byte(ops.TypeClipboardRead)
+	data := o.Write1(opconst.TypeClipboardReadLen, h.Tag)
+	data[0] = byte(opconst.TypeClipboardRead)
 }
 
 func (h WriteOp) Add(o *op.Ops) {
-	data := ops.Write1(&o.Internal, ops.TypeClipboardWriteLen, &h.Text)
-	data[0] = byte(ops.TypeClipboardWrite)
+	data := o.Write1(opconst.TypeClipboardWriteLen, &h.Text)
+	data[0] = byte(opconst.TypeClipboardWrite)
 }
 
 func (Event) ImplementsEvent() {}

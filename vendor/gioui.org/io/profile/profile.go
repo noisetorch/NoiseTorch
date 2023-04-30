@@ -5,7 +5,7 @@
 package profile
 
 import (
-	"gioui.org/internal/ops"
+	"gioui.org/internal/opconst"
 	"gioui.org/io/event"
 	"gioui.org/op"
 )
@@ -24,8 +24,8 @@ type Event struct {
 }
 
 func (p Op) Add(o *op.Ops) {
-	data := ops.Write1(&o.Internal, ops.TypeProfileLen, p.Tag)
-	data[0] = byte(ops.TypeProfile)
+	data := o.Write1(opconst.TypeProfileLen, p.Tag)
+	data[0] = byte(opconst.TypeProfile)
 }
 
 func (p Event) ImplementsEvent() {}

@@ -8,38 +8,25 @@ type (
 )
 
 const (
-	ACTIVE_TEXTURE                        = 0x84E0
 	ALL_BARRIER_BITS                      = 0xffffffff
 	ARRAY_BUFFER                          = 0x8892
-	ARRAY_BUFFER_BINDING                  = 0x8894
-	BACK                                  = 0x0405
 	BLEND                                 = 0xbe2
-	BLEND_DST_RGB                         = 0x80C8
-	BLEND_SRC_RGB                         = 0x80C9
-	BLEND_DST_ALPHA                       = 0x80CA
-	BLEND_SRC_ALPHA                       = 0x80CB
 	CLAMP_TO_EDGE                         = 0x812f
 	COLOR_ATTACHMENT0                     = 0x8ce0
 	COLOR_BUFFER_BIT                      = 0x4000
-	COLOR_CLEAR_VALUE                     = 0x0C22
 	COMPILE_STATUS                        = 0x8b81
 	COMPUTE_SHADER                        = 0x91B9
-	CURRENT_PROGRAM                       = 0x8B8D
-	DEPTH_ATTACHMENT                      = 0x8d00
 	DEPTH_BUFFER_BIT                      = 0x100
-	DEPTH_CLEAR_VALUE                     = 0x0B73
+	DEPTH_ATTACHMENT                      = 0x8d00
 	DEPTH_COMPONENT16                     = 0x81a5
 	DEPTH_COMPONENT24                     = 0x81A6
 	DEPTH_COMPONENT32F                    = 0x8CAC
-	DEPTH_FUNC                            = 0x0B74
 	DEPTH_TEST                            = 0xb71
-	DEPTH_WRITEMASK                       = 0x0B72
 	DRAW_FRAMEBUFFER                      = 0x8CA9
 	DST_COLOR                             = 0x306
 	DYNAMIC_DRAW                          = 0x88E8
 	DYNAMIC_READ                          = 0x88E9
 	ELEMENT_ARRAY_BUFFER                  = 0x8893
-	ELEMENT_ARRAY_BUFFER_BINDING          = 0x8895
 	EXTENSIONS                            = 0x1f03
 	FALSE                                 = 0
 	FLOAT                                 = 0x1406
@@ -48,7 +35,6 @@ const (
 	FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING = 0x8210
 	FRAMEBUFFER_BINDING                   = 0x8ca6
 	FRAMEBUFFER_COMPLETE                  = 0x8cd5
-	FRAMEBUFFER_SRGB                      = 0x8db9
 	HALF_FLOAT                            = 0x140b
 	HALF_FLOAT_OES                        = 0x8d61
 	INFO_LOG_LENGTH                       = 0x8B84
@@ -65,14 +51,11 @@ const (
 	NUM_EXTENSIONS                        = 0x821D
 	ONE                                   = 0x1
 	ONE_MINUS_SRC_ALPHA                   = 0x303
-	PACK_ROW_LENGTH                       = 0x0D02
-	PROGRAM_BINARY_LENGTH                 = 0x8741
 	QUERY_RESULT                          = 0x8866
 	QUERY_RESULT_AVAILABLE                = 0x8867
 	R16F                                  = 0x822d
 	R8                                    = 0x8229
 	READ_FRAMEBUFFER                      = 0x8ca8
-	READ_FRAMEBUFFER_BINDING              = 0x8CAA
 	READ_ONLY                             = 0x88B8
 	READ_WRITE                            = 0x88BA
 	RED                                   = 0x1903
@@ -85,7 +68,6 @@ const (
 	RGBA                                  = 0x1908
 	RGBA8                                 = 0x8058
 	SHADER_STORAGE_BUFFER                 = 0x90D2
-	SHADER_STORAGE_BUFFER_BINDING         = 0x90D3
 	SHORT                                 = 0x1402
 	SRGB                                  = 0x8c40
 	SRGB_ALPHA_EXT                        = 0x8c42
@@ -94,7 +76,6 @@ const (
 	STATIC_DRAW                           = 0x88e4
 	STENCIL_BUFFER_BIT                    = 0x00000400
 	TEXTURE_2D                            = 0xde1
-	TEXTURE_BINDING_2D                    = 0x8069
 	TEXTURE_MAG_FILTER                    = 0x2800
 	TEXTURE_MIN_FILTER                    = 0x2801
 	TEXTURE_WRAP_S                        = 0x2802
@@ -105,22 +86,11 @@ const (
 	TRIANGLES                             = 0x4
 	TRUE                                  = 1
 	UNIFORM_BUFFER                        = 0x8A11
-	UNIFORM_BUFFER_BINDING                = 0x8A28
 	UNPACK_ALIGNMENT                      = 0xcf5
-	UNPACK_ROW_LENGTH                     = 0x0CF2
 	UNSIGNED_BYTE                         = 0x1401
 	UNSIGNED_SHORT                        = 0x1403
-	VIEWPORT                              = 0x0BA2
 	VERSION                               = 0x1f02
-	VERTEX_ARRAY_BINDING                  = 0x85B5
 	VERTEX_SHADER                         = 0x8b31
-	VERTEX_ATTRIB_ARRAY_BUFFER_BINDING    = 0x889F
-	VERTEX_ATTRIB_ARRAY_ENABLED           = 0x8622
-	VERTEX_ATTRIB_ARRAY_POINTER           = 0x8645
-	VERTEX_ATTRIB_ARRAY_NORMALIZED        = 0x886A
-	VERTEX_ATTRIB_ARRAY_SIZE              = 0x8623
-	VERTEX_ATTRIB_ARRAY_STRIDE            = 0x8624
-	VERTEX_ATTRIB_ARRAY_TYPE              = 0x8625
 	WRITE_ONLY                            = 0x88B9
 	ZERO                                  = 0x0
 
@@ -128,3 +98,84 @@ const (
 	TIME_ELAPSED_EXT = 0x88BF
 	GPU_DISJOINT_EXT = 0x8FBB
 )
+
+var _ interface {
+	ActiveTexture(texture Enum)
+	AttachShader(p Program, s Shader)
+	BeginQuery(target Enum, query Query)
+	BindAttribLocation(p Program, a Attrib, name string)
+	BindBuffer(target Enum, b Buffer)
+	BindBufferBase(target Enum, index int, buffer Buffer)
+	BindFramebuffer(target Enum, fb Framebuffer)
+	BindImageTexture(unit int, t Texture, level int, layered bool, layer int, access, format Enum)
+	BindRenderbuffer(target Enum, fb Renderbuffer)
+	BindTexture(target Enum, t Texture)
+	BlendEquation(mode Enum)
+	BlendFunc(sfactor, dfactor Enum)
+	BlitFramebuffer(sx0, sy0, sx1, sy1, dx0, dy0, dx1, dy1 int, mask Enum, filter Enum)
+	BufferData(target Enum, size int, usage Enum)
+	BufferSubData(target Enum, offset int, src []byte)
+	CheckFramebufferStatus(target Enum) Enum
+	Clear(mask Enum)
+	ClearColor(red, green, blue, alpha float32)
+	ClearDepthf(d float32)
+	CompileShader(s Shader)
+	CreateBuffer() Buffer
+	CreateFramebuffer() Framebuffer
+	CreateProgram() Program
+	CreateQuery() Query
+	CreateRenderbuffer() Renderbuffer
+	CreateShader(ty Enum) Shader
+	CreateTexture() Texture
+	DeleteBuffer(v Buffer)
+	DeleteFramebuffer(v Framebuffer)
+	DeleteProgram(p Program)
+	DeleteQuery(query Query)
+	DeleteRenderbuffer(r Renderbuffer)
+	DeleteShader(s Shader)
+	DeleteTexture(v Texture)
+	DepthFunc(f Enum)
+	DepthMask(mask bool)
+	DisableVertexAttribArray(a Attrib)
+	Disable(cap Enum)
+	DispatchCompute(x, y, z int)
+	DrawArrays(mode Enum, first, count int)
+	DrawElements(mode Enum, count int, ty Enum, offset int)
+	Enable(cap Enum)
+	EnableVertexAttribArray(a Attrib)
+	EndQuery(target Enum)
+	FramebufferTexture2D(target, attachment, texTarget Enum, t Texture, level int)
+	FramebufferRenderbuffer(target, attachment, renderbuffertarget Enum, renderbuffer Renderbuffer)
+	GetBinding(pname Enum) Object
+	GetError() Enum
+	GetInteger(pname Enum) int
+	GetProgrami(p Program, pname Enum) int
+	GetProgramInfoLog(p Program) string
+	GetQueryObjectuiv(query Query, pname Enum) uint
+	GetShaderi(s Shader, pname Enum) int
+	GetShaderInfoLog(s Shader) string
+	GetString(pname Enum) string
+	GetUniformBlockIndex(p Program, name string) uint
+	GetUniformLocation(p Program, name string) Uniform
+	InvalidateFramebuffer(target, attachment Enum)
+	LinkProgram(p Program)
+	MapBufferRange(target Enum, offset, length int, access Enum) []byte
+	MemoryBarrier(barriers Enum)
+	ReadPixels(x, y, width, height int, format, ty Enum, data []byte)
+	RenderbufferStorage(target, internalformat Enum, width, height int)
+	ShaderSource(s Shader, src string)
+	TexImage2D(target Enum, level int, internalFormat Enum, width, height int, format, ty Enum)
+	TexParameteri(target, pname Enum, param int)
+	TexStorage2D(target Enum, levels int, internalFormat Enum, width, height int)
+	TexSubImage2D(target Enum, level, xoff, yoff int, width, height int, format, ty Enum, data []byte)
+	UniformBlockBinding(p Program, uniformBlockIndex uint, uniformBlockBinding uint)
+	Uniform1f(dst Uniform, v float32)
+	Uniform1i(dst Uniform, v int)
+	Uniform2f(dst Uniform, v0, v1 float32)
+	Uniform3f(dst Uniform, v0, v1, v2 float32)
+	Uniform4f(dst Uniform, v0, v1, v2, v3 float32)
+	UseProgram(p Program)
+	UnmapBuffer(target Enum) bool
+	VertexAttribPointer(dst Attrib, size int, ty Enum, normalized bool, stride, offset int)
+	Viewport(x, y, width, height int)
+} = (*Functions)(nil)

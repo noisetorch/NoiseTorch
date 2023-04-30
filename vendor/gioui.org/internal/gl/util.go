@@ -9,12 +9,12 @@ import (
 )
 
 func CreateProgram(ctx *Functions, vsSrc, fsSrc string, attribs []string) (Program, error) {
-	vs, err := CreateShader(ctx, VERTEX_SHADER, vsSrc)
+	vs, err := createShader(ctx, VERTEX_SHADER, vsSrc)
 	if err != nil {
 		return Program{}, err
 	}
 	defer ctx.DeleteShader(vs)
-	fs, err := CreateShader(ctx, FRAGMENT_SHADER, fsSrc)
+	fs, err := createShader(ctx, FRAGMENT_SHADER, fsSrc)
 	if err != nil {
 		return Program{}, err
 	}
@@ -38,7 +38,7 @@ func CreateProgram(ctx *Functions, vsSrc, fsSrc string, attribs []string) (Progr
 }
 
 func CreateComputeProgram(ctx *Functions, src string) (Program, error) {
-	cs, err := CreateShader(ctx, COMPUTE_SHADER, src)
+	cs, err := createShader(ctx, COMPUTE_SHADER, src)
 	if err != nil {
 		return Program{}, err
 	}
@@ -57,7 +57,7 @@ func CreateComputeProgram(ctx *Functions, src string) (Program, error) {
 	return prog, nil
 }
 
-func CreateShader(ctx *Functions, typ Enum, src string) (Shader, error) {
+func createShader(ctx *Functions, typ Enum, src string) (Shader, error) {
 	sh := ctx.CreateShader(typ)
 	if !sh.Valid() {
 		return Shader{}, errors.New("glCreateShader failed")

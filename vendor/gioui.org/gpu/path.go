@@ -15,8 +15,6 @@ import (
 	"gioui.org/gpu/internal/driver"
 	"gioui.org/internal/byteslice"
 	"gioui.org/internal/f32color"
-	"gioui.org/shader"
-	"gioui.org/shader/gio"
 )
 
 type pather struct {
@@ -30,27 +28,38 @@ type pather struct {
 
 type coverer struct {
 	ctx                    driver.Device
-	pipelines              [3]*pipeline
+	prog                   [3]*program
 	texUniforms            *coverTexUniforms
 	colUniforms            *coverColUniforms
 	linearGradientUniforms *coverLinearGradientUniforms
+	layout                 driver.InputLayout
 }
 
 type coverTexUniforms struct {
-	coverUniforms
-	_ [12]byte // Padding to multiple of 16.
+	vert struct {
+		coverUniforms
+		_ [12]byte // Padding to multiple of 16.
+	}
 }
 
 type coverColUniforms struct {
-	coverUniforms
-	_ [128 - unsafe.Sizeof(coverUniforms{}) - unsafe.Sizeof(colorUniforms{})]byte // Padding to 128 bytes.
-	colorUniforms
+	vert struct {
+		coverUniforms
+		_ [12]byte // Padding to multiple of 16.
+	}
+	frag struct {
+		colorUniforms
+	}
 }
 
 type coverLinearGradientUniforms struct {
-	coverUniforms
-	_ [128 - unsafe.Sizeof(coverUniforms{}) - unsafe.Sizeof(gradientUniforms{})]byte // Padding to 128.
-	gradientUniforms
+	vert struct {
+		coverUniforms
+		_ [12]byte // Padding to multiple of 16.
+	}
+	frag struct {
+		gradientUniforms
+	}
 }
 
 type coverUniforms struct {
@@ -62,14 +71,16 @@ type coverUniforms struct {
 }
 
 type stenciler struct {
-	ctx      driver.Device
-	pipeline struct {
-		pipeline *pipeline
+	ctx  driver.Device
+	prog struct {
+		prog     *program
 		uniforms *stencilUniforms
+		layout   driver.InputLayout
 	}
-	ipipeline struct {
-		pipeline *pipeline
+	iprog struct {
+		prog     *program
 		uniforms *intersectUniforms
+		layout   driver.InputLayout
 	}
 	fbos          fboSet
 	intersections fboSet
@@ -77,9 +88,11 @@ type stenciler struct {
 }
 
 type stencilUniforms struct {
-	transform  [4]float32
-	pathOffset [2]float32
-	_          [8]byte // Padding to multiple of 16.
+	vert struct {
+		transform  [4]float32
+		pathOffset [2]float32
+		_          [8]byte // Padding to multiple of 16.
+	}
 }
 
 type intersectUniforms struct {
@@ -95,6 +108,7 @@ type fboSet struct {
 
 type stencilFBO struct {
 	size image.Point
+	fbo  driver.Framebuffer
 	tex  driver.Texture
 }
 
@@ -147,13 +161,15 @@ func newCoverer(ctx driver.Device) *coverer {
 	c.colUniforms = new(coverColUniforms)
 	c.texUniforms = new(coverTexUniforms)
 	c.linearGradientUniforms = new(coverLinearGradientUniforms)
-	pipelines, err := createColorPrograms(ctx, gio.Shader_cover_vert, gio.Shader_cover_frag,
-		[3]interface{}{c.colUniforms, c.linearGradientUniforms, c.texUniforms},
+	prog, layout, err := createColorPrograms(ctx, shader_cover_vert, shader_cover_frag,
+		[3]interface{}{&c.colUniforms.vert, &c.linearGradientUniforms.vert, &c.texUniforms.vert},
+		[3]interface{}{&c.colUniforms.frag, &c.linearGradientUniforms.frag, nil},
 	)
 	if err != nil {
 		panic(err)
 	}
-	c.pipelines = pipelines
+	c.prog = prog
+	c.layout = layout
 	return c
 }
 
@@ -173,72 +189,43 @@ func newStenciler(ctx driver.Device) *stenciler {
 	if err != nil {
 		panic(err)
 	}
-	progLayout := driver.VertexLayout{
-		Inputs: []driver.InputDesc{
-			{Type: shader.DataTypeFloat, Size: 1, Offset: int(unsafe.Offsetof((*(*vertex)(nil)).Corner))},
-			{Type: shader.DataTypeFloat, Size: 1, Offset: int(unsafe.Offsetof((*(*vertex)(nil)).MaxY))},
-			{Type: shader.DataTypeFloat, Size: 2, Offset: int(unsafe.Offsetof((*(*vertex)(nil)).FromX))},
-			{Type: shader.DataTypeFloat, Size: 2, Offset: int(unsafe.Offsetof((*(*vertex)(nil)).CtrlX))},
-			{Type: shader.DataTypeFloat, Size: 2, Offset: int(unsafe.Offsetof((*(*vertex)(nil)).ToX))},
-		},
-		Stride: vertStride,
+	progLayout, err := ctx.NewInputLayout(shader_stencil_vert, []driver.InputDesc{
+		{Type: driver.DataTypeFloat, Size: 1, Offset: int(unsafe.Offsetof((*(*vertex)(nil)).Corner))},
+		{Type: driver.DataTypeFloat, Size: 1, Offset: int(unsafe.Offsetof((*(*vertex)(nil)).MaxY))},
+		{Type: driver.DataTypeFloat, Size: 2, Offset: int(unsafe.Offsetof((*(*vertex)(nil)).FromX))},
+		{Type: driver.DataTypeFloat, Size: 2, Offset: int(unsafe.Offsetof((*(*vertex)(nil)).CtrlX))},
+		{Type: driver.DataTypeFloat, Size: 2, Offset: int(unsafe.Offsetof((*(*vertex)(nil)).ToX))},
+	})
+	if err != nil {
+		panic(err)
 	}
-	iprogLayout := driver.VertexLayout{
-		Inputs: []driver.InputDesc{
-			{Type: shader.DataTypeFloat, Size: 2, Offset: 0},
-			{Type: shader.DataTypeFloat, Size: 2, Offset: 4 * 2},
-		},
-		Stride: 4 * 4,
+	iprogLayout, err := ctx.NewInputLayout(shader_intersect_vert, []driver.InputDesc{
+		{Type: driver.DataTypeFloat, Size: 2, Offset: 0},
+		{Type: driver.DataTypeFloat, Size: 2, Offset: 4 * 2},
+	})
+	if err != nil {
+		panic(err)
 	}
 	st := &stenciler{
 		ctx:      ctx,
 		indexBuf: indexBuf,
 	}
-	vsh, fsh, err := newShaders(ctx, gio.Shader_stencil_vert, gio.Shader_stencil_frag)
+	prog, err := ctx.NewProgram(shader_stencil_vert, shader_stencil_frag)
 	if err != nil {
 		panic(err)
 	}
-	defer vsh.Release()
-	defer fsh.Release()
-	st.pipeline.uniforms = new(stencilUniforms)
-	vertUniforms := newUniformBuffer(ctx, st.pipeline.uniforms)
-	pipe, err := st.ctx.NewPipeline(driver.PipelineDesc{
-		VertexShader:   vsh,
-		FragmentShader: fsh,
-		VertexLayout:   progLayout,
-		BlendDesc: driver.BlendDesc{
-			Enable:    true,
-			SrcFactor: driver.BlendFactorOne,
-			DstFactor: driver.BlendFactorOne,
-		},
-		PixelFormat: driver.TextureFormatFloat,
-		Topology:    driver.TopologyTriangles,
-	})
-	st.pipeline.pipeline = &pipeline{pipe, vertUniforms}
+	st.prog.uniforms = new(stencilUniforms)
+	vertUniforms := newUniformBuffer(ctx, &st.prog.uniforms.vert)
+	st.prog.prog = newProgram(prog, vertUniforms, nil)
+	st.prog.layout = progLayout
+	iprog, err := ctx.NewProgram(shader_intersect_vert, shader_intersect_frag)
 	if err != nil {
 		panic(err)
 	}
-	vsh, fsh, err = newShaders(ctx, gio.Shader_intersect_vert, gio.Shader_intersect_frag)
-	if err != nil {
-		panic(err)
-	}
-	defer vsh.Release()
-	defer fsh.Release()
-	st.ipipeline.uniforms = new(intersectUniforms)
-	vertUniforms = newUniformBuffer(ctx, &st.ipipeline.uniforms.vert)
-	ipipe, err := st.ctx.NewPipeline(driver.PipelineDesc{
-		VertexShader:   vsh,
-		FragmentShader: fsh,
-		VertexLayout:   iprogLayout,
-		BlendDesc: driver.BlendDesc{
-			Enable:    true,
-			SrcFactor: driver.BlendFactorDstColor,
-			DstFactor: driver.BlendFactorZero,
-		},
-		PixelFormat: driver.TextureFormatFloat,
-		Topology:    driver.TopologyTriangleStrip,
-	})
-	st.ipipeline.pipeline = &pipeline{ipipe, vertUniforms}
+	st.iprog.uniforms = new(intersectUniforms)
+	vertUniforms = newUniformBuffer(ctx, &st.iprog.uniforms.vert)
+	st.iprog.prog = newProgram(iprog, vertUniforms, nil)
+	st.iprog.layout = iprogLayout
 	return st
 }
 
@@ -256,7 +243,8 @@ func (s *fboSet) resize(ctx driver.Device, sizes []image.Point) {
 		waste := float32(sz.X*sz.Y) / float32(f.size.X*f.size.Y)
 		resize = resize || waste > 1.2
 		if resize {
-			if f.tex != nil {
+			if f.fbo != nil {
+				f.fbo.Release()
 				f.tex.Release()
 			}
 			tex, err := ctx.NewTexture(driver.TextureFormatFloat, sz.X, sz.Y, driver.FilterNearest, driver.FilterNearest,
@@ -264,17 +252,29 @@ func (s *fboSet) resize(ctx driver.Device, sizes []image.Point) {
 			if err != nil {
 				panic(err)
 			}
+			fbo, err := ctx.NewFramebuffer(tex, 0)
+			if err != nil {
+				panic(err)
+			}
 			f.size = sz
 			f.tex = tex
+			f.fbo = fbo
 		}
 	}
 	// Delete extra fbos.
 	s.delete(ctx, len(sizes))
 }
 
+func (s *fboSet) invalidate(ctx driver.Device) {
+	for _, f := range s.fbos {
+		f.fbo.Invalidate()
+	}
+}
+
 func (s *fboSet) delete(ctx driver.Device, idx int) {
 	for i := idx; i < len(s.fbos); i++ {
 		f := s.fbos[i]
+		f.fbo.Release()
 		f.tex.Release()
 	}
 	s.fbos = s.fbos[:idx]
@@ -282,9 +282,10 @@ func (s *fboSet) delete(ctx driver.Device, idx int) {
 
 func (s *stenciler) release() {
 	s.fbos.delete(s.ctx, 0)
-	s.intersections.delete(s.ctx, 0)
-	s.pipeline.pipeline.Release()
-	s.ipipeline.pipeline.Release()
+	s.prog.layout.Release()
+	s.prog.prog.Release()
+	s.iprog.layout.Release()
+	s.iprog.prog.Release()
 	s.indexBuf.Release()
 }
 
@@ -294,9 +295,10 @@ func (p *pather) release() {
 }
 
 func (c *coverer) release() {
-	for _, p := range c.pipelines {
+	for _, p := range c.prog {
 		p.Release()
 	}
+	c.layout.Release()
 }
 
 func buildPath(ctx driver.Device, p []byte) pathData {
@@ -323,10 +325,17 @@ func (p *pather) stencilPath(bounds image.Rectangle, offset f32.Point, uv image.
 }
 
 func (s *stenciler) beginIntersect(sizes []image.Point) {
+	s.ctx.BlendFunc(driver.BlendFactorDstColor, driver.BlendFactorZero)
 	// 8 bit coverage is enough, but OpenGL ES only supports single channel
 	// floating point formats. Replace with GL_RGB+GL_UNSIGNED_BYTE if
 	// no floating point support is available.
 	s.intersections.resize(s.ctx, sizes)
+	s.ctx.BindProgram(s.iprog.prog.prog)
+}
+
+func (s *stenciler) invalidateFBO() {
+	s.intersections.invalidate(s.ctx)
+	s.fbos.invalidate(s.ctx)
 }
 
 func (s *stenciler) cover(idx int) stencilFBO {
@@ -334,7 +343,11 @@ func (s *stenciler) cover(idx int) stencilFBO {
 }
 
 func (s *stenciler) begin(sizes []image.Point) {
+	s.ctx.BlendFunc(driver.BlendFactorOne, driver.BlendFactorOne)
 	s.fbos.resize(s.ctx, sizes)
+	s.ctx.BindProgram(s.prog.prog.prog)
+	s.ctx.BindInputLayout(s.prog.layout)
+	s.ctx.BindIndexBuffer(s.indexBuf)
 }
 
 func (s *stenciler) stencilPath(bounds image.Rectangle, offset f32.Point, uv image.Point, data pathData) {
@@ -343,9 +356,9 @@ func (s *stenciler) stencilPath(bounds image.Rectangle, offset f32.Point, uv ima
 	texSize := f32.Point{X: float32(bounds.Dx()), Y: float32(bounds.Dy())}
 	scale := f32.Point{X: 2 / texSize.X, Y: 2 / texSize.Y}
 	orig := f32.Point{X: -1 - float32(bounds.Min.X)*2/texSize.X, Y: -1 - float32(bounds.Min.Y)*2/texSize.Y}
-	s.pipeline.uniforms.transform = [4]float32{scale.X, scale.Y, orig.X, orig.Y}
-	s.pipeline.uniforms.pathOffset = [2]float32{offset.X, offset.Y}
-	s.pipeline.pipeline.UploadUniforms(s.ctx)
+	s.prog.uniforms.vert.transform = [4]float32{scale.X, scale.Y, orig.X, orig.Y}
+	s.prog.uniforms.vert.pathOffset = [2]float32{offset.X, offset.Y}
+	s.prog.prog.UploadUniforms()
 	// Draw in batches that fit in uint16 indices.
 	start := 0
 	nquads := data.ncurves / 4
@@ -355,40 +368,43 @@ func (s *stenciler) stencilPath(bounds image.Rectangle, offset f32.Point, uv ima
 			batch = max
 		}
 		off := vertStride * start * 4
-		s.ctx.BindVertexBuffer(data.data, off)
-		s.ctx.DrawElements(0, batch*6)
+		s.ctx.BindVertexBuffer(data.data, vertStride, off)
+		s.ctx.DrawElements(driver.DrawModeTriangles, 0, batch*6)
 		start += batch
 	}
 }
 
-func (p *pather) cover(mat materialType, col f32color.RGBA, col1, col2 f32color.RGBA, scale, off f32.Point, uvTrans f32.Affine2D, coverScale, coverOff f32.Point) {
-	p.coverer.cover(mat, col, col1, col2, scale, off, uvTrans, coverScale, coverOff)
+func (p *pather) cover(z float32, mat materialType, col f32color.RGBA, col1, col2 f32color.RGBA, scale, off f32.Point, uvTrans f32.Affine2D, coverScale, coverOff f32.Point) {
+	p.coverer.cover(z, mat, col, col1, col2, scale, off, uvTrans, coverScale, coverOff)
 }
 
-func (c *coverer) cover(mat materialType, col f32color.RGBA, col1, col2 f32color.RGBA, scale, off f32.Point, uvTrans f32.Affine2D, coverScale, coverOff f32.Point) {
+func (c *coverer) cover(z float32, mat materialType, col f32color.RGBA, col1, col2 f32color.RGBA, scale, off f32.Point, uvTrans f32.Affine2D, coverScale, coverOff f32.Point) {
+	p := c.prog[mat]
+	c.ctx.BindProgram(p.prog)
 	var uniforms *coverUniforms
 	switch mat {
 	case materialColor:
-		c.colUniforms.color = col
-		uniforms = &c.colUniforms.coverUniforms
+		c.colUniforms.frag.color = col
+		uniforms = &c.colUniforms.vert.coverUniforms
 	case materialLinearGradient:
-		c.linearGradientUniforms.color1 = col1
-		c.linearGradientUniforms.color2 = col2
+		c.linearGradientUniforms.frag.color1 = col1
+		c.linearGradientUniforms.frag.color2 = col2
 
 		t1, t2, t3, t4, t5, t6 := uvTrans.Elems()
-		c.linearGradientUniforms.uvTransformR1 = [4]float32{t1, t2, t3, 0}
-		c.linearGradientUniforms.uvTransformR2 = [4]float32{t4, t5, t6, 0}
-		uniforms = &c.linearGradientUniforms.coverUniforms
+		c.linearGradientUniforms.vert.uvTransformR1 = [4]float32{t1, t2, t3, 0}
+		c.linearGradientUniforms.vert.uvTransformR2 = [4]float32{t4, t5, t6, 0}
+		uniforms = &c.linearGradientUniforms.vert.coverUniforms
 	case materialTexture:
 		t1, t2, t3, t4, t5, t6 := uvTrans.Elems()
-		c.texUniforms.uvTransformR1 = [4]float32{t1, t2, t3, 0}
-		c.texUniforms.uvTransformR2 = [4]float32{t4, t5, t6, 0}
-		uniforms = &c.texUniforms.coverUniforms
+		c.texUniforms.vert.uvTransformR1 = [4]float32{t1, t2, t3, 0}
+		c.texUniforms.vert.uvTransformR2 = [4]float32{t4, t5, t6, 0}
+		uniforms = &c.texUniforms.vert.coverUniforms
 	}
+	uniforms.z = z
 	uniforms.transform = [4]float32{scale.X, scale.Y, off.X, off.Y}
 	uniforms.uvCoverTransform = [4]float32{coverScale.X, coverScale.Y, coverOff.X, coverOff.Y}
-	c.pipelines[mat].UploadUniforms(c.ctx)
-	c.ctx.DrawArrays(0, 4)
+	p.UploadUniforms()
+	c.ctx.DrawArrays(driver.DrawModeTriangleStrip, 0, 4)
 }
 
 func init() {

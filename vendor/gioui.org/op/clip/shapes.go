@@ -7,7 +7,6 @@ import (
 	"math"
 
 	"gioui.org/f32"
-	"gioui.org/internal/ops"
 	"gioui.org/op"
 )
 
@@ -17,22 +16,14 @@ type Rect image.Rectangle
 // Op returns the op for the rectangle.
 func (r Rect) Op() Op {
 	return Op{
+		bounds:  image.Rectangle(r),
 		outline: true,
-		path:    r.Path(),
 	}
 }
 
-// Push the clip operation on the clip stack.
-func (r Rect) Push(ops *op.Ops) Stack {
-	return r.Op().Push(ops)
-}
-
-// Path returns the PathSpec for the rectangle.
-func (r Rect) Path() PathSpec {
-	return PathSpec{
-		shape:  ops.Rect,
-		bounds: image.Rectangle(r),
-	}
+// Add the clip operation.
+func (r Rect) Add(ops *op.Ops) {
+	r.Op().Add(ops)
 }
 
 // UniformRRect returns an RRect with all corner radii set to the
@@ -73,9 +64,9 @@ func (rr RRect) Op(ops *op.Ops) Op {
 	return Outline{Path: rr.Path(ops)}.Op()
 }
 
-// Push the rectangle clip on the clip stack.
-func (rr RRect) Push(ops *op.Ops) Stack {
-	return rr.Op(ops).Push(ops)
+// Add the rectangle clip.
+func (rr RRect) Add(ops *op.Ops) {
+	rr.Op(ops).Add(ops)
 }
 
 // Path returns the PathSpec for the rounded rectangle.
@@ -115,67 +106,58 @@ func (rr RRect) Path(ops *op.Ops) PathSpec {
 	return p.End()
 }
 
-// Ellipse represents the largest axis-aligned ellipse that
-// is contained in its bounds.
-type Ellipse f32.Rectangle
-
-// Op returns the op for the filled ellipse.
-func (e Ellipse) Op(ops *op.Ops) Op {
-	return Outline{Path: e.Path(ops)}.Op()
+// Circle represents the clip area of a circle.
+type Circle struct {
+	Center f32.Point
+	Radius float32
 }
 
-// Push the filled ellipse clip op on the clip stack.
-func (e Ellipse) Push(ops *op.Ops) Stack {
-	return e.Op(ops).Push(ops)
+// Op returns the op for the circle.
+func (c Circle) Op(ops *op.Ops) Op {
+	return Outline{Path: c.Path(ops)}.Op()
 }
 
-// Path constructs a path for the ellipse.
-func (e Ellipse) Path(o *op.Ops) PathSpec {
-	bounds := f32.Rectangle(e)
-	if bounds.Dx() == 0 || bounds.Dy() == 0 {
-		return PathSpec{shape: ops.Rect}
-	}
+// Add the circle clip.
+func (c Circle) Add(ops *op.Ops) {
+	c.Op(ops).Add(ops)
+}
 
+// Path returns the PathSpec for the circle.
+func (c Circle) Path(ops *op.Ops) PathSpec {
 	var p Path
-	p.Begin(o)
+	p.Begin(ops)
 
-	center := bounds.Max.Add(bounds.Min).Mul(.5)
-	diam := bounds.Dx()
-	r := diam * .5
-	// We'll model the ellipse as a circle scaled in the Y
-	// direction.
-	scale := bounds.Dy() / diam
+	center := c.Center
+	r := c.Radius
 
 	// https://pomax.github.io/bezierinfo/#circles_cubic.
 	const q = 4 * (math.Sqrt2 - 1) / 3
 
 	curve := r * q
-	top := f32.Point{X: center.X, Y: center.Y - r*scale}
+	top := f32.Point{X: center.X, Y: center.Y - r}
 
 	p.MoveTo(top)
 	p.CubeTo(
-		f32.Point{X: center.X + curve, Y: center.Y - r*scale},
-		f32.Point{X: center.X + r, Y: center.Y - curve*scale},
+		f32.Point{X: center.X + curve, Y: center.Y - r},
+		f32.Point{X: center.X + r, Y: center.Y - curve},
 		f32.Point{X: center.X + r, Y: center.Y},
 	)
 	p.CubeTo(
-		f32.Point{X: center.X + r, Y: center.Y + curve*scale},
-		f32.Point{X: center.X + curve, Y: center.Y + r*scale},
-		f32.Point{X: center.X, Y: center.Y + r*scale},
+		f32.Point{X: center.X + r, Y: center.Y + curve},
+		f32.Point{X: center.X + curve, Y: center.Y + r},
+		f32.Point{X: center.X, Y: center.Y + r},
 	)
 	p.CubeTo(
-		f32.Point{X: center.X - curve, Y: center.Y + r*scale},
-		f32.Point{X: center.X - r, Y: center.Y + curve*scale},
+		f32.Point{X: center.X - curve, Y: center.Y + r},
+		f32.Point{X: center.X - r, Y: center.Y + curve},
 		f32.Point{X: center.X - r, Y: center.Y},
 	)
 	p.CubeTo(
-		f32.Point{X: center.X - r, Y: center.Y - curve*scale},
-		f32.Point{X: center.X - curve, Y: center.Y - r*scale},
+		f32.Point{X: center.X - r, Y: center.Y - curve},
+		f32.Point{X: center.X - curve, Y: center.Y - r},
 		top,
 	)
-	ellipse := p.End()
-	ellipse.shape = ops.Ellipse
-	return ellipse
+	return p.End()
 }
 
 func fPt(p image.Point) f32.Point {

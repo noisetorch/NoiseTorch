@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Unlicense OR MIT
 
-//go:build windows
 // +build windows
 
 package windows
@@ -113,7 +112,6 @@ const (
 	SWP_NOOWNERZORDER = 0x0200
 	SWP_NOSIZE        = 0x0001
 	SWP_NOZORDER      = 0x0004
-	SWP_SHOWWINDOW    = 0x0040
 
 	USER_TIMER_MINIMUM = 0x0000000A
 
@@ -200,7 +198,6 @@ const (
 
 	WS_CLIPCHILDREN     = 0x00010000
 	WS_CLIPSIBLINGS     = 0x04000000
-	WS_MAXIMIZE         = 0x01000000
 	WS_VISIBLE          = 0x10000000
 	WS_OVERLAPPED       = 0x00000000
 	WS_OVERLAPPEDWINDOW = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME |
@@ -268,7 +265,6 @@ var (
 	_GetMessageTime              = user32.NewProc("GetMessageTime")
 	_GetMonitorInfo              = user32.NewProc("GetMonitorInfoW")
 	_GetWindowLong               = user32.NewProc("GetWindowLongPtrW")
-	_GetWindowLong32             = user32.NewProc("GetWindowLongW")
 	_GetWindowPlacement          = user32.NewProc("GetWindowPlacement")
 	_KillTimer                   = user32.NewProc("KillTimer")
 	_LoadCursor                  = user32.NewProc("LoadCursorW")
@@ -294,7 +290,6 @@ var (
 	_SetProcessDPIAware          = user32.NewProc("SetProcessDPIAware")
 	_SetTimer                    = user32.NewProc("SetTimer")
 	_SetWindowLong               = user32.NewProc("SetWindowLongPtrW")
-	_SetWindowLong32             = user32.NewProc("SetWindowLongW")
 	_SetWindowPlacement          = user32.NewProc("SetWindowPlacement")
 	_SetWindowPos                = user32.NewProc("SetWindowPos")
 	_SetWindowText               = user32.NewProc("SetWindowTextW")
@@ -473,20 +468,12 @@ func GetMonitorInfo(hwnd syscall.Handle) MonitorInfo {
 }
 
 func GetWindowLong(hwnd syscall.Handle) (style uintptr) {
-	if runtime.GOARCH == "386" {
-		style, _, _ = _GetWindowLong32.Call(uintptr(hwnd), uintptr(GWL_STYLE))
-	} else {
-		style, _, _ = _GetWindowLong.Call(uintptr(hwnd), uintptr(GWL_STYLE))
-	}
+	style, _, _ = _GetWindowLong.Call(uintptr(hwnd), uintptr(GWL_STYLE))
 	return
 }
 
 func SetWindowLong(hwnd syscall.Handle, idx uint32, style uintptr) {
-	if runtime.GOARCH == "386" {
-		_SetWindowLong32.Call(uintptr(hwnd), uintptr(idx), style)
-	} else {
-		_SetWindowLong.Call(uintptr(hwnd), uintptr(idx), style)
-	}
+	_SetWindowLong.Call(uintptr(hwnd), uintptr(idx), style)
 }
 
 func SetWindowPlacement(hwnd syscall.Handle, wp *WindowPlacement) {
@@ -677,10 +664,6 @@ func UnregisterClass(cls uint16, hInst syscall.Handle) {
 
 func UpdateWindow(hwnd syscall.Handle) {
 	_UpdateWindow.Call(uintptr(hwnd))
-}
-
-func (p WindowPlacement) Rect() Rect {
-	return p.rcNormalPosition
 }
 
 // issue34474KeepAlive calls runtime.KeepAlive as a

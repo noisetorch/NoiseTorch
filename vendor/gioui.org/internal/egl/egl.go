@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Unlicense OR MIT
 
-//go:build linux || windows || freebsd || openbsd
 // +build linux windows freebsd openbsd
 
 package egl
@@ -12,13 +11,19 @@ import (
 	"strings"
 
 	"gioui.org/gpu"
+	"gioui.org/internal/gl"
+	"gioui.org/internal/srgb"
 )
 
 type Context struct {
+	c             *gl.Functions
 	disp          _EGLDisplay
 	eglCtx        *eglContext
 	eglSurf       _EGLSurface
 	width, height int
+	refreshFBO    bool
+	// For sRGB emulation.
+	srgbFBO *srgb.FBO
 }
 
 type eglContext struct {
@@ -57,6 +62,10 @@ const (
 )
 
 func (c *Context) Release() {
+	if c.srgbFBO != nil {
+		c.srgbFBO.Release()
+		c.srgbFBO = nil
+	}
 	c.ReleaseSurface()
 	if c.eglCtx != nil {
 		eglDestroyContext(c.disp, c.eglCtx.ctx)
@@ -66,8 +75,14 @@ func (c *Context) Release() {
 }
 
 func (c *Context) Present() error {
+	if c.srgbFBO != nil {
+		c.srgbFBO.Blit()
+	}
 	if !eglSwapBuffers(c.disp, c.eglSurf) {
 		return fmt.Errorf("eglSwapBuffers failed (%x)", eglGetError())
+	}
+	if c.srgbFBO != nil {
+		c.srgbFBO.AfterPresent()
 	}
 	return nil
 }
@@ -90,15 +105,16 @@ func NewContext(disp NativeDisplayType) (*Context, error) {
 	if err != nil {
 		return nil, err
 	}
+	f, err := gl.NewFunctions(nil)
+	if err != nil {
+		return nil, err
+	}
 	c := &Context{
 		disp:   eglDisp,
 		eglCtx: eglCtx,
+		c:      f,
 	}
 	return c, nil
-}
-
-func (c *Context) RenderTarget() (gpu.RenderTarget, error) {
-	return gpu.OpenGLRenderTarget{}, nil
 }
 
 func (c *Context) API() gpu.API {
@@ -110,7 +126,7 @@ func (c *Context) ReleaseSurface() {
 		return
 	}
 	// Make sure any in-flight GL commands are complete.
-	eglWaitClient()
+	c.c.Finish()
 	c.ReleaseCurrent()
 	eglDestroySurface(c.disp, c.eglSurf)
 	c.eglSurf = nilEGLSurface
@@ -125,6 +141,7 @@ func (c *Context) CreateSurface(win NativeWindowType, width, height int) error {
 	c.eglSurf = eglSurf
 	c.width = width
 	c.height = height
+	c.refreshFBO = true
 	return err
 }
 
@@ -135,14 +152,29 @@ func (c *Context) ReleaseCurrent() {
 }
 
 func (c *Context) MakeCurrent() error {
-	// OpenGL contexts are implicit and thread-local. Lock the OS thread.
-	runtime.LockOSThread()
-
 	if c.eglSurf == nilEGLSurface && !c.eglCtx.surfaceless {
 		return errors.New("no surface created yet EGL_KHR_surfaceless_context is not supported")
 	}
 	if !eglMakeCurrent(c.disp, c.eglSurf, c.eglSurf, c.eglCtx.ctx) {
 		return fmt.Errorf("eglMakeCurrent error 0x%x", eglGetError())
+	}
+	if c.eglCtx.srgb || c.eglSurf == nilEGLSurface {
+		return nil
+	}
+	if c.srgbFBO == nil {
+		var err error
+		c.srgbFBO, err = srgb.New(nil)
+		if err != nil {
+			c.ReleaseCurrent()
+			return err
+		}
+	}
+	if c.refreshFBO {
+		c.refreshFBO = false
+		if err := c.srgbFBO.Refresh(c.width, c.height); err != nil {
+			c.ReleaseCurrent()
+			return err
+		}
 	}
 	return nil
 }
@@ -185,9 +217,11 @@ func createContext(disp _EGLDisplay) (*eglContext, error) {
 			// Some Mesa drivers crash if an sRGB framebuffer is requested without alpha.
 			// https://bugs.freedesktop.org/show_bug.cgi?id=107782.
 			//
-			// Also, some Android devices (Samsung S9) need alpha for sRGB to work.
+			// Also, some Android devices (Samsung S9) needs alpha for sRGB to work.
 			attribs = append(attribs, _EGL_ALPHA_SIZE, 8)
 		}
+		// Only request a depth buffer if we're going to render directly to the framebuffer.
+		attribs = append(attribs, _EGL_DEPTH_SIZE, 16)
 	}
 	attribs = append(attribs, _EGL_NONE)
 	eglCfg, ret := eglChooseConfig(disp, attribs)
@@ -241,7 +275,7 @@ func createSurface(disp _EGLDisplay, eglCtx *eglContext, win NativeWindowType) (
 	surfAttribs = append(surfAttribs, _EGL_NONE)
 	eglSurf := eglCreateWindowSurface(disp, eglCtx.config, win, surfAttribs)
 	if eglSurf == nilEGLSurface && eglCtx.srgb {
-		// Try again without sRGB.
+		// Try again without sRGB
 		eglCtx.srgb = false
 		surfAttribs = []_EGLint{_EGL_NONE}
 		eglSurf = eglCreateWindowSurface(disp, eglCtx.config, win, surfAttribs)

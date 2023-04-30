@@ -27,46 +27,6 @@ import (
 // The duration is somewhat arbitrary.
 const doubleClickDuration = 200 * time.Millisecond
 
-// Hover detects the hover gesture for a pointer area.
-type Hover struct {
-	// entered tracks whether the pointer is inside the gesture.
-	entered bool
-	// pid is the pointer.ID.
-	pid pointer.ID
-}
-
-// Add the gesture to detect hovering over the current pointer area.
-func (h *Hover) Add(ops *op.Ops) {
-	pointer.InputOp{
-		Tag:   h,
-		Types: pointer.Enter | pointer.Leave,
-	}.Add(ops)
-}
-
-// Hovered returns whether a pointer is inside the area.
-func (h *Hover) Hovered(q event.Queue) bool {
-	for _, ev := range q.Events(h) {
-		e, ok := ev.(pointer.Event)
-		if !ok {
-			continue
-		}
-		switch e.Type {
-		case pointer.Leave:
-			if h.entered && h.pid == e.PointerID {
-				h.entered = false
-			}
-		case pointer.Enter:
-			if !h.entered {
-				h.pid = e.PointerID
-			}
-			if h.pid == e.PointerID {
-				h.entered = true
-			}
-		}
-	}
-	return h.entered
-}
-
 // Click detects click gestures in the form
 // of ClickEvents.
 type Click struct {
@@ -83,6 +43,8 @@ type Click struct {
 	// pid is the pointer.ID.
 	pid pointer.ID
 }
+
+type ClickState uint8
 
 // ClickEvent represent a click action, either a
 // TypePress for the beginning of a click or a
@@ -102,7 +64,6 @@ type ClickType uint8
 // Drag detects drag gestures in the form of pointer.Drag events.
 type Drag struct {
 	dragging bool
-	pressed  bool
 	pid      pointer.ID
 	start    f32.Point
 	grab     bool
@@ -148,7 +109,7 @@ const (
 const (
 	// StateIdle is the default scroll state.
 	StateIdle ScrollState = iota
-	// StateDragging is reported during drag gestures.
+	// StateDrag is reported during drag gestures.
 	StateDragging
 	// StateFlinging is reported when a fling is
 	// in progress.
@@ -159,10 +120,11 @@ var touchSlop = unit.Dp(3)
 
 // Add the handler to the operation list to receive click events.
 func (c *Click) Add(ops *op.Ops) {
-	pointer.InputOp{
+	op := pointer.InputOp{
 		Tag:   c,
 		Types: pointer.Press | pointer.Release | pointer.Enter | pointer.Leave,
-	}.Add(ops)
+	}
+	op.Add(ops)
 }
 
 // Hovered returns whether a pointer is inside the area.
@@ -175,7 +137,7 @@ func (c *Click) Pressed() bool {
 	return c.pressed
 }
 
-// Events returns the next click events, if any.
+// Events returns the next click event, if any.
 func (c *Click) Events(q event.Queue) []ClickEvent {
 	var events []ClickEvent
 	for _, evt := range q.Events(c) {
@@ -244,8 +206,6 @@ func (c *Click) Events(q event.Queue) []ClickEvent {
 func (ClickEvent) ImplementsEvent() {}
 
 // Add the handler to the operation list to receive scroll events.
-// The bounds variable refers to the scrolling boundaries
-// as defined in io/pointer.InputOp.
 func (s *Scroll) Add(ops *op.Ops, bounds image.Rectangle) {
 	oph := pointer.InputOp{
 		Tag:          s,
@@ -361,11 +321,12 @@ func (s *Scroll) State() ScrollState {
 
 // Add the handler to the operation list to receive drag events.
 func (d *Drag) Add(ops *op.Ops) {
-	pointer.InputOp{
+	op := pointer.InputOp{
 		Tag:   d,
 		Grab:  d.grab,
 		Types: pointer.Press | pointer.Drag | pointer.Release,
-	}.Add(ops)
+	}
+	op.Add(ops)
 }
 
 // Events returns the next drag events, if any.
@@ -382,7 +343,6 @@ func (d *Drag) Events(cfg unit.Metric, q event.Queue, axis Axis) []pointer.Event
 			if !(e.Buttons == pointer.ButtonPrimary || e.Source == pointer.Touch) {
 				continue
 			}
-			d.pressed = true
 			if d.dragging {
 				continue
 			}
@@ -409,7 +369,6 @@ func (d *Drag) Events(cfg unit.Metric, q event.Queue, axis Axis) []pointer.Event
 				}
 			}
 		case pointer.Release, pointer.Cancel:
-			d.pressed = false
 			if !d.dragging || e.PointerID != d.pid {
 				continue
 			}
@@ -423,11 +382,8 @@ func (d *Drag) Events(cfg unit.Metric, q event.Queue, axis Axis) []pointer.Event
 	return events
 }
 
-// Dragging reports whether it is currently in use.
+// Dragging reports whether it's currently in use.
 func (d *Drag) Dragging() bool { return d.dragging }
-
-// Pressed returns whether a pointer is pressing.
-func (d *Drag) Pressed() bool { return d.pressed }
 
 func (a Axis) String() string {
 	switch a {

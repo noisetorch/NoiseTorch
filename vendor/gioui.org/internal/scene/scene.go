@@ -5,8 +5,6 @@
 package scene
 
 import (
-	"fmt"
-	"image"
 	"image/color"
 	"math"
 	"unsafe"
@@ -18,7 +16,7 @@ type Op uint32
 
 type Command [sceneElemSize / 4]uint32
 
-// GPU commands from piet/scene.h in package gioui.org/shaders.
+// GPU commands from scene.h
 const (
 	OpNop Op = iota
 	OpLine
@@ -31,7 +29,6 @@ const (
 	OpEndClip
 	OpFillImage
 	OpSetFillMode
-	OpGap
 )
 
 // FillModes, from setup.h.
@@ -50,70 +47,9 @@ func (c Command) Op() Op {
 	return Op(c[0])
 }
 
-func (c Command) String() string {
-	switch Op(c[0]) {
-	case OpNop:
-		return "nop"
-	case OpLine:
-		from, to := DecodeLine(c)
-		return fmt.Sprintf("line(%v, %v)", from, to)
-	case OpGap:
-		from, to := DecodeLine(c)
-		return fmt.Sprintf("gap(%v, %v)", from, to)
-	case OpQuad:
-		from, ctrl, to := DecodeQuad(c)
-		return fmt.Sprintf("quad(%v, %v, %v)", from, ctrl, to)
-	case OpCubic:
-		from, ctrl0, ctrl1, to := DecodeCubic(c)
-		return fmt.Sprintf("cubic(%v, %v, %v, %v)", from, ctrl0, ctrl1, to)
-	case OpFillColor:
-		return fmt.Sprintf("fillcolor %#.8x", c[1])
-	case OpLineWidth:
-		return "linewidth"
-	case OpTransform:
-		t := f32.NewAffine2D(
-			math.Float32frombits(c[1]),
-			math.Float32frombits(c[3]),
-			math.Float32frombits(c[5]),
-			math.Float32frombits(c[2]),
-			math.Float32frombits(c[4]),
-			math.Float32frombits(c[6]),
-		)
-		return fmt.Sprintf("transform (%v)", t)
-	case OpBeginClip:
-		bounds := f32.Rectangle{
-			Min: f32.Pt(math.Float32frombits(c[1]), math.Float32frombits(c[2])),
-			Max: f32.Pt(math.Float32frombits(c[3]), math.Float32frombits(c[4])),
-		}
-		return fmt.Sprintf("beginclip (%v)", bounds)
-	case OpEndClip:
-		bounds := f32.Rectangle{
-			Min: f32.Pt(math.Float32frombits(c[1]), math.Float32frombits(c[2])),
-			Max: f32.Pt(math.Float32frombits(c[3]), math.Float32frombits(c[4])),
-		}
-		return fmt.Sprintf("endclip (%v)", bounds)
-	case OpFillImage:
-		return "fillimage"
-	case OpSetFillMode:
-		return "setfillmode"
-	default:
-		panic("unreachable")
-	}
-}
-
 func Line(start, end f32.Point) Command {
 	return Command{
 		0: uint32(OpLine),
-		1: math.Float32bits(start.X),
-		2: math.Float32bits(start.Y),
-		3: math.Float32bits(end.X),
-		4: math.Float32bits(end.Y),
-	}
-}
-
-func Gap(start, end f32.Point) Command {
-	return Command{
-		0: uint32(OpGap),
 		1: math.Float32bits(start.X),
 		2: math.Float32bits(start.Y),
 		3: math.Float32bits(end.X),
@@ -194,13 +130,10 @@ func FillColor(col color.RGBA) Command {
 	}
 }
 
-func FillImage(index int, offset image.Point) Command {
-	x := int16(offset.X)
-	y := int16(offset.Y)
+func FillImage(index int) Command {
 	return Command{
 		0: uint32(OpFillImage),
 		1: uint32(index),
-		2: uint32(uint16(x)) | uint32(uint16(y))<<16,
 	}
 }
 
@@ -213,15 +146,6 @@ func SetFillMode(mode FillMode) Command {
 
 func DecodeLine(cmd Command) (from, to f32.Point) {
 	if cmd[0] != uint32(OpLine) {
-		panic("invalid command")
-	}
-	from = f32.Pt(math.Float32frombits(cmd[1]), math.Float32frombits(cmd[2]))
-	to = f32.Pt(math.Float32frombits(cmd[3]), math.Float32frombits(cmd[4]))
-	return
-}
-
-func DecodeGap(cmd Command) (from, to f32.Point) {
-	if cmd[0] != uint32(OpGap) {
 		panic("invalid command")
 	}
 	from = f32.Pt(math.Float32frombits(cmd[1]), math.Float32frombits(cmd[2]))

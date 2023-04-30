@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"gioui.org/f32"
-	"gioui.org/internal/ops"
+	"gioui.org/internal/opconst"
 	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/op"
@@ -42,16 +42,12 @@ type Event struct {
 	Modifiers key.Modifiers
 }
 
-// PassOp sets the pass-through mode. InputOps added while the pass-through
-// mode is set don't block events to siblings.
-type PassOp struct {
-}
-
-// PassStack represents a PassOp on the pass stack.
-type PassStack struct {
-	ops     *ops.Ops
-	id      ops.StackID
-	macroID int
+// AreaOp updates the hit area to the intersection of the current
+// hit area and the area. The area is transformed before applying
+// it.
+type AreaOp struct {
+	kind areaKind
+	rect image.Rectangle
 }
 
 // CursorNameOp sets the cursor for the current area.
@@ -76,10 +72,15 @@ type InputOp struct {
 	ScrollBounds image.Rectangle
 }
 
+// PassOp sets the pass-through mode.
+type PassOp struct {
+	Pass bool
+}
+
 type ID uint16
 
 // Type of an Event.
-type Type uint
+type Type uint8
 
 // Priority of an Event.
 type Priority uint8
@@ -92,6 +93,9 @@ type Buttons uint8
 
 // CursorName is the name of a cursor.
 type CursorName string
+
+// Must match app/internal/input.areaKind
+type areaKind uint8
 
 const (
 	// CursorDefault is the default cursor.
@@ -161,37 +165,41 @@ const (
 	ButtonTertiary
 )
 
-// frect converts a rectangle to a f32.Rectangle.
-func frect(r image.Rectangle) f32.Rectangle {
-	return f32.Rectangle{
-		Min: fpt(r.Min), Max: fpt(r.Max),
+const (
+	areaRect areaKind = iota
+	areaEllipse
+)
+
+// Rect constructs a rectangular hit area.
+func Rect(size image.Rectangle) AreaOp {
+	return AreaOp{
+		kind: areaRect,
+		rect: size,
 	}
 }
 
-// fpt converts an point to a f32.Point.
-func fpt(p image.Point) f32.Point {
-	return f32.Point{
-		X: float32(p.X), Y: float32(p.Y),
+// Ellipse constructs an ellipsoid hit area.
+func Ellipse(size image.Rectangle) AreaOp {
+	return AreaOp{
+		kind: areaEllipse,
+		rect: size,
 	}
 }
 
-// Push the current pass mode to the pass stack and set the pass mode.
-func (p PassOp) Push(o *op.Ops) PassStack {
-	id, mid := ops.PushOp(&o.Internal, ops.PassStack)
-	data := ops.Write(&o.Internal, ops.TypePassLen)
-	data[0] = byte(ops.TypePass)
-	return PassStack{ops: &o.Internal, id: id, macroID: mid}
-}
-
-func (p PassStack) Pop() {
-	ops.PopOp(p.ops, ops.PassStack, p.id, p.macroID)
-	data := ops.Write(p.ops, ops.TypePopPassLen)
-	data[0] = byte(ops.TypePopPass)
+func (op AreaOp) Add(o *op.Ops) {
+	data := o.Write(opconst.TypeAreaLen)
+	data[0] = byte(opconst.TypeArea)
+	data[1] = byte(op.kind)
+	bo := binary.LittleEndian
+	bo.PutUint32(data[2:], uint32(op.rect.Min.X))
+	bo.PutUint32(data[6:], uint32(op.rect.Min.Y))
+	bo.PutUint32(data[10:], uint32(op.rect.Max.X))
+	bo.PutUint32(data[14:], uint32(op.rect.Max.Y))
 }
 
 func (op CursorNameOp) Add(o *op.Ops) {
-	data := ops.Write1(&o.Internal, ops.TypeCursorLen, op.Name)
-	data[0] = byte(ops.TypeCursor)
+	data := o.Write1(opconst.TypeCursorLen, op.Name)
+	data[0] = byte(opconst.TypeCursor)
 }
 
 // Add panics if the scroll range does not contain zero.
@@ -202,39 +210,28 @@ func (op InputOp) Add(o *op.Ops) {
 	if b := op.ScrollBounds; b.Min.X > 0 || b.Max.X < 0 || b.Min.Y > 0 || b.Max.Y < 0 {
 		panic(fmt.Errorf("invalid scroll range value %v", b))
 	}
-	if op.Types>>16 > 0 {
-		panic(fmt.Errorf("value in Types overflows uint16"))
-	}
-	data := ops.Write1(&o.Internal, ops.TypePointerInputLen, op.Tag)
-	data[0] = byte(ops.TypePointerInput)
+	data := o.Write1(opconst.TypePointerInputLen, op.Tag)
+	data[0] = byte(opconst.TypePointerInput)
 	if op.Grab {
 		data[1] = 1
 	}
+	data[2] = byte(op.Types)
 	bo := binary.LittleEndian
-	bo.PutUint16(data[2:], uint16(op.Types))
-	bo.PutUint32(data[4:], uint32(op.ScrollBounds.Min.X))
-	bo.PutUint32(data[8:], uint32(op.ScrollBounds.Min.Y))
-	bo.PutUint32(data[12:], uint32(op.ScrollBounds.Max.X))
-	bo.PutUint32(data[16:], uint32(op.ScrollBounds.Max.Y))
+	bo.PutUint32(data[3:], uint32(op.ScrollBounds.Min.X))
+	bo.PutUint32(data[7:], uint32(op.ScrollBounds.Min.Y))
+	bo.PutUint32(data[11:], uint32(op.ScrollBounds.Max.X))
+	bo.PutUint32(data[15:], uint32(op.ScrollBounds.Max.Y))
+}
+
+func (op PassOp) Add(o *op.Ops) {
+	data := o.Write(opconst.TypePassLen)
+	data[0] = byte(opconst.TypePass)
+	if op.Pass {
+		data[1] = 1
+	}
 }
 
 func (t Type) String() string {
-	if t == Cancel {
-		return "Cancel"
-	}
-	var buf strings.Builder
-	for tt := Type(1); tt > 0; tt <<= 1 {
-		if t&tt > 0 {
-			if buf.Len() > 0 {
-				buf.WriteByte('|')
-			}
-			buf.WriteString((t & tt).string())
-		}
-	}
-	return buf.String()
-}
-
-func (t Type) string() string {
 	switch t {
 	case Press:
 		return "Press"

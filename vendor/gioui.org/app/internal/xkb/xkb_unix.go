@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Unlicense OR MIT
 
-//go:build (linux && !android) || freebsd || openbsd
 // +build linux,!android freebsd openbsd
 
 // Package xkb implements a Go interface for the X Keyboard Extension library.

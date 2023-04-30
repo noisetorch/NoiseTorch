@@ -19,13 +19,11 @@ type Functions struct {
 	// Cached JS arrays.
 	arrayBuf js.Value
 	int32Buf js.Value
-
-	isWebGL2 bool
 }
 
 type Context js.Value
 
-func NewFunctions(ctx Context, forceES bool) (*Functions, error) {
+func NewFunctions(ctx Context) (*Functions, error) {
 	f := &Functions{
 		Ctx:        js.Value(ctx),
 		uint8Array: js.Global().Get("Uint8Array"),
@@ -38,8 +36,8 @@ func NewFunctions(ctx Context, forceES bool) (*Functions, error) {
 
 func (f *Functions) Init() error {
 	webgl2Class := js.Global().Get("WebGL2RenderingContext")
-	f.isWebGL2 = !webgl2Class.IsUndefined() && f.Ctx.InstanceOf(webgl2Class)
-	if !f.isWebGL2 {
+	iswebgl2 := !webgl2Class.IsUndefined() && f.Ctx.InstanceOf(webgl2Class)
+	if !iswebgl2 {
 		f.EXT_disjoint_timer_query = f.getExtension("EXT_disjoint_timer_query")
 		if f.getExtension("OES_texture_half_float").IsNull() && f.getExtension("OES_texture_float").IsNull() {
 			return errors.New("gl: no support for neither OES_texture_half_float nor OES_texture_float")
@@ -95,24 +93,17 @@ func (f *Functions) BindTexture(target Enum, t Texture) {
 func (f *Functions) BindImageTexture(unit int, t Texture, level int, layered bool, layer int, access, format Enum) {
 	panic("not implemented")
 }
-func (f *Functions) BindVertexArray(a VertexArray) {
-	panic("not supported")
-}
 func (f *Functions) BlendEquation(mode Enum) {
 	f.Ctx.Call("blendEquation", int(mode))
 }
-func (f *Functions) BlendFuncSeparate(srcRGB, dstRGB, srcA, dstA Enum) {
-	f.Ctx.Call("blendFunc", int(srcRGB), int(dstRGB), int(srcA), int(dstA))
+func (f *Functions) BlendFunc(sfactor, dfactor Enum) {
+	f.Ctx.Call("blendFunc", int(sfactor), int(dfactor))
 }
-func (f *Functions) BufferData(target Enum, size int, usage Enum, data []byte) {
-	if data == nil {
-		f.Ctx.Call("bufferData", int(target), size, int(usage))
-	} else {
-		if len(data) != size {
-			panic("size mismatch")
-		}
-		f.Ctx.Call("bufferData", int(target), f.byteArrayOf(data), int(usage))
-	}
+func (f *Functions) BlitFramebuffer(sx0, sy0, sx1, sy1, dx0, dy0, dx1, dy1 int, mask Enum, filter Enum) {
+	panic("not implemented")
+}
+func (f *Functions) BufferData(target Enum, size int, usage Enum) {
+	f.Ctx.Call("bufferData", int(target), size, int(usage))
 }
 func (f *Functions) BufferSubData(target Enum, offset int, src []byte) {
 	f.Ctx.Call("bufferSubData", int(target), offset, f.byteArrayOf(src))
@@ -131,9 +122,6 @@ func (f *Functions) ClearDepthf(d float32) {
 }
 func (f *Functions) CompileShader(s Shader) {
 	f.Ctx.Call("compileShader", js.Value(s))
-}
-func (f *Functions) CopyTexSubImage2D(target Enum, level, xoffset, yoffset, x, y, width, height int) {
-	f.Ctx.Call("copyTexSubImage2D", int(target), level, xoffset, yoffset, x, y, width, height)
 }
 func (f *Functions) CreateBuffer() Buffer {
 	return Buffer(f.Ctx.Call("createBuffer"))
@@ -155,9 +143,6 @@ func (f *Functions) CreateShader(ty Enum) Shader {
 }
 func (f *Functions) CreateTexture() Texture {
 	return Texture(f.Ctx.Call("createTexture"))
-}
-func (f *Functions) CreateVertexArray() VertexArray {
-	panic("not supported")
 }
 func (f *Functions) DeleteBuffer(v Buffer) {
 	f.Ctx.Call("deleteBuffer", js.Value(v))
@@ -183,9 +168,6 @@ func (f *Functions) DeleteRenderbuffer(v Renderbuffer) {
 }
 func (f *Functions) DeleteTexture(v Texture) {
 	f.Ctx.Call("deleteTexture", js.Value(v))
-}
-func (f *Functions) DeleteVertexArray(a VertexArray) {
-	panic("not implemented")
 }
 func (f *Functions) DepthFunc(fn Enum) {
 	f.Ctx.Call("depthFunc", int(fn))
@@ -224,9 +206,6 @@ func (f *Functions) EndQuery(target Enum) {
 func (f *Functions) Finish() {
 	f.Ctx.Call("finish")
 }
-func (f *Functions) Flush() {
-	f.Ctx.Call("flush")
-}
 func (f *Functions) FramebufferRenderbuffer(target, attachment, renderbuffertarget Enum, renderbuffer Renderbuffer) {
 	f.Ctx.Call("framebufferRenderbuffer", int(target), int(attachment), int(renderbuffertarget), js.Value(renderbuffer))
 }
@@ -241,53 +220,13 @@ func (f *Functions) GetRenderbufferParameteri(target, pname Enum) int {
 	return paramVal(f.Ctx.Call("getRenderbufferParameteri", int(pname)))
 }
 func (f *Functions) GetFramebufferAttachmentParameteri(target, attachment, pname Enum) int {
-	if !f.isWebGL2 && pname == FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING {
-		// FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING is only available on WebGL 2
-		return LINEAR
-	}
 	return paramVal(f.Ctx.Call("getFramebufferAttachmentParameter", int(target), int(attachment), int(pname)))
 }
 func (f *Functions) GetBinding(pname Enum) Object {
-	obj := f.Ctx.Call("getParameter", int(pname))
-	if !obj.Truthy() {
-		return Object{}
-	}
-	return Object(obj)
-}
-func (f *Functions) GetBindingi(pname Enum, idx int) Object {
-	obj := f.Ctx.Call("getIndexedParameter", int(pname), idx)
-	if !obj.Truthy() {
-		return Object{}
-	}
-	return Object(obj)
+	return Object(f.Ctx.Call("getParameter", int(pname)))
 }
 func (f *Functions) GetInteger(pname Enum) int {
-	if !f.isWebGL2 {
-		switch pname {
-		case PACK_ROW_LENGTH, UNPACK_ROW_LENGTH:
-			return 0 // PACK_ROW_LENGTH and UNPACK_ROW_LENGTH is only available on WebGL 2
-		}
-	}
 	return paramVal(f.Ctx.Call("getParameter", int(pname)))
-}
-func (f *Functions) GetFloat(pname Enum) float32 {
-	return float32(f.Ctx.Call("getParameter", int(pname)).Float())
-}
-func (f *Functions) GetInteger4(pname Enum) [4]int {
-	arr := f.Ctx.Call("getParameter", int(pname))
-	var res [4]int
-	for i := range res {
-		res[i] = arr.Index(i).Int()
-	}
-	return res
-}
-func (f *Functions) GetFloat4(pname Enum) [4]float32 {
-	arr := f.Ctx.Call("getParameter", int(pname))
-	var res [4]float32
-	for i := range res {
-		res[i] = float32(arr.Index(i).Float())
-	}
-	return res
 }
 func (f *Functions) GetProgrami(p Program, pname Enum) int {
 	return paramVal(f.Ctx.Call("getProgramParameter", js.Value(p), int(pname)))
@@ -327,19 +266,6 @@ func (f *Functions) GetUniformBlockIndex(p Program, name string) uint {
 func (f *Functions) GetUniformLocation(p Program, name string) Uniform {
 	return Uniform(f.Ctx.Call("getUniformLocation", js.Value(p), name))
 }
-func (f *Functions) GetVertexAttrib(index int, pname Enum) int {
-	return paramVal(f.Ctx.Call("getVertexAttrib", index, int(pname)))
-}
-func (f *Functions) GetVertexAttribBinding(index int, pname Enum) Object {
-	obj := f.Ctx.Call("getVertexAttrib", index, int(pname))
-	if !obj.Truthy() {
-		return Object{}
-	}
-	return Object(obj)
-}
-func (f *Functions) GetVertexAttribPointer(index int, pname Enum) uintptr {
-	return uintptr(f.Ctx.Call("getVertexAttribOffset", index, int(pname)).Int())
-}
 func (f *Functions) InvalidateFramebuffer(target, attachment Enum) {
 	fn := f.Ctx.Get("invalidateFramebuffer")
 	if !fn.IsUndefined() {
@@ -350,13 +276,10 @@ func (f *Functions) InvalidateFramebuffer(target, attachment Enum) {
 		f.Ctx.Call("invalidateFramebuffer", int(target), f.int32Buf)
 	}
 }
-func (f *Functions) IsEnabled(cap Enum) bool {
-	return f.Ctx.Call("isEnabled", int(cap)).Truthy()
-}
 func (f *Functions) LinkProgram(p Program) {
 	f.Ctx.Call("linkProgram", js.Value(p))
 }
-func (f *Functions) PixelStorei(pname Enum, param int) {
+func (f *Functions) PixelStorei(pname Enum, param int32) {
 	f.Ctx.Call("pixelStorei", int(pname), param)
 }
 func (f *Functions) MemoryBarrier(barriers Enum) {

@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"strings"
 
-	"gioui.org/internal/ops"
+	"gioui.org/internal/opconst"
 	"gioui.org/io/event"
 	"gioui.org/op"
 )
@@ -22,8 +22,7 @@ import (
 // Key events are in general only delivered to the
 // focused key handler.
 type InputOp struct {
-	Tag  event.Tag
-	Hint InputHint
+	Tag event.Tag
 }
 
 // SoftKeyboardOp shows or hide the on-screen keyboard, if available.
@@ -64,25 +63,6 @@ type Event struct {
 type EditEvent struct {
 	Text string
 }
-
-// InputHint changes the on-screen-keyboard type. That hints the
-// type of data that might be entered by the user.
-type InputHint uint8
-
-const (
-	// HintAny hints that any input is expected.
-	HintAny InputHint = iota
-	// HintText hints that text input is expected. It may activate auto-correction and suggestions.
-	HintText
-	// HintNumeric hints that numeric input is expected. It may activate shortcuts for 0-9, "." and ",".
-	HintNumeric
-	// HintEmail hints that email input is expected. It may activate shortcuts for common email characters, such as "@" and ".com".
-	HintEmail
-	// HintURL hints that URL input is expected. It may activate shortcuts for common URL fragments such as "/" and ".com".
-	HintURL
-	// HintTelephone hints that telephone number input is expected. It may activate shortcuts for 0-9, "#" and "*".
-	HintTelephone
-)
 
 // State is the state of a key during an event.
 type State uint8
@@ -145,22 +125,21 @@ func (h InputOp) Add(o *op.Ops) {
 	if h.Tag == nil {
 		panic("Tag must be non-nil")
 	}
-	data := ops.Write1(&o.Internal, ops.TypeKeyInputLen, h.Tag)
-	data[0] = byte(ops.TypeKeyInput)
-	data[1] = byte(h.Hint)
+	data := o.Write1(opconst.TypeKeyInputLen, h.Tag)
+	data[0] = byte(opconst.TypeKeyInput)
 }
 
 func (h SoftKeyboardOp) Add(o *op.Ops) {
-	data := ops.Write(&o.Internal, ops.TypeKeySoftKeyboardLen)
-	data[0] = byte(ops.TypeKeySoftKeyboard)
+	data := o.Write(opconst.TypeKeySoftKeyboardLen)
+	data[0] = byte(opconst.TypeKeySoftKeyboard)
 	if h.Show {
 		data[1] = 1
 	}
 }
 
 func (h FocusOp) Add(o *op.Ops) {
-	data := ops.Write1(&o.Internal, ops.TypeKeyFocusLen, h.Tag)
-	data[0] = byte(ops.TypeKeyFocus)
+	data := o.Write1(opconst.TypeKeyFocusLen, h.Tag)
+	data[0] = byte(opconst.TypeKeyFocus)
 }
 
 func (EditEvent) ImplementsEvent()  {}
@@ -174,19 +153,19 @@ func (e Event) String() string {
 func (m Modifiers) String() string {
 	var strs []string
 	if m.Contain(ModCtrl) {
-		strs = append(strs, "Ctrl")
+		strs = append(strs, "ModCtrl")
 	}
 	if m.Contain(ModCommand) {
-		strs = append(strs, "Command")
+		strs = append(strs, "ModCommand")
 	}
 	if m.Contain(ModShift) {
-		strs = append(strs, "Shift")
+		strs = append(strs, "ModShift")
 	}
 	if m.Contain(ModAlt) {
-		strs = append(strs, "Alt")
+		strs = append(strs, "ModAlt")
 	}
 	if m.Contain(ModSuper) {
-		strs = append(strs, "Super")
+		strs = append(strs, "ModSuper")
 	}
 	return strings.Join(strs, "|")
 }

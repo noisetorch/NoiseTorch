@@ -74,27 +74,7 @@ type SHADER_RESOURCE_VIEW_DESC_TEX2D struct {
 	Texture2D TEX2D_SRV
 }
 
-type SHADER_RESOURCE_VIEW_DESC_BUFFEREX struct {
-	SHADER_RESOURCE_VIEW_DESC
-	Buffer BUFFEREX_SRV
-}
-
-type UNORDERED_ACCESS_VIEW_DESC_TEX2D struct {
-	UNORDERED_ACCESS_VIEW_DESC
-	Texture2D TEX2D_UAV
-}
-
-type UNORDERED_ACCESS_VIEW_DESC_BUFFER struct {
-	UNORDERED_ACCESS_VIEW_DESC
-	Buffer BUFFER_UAV
-}
-
 type SHADER_RESOURCE_VIEW_DESC struct {
-	Format        uint32
-	ViewDimension uint32
-}
-
-type UNORDERED_ACCESS_VIEW_DESC struct {
 	Format        uint32
 	ViewDimension uint32
 }
@@ -102,22 +82,6 @@ type UNORDERED_ACCESS_VIEW_DESC struct {
 type TEX2D_SRV struct {
 	MostDetailedMip uint32
 	MipLevels       uint32
-}
-
-type BUFFEREX_SRV struct {
-	FirstElement uint32
-	NumElements  uint32
-	Flags        uint32
-}
-
-type TEX2D_UAV struct {
-	MipSlice uint32
-}
-
-type BUFFER_UAV struct {
-	FirstElement uint32
-	NumElements  uint32
-	Flags        uint32
 }
 
 type INPUT_ELEMENT_DESC struct {
@@ -148,21 +112,6 @@ type IDXGISwapChain struct {
 		GetContainingOutput     uintptr
 		GetFrameStatistics      uintptr
 		GetLastPresentCount     uintptr
-	}
-}
-
-type Debug struct {
-	Vtbl *struct {
-		_IUnknownVTbl
-		SetFeatureMask             uintptr
-		GetFeatureMask             uintptr
-		SetPresentPerRenderOpDelay uintptr
-		GetPresentPerRenderOpDelay uintptr
-		SetSwapChain               uintptr
-		GetSwapChain               uintptr
-		ValidateContext            uintptr
-		ReportLiveDeviceObjects    uintptr
-		ValidateContextForDispatch uintptr
 	}
 }
 
@@ -372,12 +321,6 @@ type ShaderResourceView struct {
 	}
 }
 
-type UnorderedAccessView struct {
-	Vtbl *struct {
-		_IUnknownVTbl
-	}
-}
-
 type DepthStencilView struct {
 	Vtbl *struct {
 		_IUnknownVTbl
@@ -397,12 +340,6 @@ type DepthStencilState struct {
 }
 
 type VertexShader struct {
-	Vtbl *struct {
-		_IUnknownVTbl
-	}
-}
-
-type ComputeShader struct {
 	Vtbl *struct {
 		_IUnknownVTbl
 	}
@@ -507,13 +444,6 @@ type IDXGIFactory struct {
 	}
 }
 
-type IDXGIDebug struct {
-	Vtbl *struct {
-		_IUnknownVTbl
-		ReportLiveObjects uintptr
-	}
-}
-
 type IDXGIDevice struct {
 	Vtbl *struct {
 		_IUnknownVTbl
@@ -612,12 +542,8 @@ type RASTERIZER_DESC struct {
 
 var (
 	IID_Texture2D    = GUID{0x6f15aaf2, 0xd208, 0x4e89, 0x9a, 0xb4, 0x48, 0x95, 0x35, 0xd3, 0x4f, 0x9c}
-	IID_IDXGIDebug   = GUID{0x119E7452, 0xDE9E, 0x40fe, 0x88, 0x06, 0x88, 0xF9, 0x0C, 0x12, 0xB4, 0x41}
 	IID_IDXGIDevice  = GUID{0x54ec77fa, 0x1377, 0x44e6, 0x8c, 0x32, 0x88, 0xfd, 0x5f, 0x44, 0xc8, 0x4c}
 	IID_IDXGIFactory = GUID{0x7b7166ec, 0x21c7, 0x44ae, 0xb2, 0x1a, 0xc9, 0xae, 0x32, 0x1a, 0xe3, 0x69}
-	IID_ID3D11Debug  = GUID{0x79cf2233, 0x7536, 0x4948, 0x9d, 0x36, 0x1e, 0x46, 0x92, 0xdc, 0x57, 0x60}
-
-	DXGI_DEBUG_ALL = GUID{0xe48ae283, 0xda80, 0x490b, 0x87, 0xe6, 0x43, 0xe9, 0xa9, 0xcf, 0xda, 0x8}
 )
 
 var (
@@ -625,10 +551,6 @@ var (
 
 	_D3D11CreateDevice             = d3d11.NewProc("D3D11CreateDevice")
 	_D3D11CreateDeviceAndSwapChain = d3d11.NewProc("D3D11CreateDeviceAndSwapChain")
-
-	dxgi = windows.NewLazySystemDLL("dxgi.dll")
-
-	_DXGIGetDebugInterface1 = dxgi.NewProc("DXGIGetDebugInterface1")
 )
 
 const (
@@ -638,11 +560,9 @@ const (
 	DXGI_FORMAT_UNKNOWN             = 0
 	DXGI_FORMAT_R16_FLOAT           = 54
 	DXGI_FORMAT_R32_FLOAT           = 41
-	DXGI_FORMAT_R32_TYPELESS        = 39
 	DXGI_FORMAT_R32G32_FLOAT        = 16
 	DXGI_FORMAT_R32G32B32_FLOAT     = 6
 	DXGI_FORMAT_R32G32B32A32_FLOAT  = 2
-	DXGI_FORMAT_R8G8B8A8_UNORM      = 28
 	DXGI_FORMAT_R8G8B8A8_UNORM_SRGB = 29
 	DXGI_FORMAT_R16_SINT            = 59
 	DXGI_FORMAT_R16G16_SINT         = 38
@@ -650,10 +570,6 @@ const (
 	DXGI_FORMAT_D24_UNORM_S8_UINT   = 45
 	DXGI_FORMAT_R16G16_FLOAT        = 34
 	DXGI_FORMAT_R16G16B16A16_FLOAT  = 10
-
-	DXGI_DEBUG_RLO_SUMMARY         = 0x1
-	DXGI_DEBUG_RLO_DETAIL          = 0x2
-	DXGI_DEBUG_RLO_IGNORE_INTERNAL = 0x4
 
 	FORMAT_SUPPORT_TEXTURE2D     = 0x20
 	FORMAT_SUPPORT_RENDER_TARGET = 0x4000
@@ -673,13 +589,12 @@ const (
 	USAGE_IMMUTABLE = 1
 	USAGE_STAGING   = 3
 
-	BIND_VERTEX_BUFFER    = 0x1
-	BIND_INDEX_BUFFER     = 0x2
-	BIND_CONSTANT_BUFFER  = 0x4
-	BIND_SHADER_RESOURCE  = 0x8
-	BIND_RENDER_TARGET    = 0x20
-	BIND_DEPTH_STENCIL    = 0x40
-	BIND_UNORDERED_ACCESS = 0x80
+	BIND_VERTEX_BUFFER   = 0x1
+	BIND_INDEX_BUFFER    = 0x2
+	BIND_CONSTANT_BUFFER = 0x4
+	BIND_SHADER_RESOURCE = 0x8
+	BIND_RENDER_TARGET   = 0x20
+	BIND_DEPTH_STENCIL   = 0x40
 
 	PRIMITIVE_TOPOLOGY_TRIANGLELIST  = 4
 	PRIMITIVE_TOPOLOGY_TRIANGLESTRIP = 5
@@ -691,16 +606,7 @@ const (
 	TEXTURE_ADDRESS_CLAMP  = 3
 	TEXTURE_ADDRESS_WRAP   = 1
 
-	SRV_DIMENSION_BUFFER    = 1
-	UAV_DIMENSION_BUFFER    = 1
-	SRV_DIMENSION_BUFFEREX  = 11
 	SRV_DIMENSION_TEXTURE2D = 4
-	UAV_DIMENSION_TEXTURE2D = 4
-
-	BUFFER_UAV_FLAG_RAW   = 0x1
-	BUFFEREX_SRV_FLAG_RAW = 0x1
-
-	RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS = 0x20
 
 	CREATE_DEVICE_DEBUG = 0x2
 
@@ -731,10 +637,6 @@ const (
 	DXGI_ERROR_DEVICE_RESET   = 0x887A0007
 	DXGI_ERROR_DEVICE_REMOVED = 0x887A0005
 	D3DDDIERR_DEVICEREMOVED   = 1<<31 | 0x876<<16 | 2160
-
-	RLDO_SUMMARY         = 1
-	RLDO_DETAIL          = 2
-	RLDO_IGNORE_INTERNAL = 4
 )
 
 func CreateDevice(driverType uint32, flags uint32) (*Device, *DeviceContext, uint32, error) {
@@ -786,42 +688,6 @@ func CreateDeviceAndSwapChain(driverType uint32, flags uint32, swapDesc *DXGI_SW
 		return nil, nil, nil, 0, ErrorCode{Name: "D3D11CreateDeviceAndSwapChain", Code: uint32(r)}
 	}
 	return dev, ctx, swchain, featLvl, nil
-}
-
-func DXGIGetDebugInterface1() (*IDXGIDebug, error) {
-	var dbg *IDXGIDebug
-	r, _, _ := _DXGIGetDebugInterface1.Call(
-		0, // Flags
-		uintptr(unsafe.Pointer(&IID_IDXGIDebug)),
-		uintptr(unsafe.Pointer(&dbg)),
-	)
-	if r != 0 {
-		return nil, ErrorCode{Name: "DXGIGetDebugInterface1", Code: uint32(r)}
-	}
-	return dbg, nil
-}
-
-func ReportLiveObjects() error {
-	dxgi, err := DXGIGetDebugInterface1()
-	if err != nil {
-		return err
-	}
-	defer IUnknownRelease(unsafe.Pointer(dxgi), dxgi.Vtbl.Release)
-	dxgi.ReportLiveObjects(&DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_DETAIL|DXGI_DEBUG_RLO_IGNORE_INTERNAL)
-	return nil
-}
-
-func (d *IDXGIDebug) ReportLiveObjects(guid *GUID, flags uint32) {
-	syscall.Syscall6(
-		d.Vtbl.ReportLiveObjects,
-		3,
-		uintptr(unsafe.Pointer(d)),
-		uintptr(unsafe.Pointer(guid)),
-		uintptr(flags),
-		0,
-		0,
-		0,
-	)
 }
 
 func (d *Device) CheckFormatSupport(format uint32) (uint32, error) {
@@ -915,32 +781,14 @@ func (d *Device) CreateVertexShader(bytecode []byte) (*VertexShader, error) {
 	return shader, nil
 }
 
-func (d *Device) CreateComputeShader(bytecode []byte) (*ComputeShader, error) {
-	var shader *ComputeShader
-	r, _, _ := syscall.Syscall6(
-		d.Vtbl.CreateComputeShader,
-		5,
-		uintptr(unsafe.Pointer(d)),
-		uintptr(unsafe.Pointer(&bytecode[0])),
-		uintptr(len(bytecode)),
-		0, // pClassLinkage
-		uintptr(unsafe.Pointer(&shader)),
-		0,
-	)
-	if r != 0 {
-		return nil, ErrorCode{Name: "DeviceCreateComputeShader", Code: uint32(r)}
-	}
-	return shader, nil
-}
-
-func (d *Device) CreateShaderResourceView(res *Resource, desc unsafe.Pointer) (*ShaderResourceView, error) {
+func (d *Device) CreateShaderResourceViewTEX2D(res *Resource, desc *SHADER_RESOURCE_VIEW_DESC_TEX2D) (*ShaderResourceView, error) {
 	var resView *ShaderResourceView
 	r, _, _ := syscall.Syscall6(
 		d.Vtbl.CreateShaderResourceView,
 		4,
 		uintptr(unsafe.Pointer(d)),
 		uintptr(unsafe.Pointer(res)),
-		uintptr(desc),
+		uintptr(unsafe.Pointer(desc)),
 		uintptr(unsafe.Pointer(&resView)),
 		0, 0,
 	)
@@ -948,23 +796,6 @@ func (d *Device) CreateShaderResourceView(res *Resource, desc unsafe.Pointer) (*
 		return nil, ErrorCode{Name: "DeviceCreateShaderResourceView", Code: uint32(r)}
 	}
 	return resView, nil
-}
-
-func (d *Device) CreateUnorderedAccessView(res *Resource, desc unsafe.Pointer) (*UnorderedAccessView, error) {
-	var uaView *UnorderedAccessView
-	r, _, _ := syscall.Syscall6(
-		d.Vtbl.CreateUnorderedAccessView,
-		4,
-		uintptr(unsafe.Pointer(d)),
-		uintptr(unsafe.Pointer(res)),
-		uintptr(desc),
-		uintptr(unsafe.Pointer(&uaView)),
-		0, 0,
-	)
-	if r != 0 {
-		return nil, ErrorCode{Name: "DeviceCreateUnorderedAccessView", Code: uint32(r)}
-	}
-	return uaView, nil
 }
 
 func (d *Device) CreateRasterizerState(desc *RASTERIZER_DESC) (*RasterizerState, error) {
@@ -1105,27 +936,6 @@ func (d *Device) GetImmediateContext() *DeviceContext {
 	return ctx
 }
 
-func (d *Device) ReportLiveDeviceObjects() error {
-	intf, err := IUnknownQueryInterface(unsafe.Pointer(d), d.Vtbl.QueryInterface, &IID_ID3D11Debug)
-	if err != nil {
-		return fmt.Errorf("ReportLiveObjects: failed to query ID3D11Debug interface: %v", err)
-	}
-	defer IUnknownRelease(unsafe.Pointer(intf), intf.Vtbl.Release)
-	dbg := (*Debug)(unsafe.Pointer(intf))
-	dbg.ReportLiveDeviceObjects(RLDO_DETAIL | RLDO_IGNORE_INTERNAL)
-	return nil
-}
-
-func (d *Debug) ReportLiveDeviceObjects(flags uint32) {
-	syscall.Syscall(
-		d.Vtbl.ReportLiveDeviceObjects,
-		2,
-		uintptr(unsafe.Pointer(d)),
-		uintptr(flags),
-		0,
-	)
-}
-
 func (s *IDXGISwapChain) GetDesc() (DXGI_SWAP_CHAIN_DESC, error) {
 	var desc DXGI_SWAP_CHAIN_DESC
 	r, _, _ := syscall.Syscall(
@@ -1254,42 +1064,6 @@ func (c *DeviceContext) ClearRenderTargetView(target *RenderTargetView, color *[
 		uintptr(unsafe.Pointer(c)),
 		uintptr(unsafe.Pointer(target)),
 		uintptr(unsafe.Pointer(color)),
-	)
-}
-
-func (c *DeviceContext) CSSetShaderResources(startSlot uint32, s *ShaderResourceView) {
-	syscall.Syscall6(
-		c.Vtbl.CSSetShaderResources,
-		4,
-		uintptr(unsafe.Pointer(c)),
-		uintptr(startSlot),
-		1, // NumViews
-		uintptr(unsafe.Pointer(&s)),
-		0, 0,
-	)
-}
-
-func (c *DeviceContext) CSSetUnorderedAccessViews(startSlot uint32, v *UnorderedAccessView) {
-	syscall.Syscall6(
-		c.Vtbl.CSSetUnorderedAccessViews,
-		4,
-		uintptr(unsafe.Pointer(c)),
-		uintptr(startSlot),
-		1, // NumViews
-		uintptr(unsafe.Pointer(&v)),
-		0, 0,
-	)
-}
-
-func (c *DeviceContext) CSSetShader(s *ComputeShader) {
-	syscall.Syscall6(
-		c.Vtbl.CSSetShader,
-		4,
-		uintptr(unsafe.Pointer(c)),
-		uintptr(unsafe.Pointer(s)),
-		0, // ppClassInstances
-		0, // NumClassInstances
-		0, 0,
 	)
 }
 
@@ -1496,18 +1270,6 @@ func (c *DeviceContext) DrawIndexed(count, start uint32, base int32) {
 	)
 }
 
-func (c *DeviceContext) Dispatch(x, y, z uint32) {
-	syscall.Syscall6(
-		c.Vtbl.Dispatch,
-		4,
-		uintptr(unsafe.Pointer(c)),
-		uintptr(x),
-		uintptr(y),
-		uintptr(z),
-		0, 0,
-	)
-}
-
 func (c *DeviceContext) OMSetBlendState(state *BlendState, factor *f32color.RGBA, sampleMask uint32) {
 	syscall.Syscall6(
 		c.Vtbl.OMSetBlendState,
@@ -1590,16 +1352,6 @@ func IUnknownQueryInterface(obj unsafe.Pointer, queryInterfaceMethod uintptr, gu
 		return nil, ErrorCode{Name: "IUnknownQueryInterface", Code: uint32(r)}
 	}
 	return ref, nil
-}
-
-func IUnknownAddRef(obj unsafe.Pointer, addRefMethod uintptr) {
-	syscall.Syscall(
-		addRefMethod,
-		1,
-		uintptr(obj),
-		0,
-		0,
-	)
 }
 
 func IUnknownRelease(obj unsafe.Pointer, releaseMethod uintptr) {
