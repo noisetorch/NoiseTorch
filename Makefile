@@ -21,7 +21,10 @@ release: rnnoise
 
 	mkdir -p tmp/.local/bin/
 	go generate
-	CGO_ENABLED=0 GOOS=linux go build -trimpath -tags release -a -ldflags '-s -w -extldflags "-static" -X main.nameSuffix=${NAME_SUFFIX} -X main.version=${VERSION} -X main.distribution=official -X main.updateURL=${UPDATE_URL} -X main.publicKeyString=${UPDATE_PUBKEY} -X main.websiteURL=${WEBSITE_URL}' .
+	# Use this one on linux
+	# CGO_ENABLED=0 GOOS=linux go build -trimpath -tags release -a -ldflags '-s -w -extldflags "-static" -X main.nameSuffix=${NAME_SUFFIX} -X main.version=${VERSION} -X main.distribution=official -X main.updateURL=${UPDATE_URL} -X main.publicKeyString=${UPDATE_PUBKEY} -X main.websiteURL=${WEBSITE_URL}' .
+	# Use this one on macos
+	CGO_ENABLED=0 GOOS=darwin go build -trimpath -tags release -a -ldflags '-s -w -extldflags "-static" -X main.nameSuffix=${NAME_SUFFIX} -X main.version=${VERSION} -X main.distribution=official -X main.updateURL=${UPDATE_URL} -X main.publicKeyString=${UPDATE_PUBKEY} -X main.websiteURL=${WEBSITE_URL}' .
 	mv noisetorch tmp/.local/bin/
 	cd tmp/; \
 	tar cvzf ../bin/NoiseTorch_x64_${VERSION}.tgz .
