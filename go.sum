@@ -3,6 +3,7 @@ cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMT
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20201218220906-28db891af037 h1:+PdD6GLKejR9DizMAKT5DpSAkKswvZrurk1/eEt9+pw=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20201218220906-28db891af037/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
+gioui.org v0.0.0-20210407072325-abd6e8f9cdd4 h1:AlnhfKQm5z7MT1Soxj5dObqyhOU0YCGT6+gc7zCCCLg=
 gioui.org v0.0.0-20210407072325-abd6e8f9cdd4/go.mod h1:RSH6KIUZ0p2xy5zHDxgAM4zumjgTw83q2ge/PI+yyw8=
 gioui.org v0.0.0-20220105104929-8d8aeef66bef h1:vjBKFl76dewHkdOnlEt09daV4/E/oHHnMA4rV7eGH+E=
 gioui.org v0.0.0-20220105104929-8d8aeef66bef/go.mod h1:yoWOxPng6WkDpsud+NRmkoftmyWn3rkKsYGEcWHpjTI=
