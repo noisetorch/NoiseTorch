@@ -186,6 +186,9 @@ func (f *Font) makeCachedGlyphIndexFormat4(buf []byte, offset, length uint32) ([
 				if offset > indexesLength || offset+2 > indexesLength {
 					return 0, errInvalidCmapTable
 				}
+				if b == nil {
+					b = &Buffer{}
+				}
 				x, err := b.view(&f.src, int(indexesBase+offset), 2)
 				if err != nil {
 					return 0, err
