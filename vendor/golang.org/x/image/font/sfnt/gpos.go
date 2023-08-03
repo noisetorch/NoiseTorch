@@ -14,7 +14,7 @@ const (
 	hexFeatureKern = uint32(0x6b65726e) // kern
 )
 
-//kernFunc returns the unscaled kerning value for kerning pair a+b.
+// kernFunc returns the unscaled kerning value for kerning pair a+b.
 // Returns ErrNotFound if no kerning is specified for this pair.
 type kernFunc func(a, b GlyphIndex) (int16, error)
 
@@ -437,7 +437,7 @@ func makeCachedCoverageRange(buf []byte) indexLookupFunc {
 		//	 pairs: 130=0, 131=1, 132=2, 133=3, 134=4, 135=5, 137=6
 		//   ranges: 130, 135, 0    137, 137, 6
 		// startCoverageIndex is used to calculate the index without counting
-		// the length of the preceeding ranges
+		// the length of the preceding ranges
 
 		idx := sort.Search(num, func(i int) bool {
 			return gi <= GlyphIndex(u16(ranges[i*6:]))

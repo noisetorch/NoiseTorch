@@ -16,6 +16,6 @@ require (
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635
 	golang.org/x/crypto v0.11.0
 	golang.org/x/exp v0.0.0-20220104160115-025e73f80486 // indirect
-	golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // indirect
+	golang.org/x/image v0.5.0 // indirect
 	golang.org/x/mobile v0.0.0-20220104184238-4a8be17bd2e3 // indirect
 )
