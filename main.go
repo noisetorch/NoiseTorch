@@ -240,7 +240,7 @@ func serverInfo(paClient *pulseaudio.Client) (audioserverinfo, error) {
 	var servername string
 	var servertype uint
 	var major, minor, patch int
-	var versionRegex *regexp.Regexp
+	var versionRegex, fallbackVersionRegex *regexp.Regexp
 	var versionString string
 
 	var outdatedPipeWire bool
@@ -255,15 +255,31 @@ func serverInfo(paClient *pulseaudio.Client) (audioserverinfo, error) {
 		servername = "PulseAudio"
 		servertype = servertype_pulse
 		versionRegex = regexp.MustCompile(`.*?(\d+)\.(\d+)\.(\d+).*?`)
+		fallbackVersionRegex = regexp.MustCompile(`.*?(\d+)\.(\d+).*?`)
 		versionString = info.PackageVersion
 		log.Printf("Detected PulseAudio\n")
 	}
 
 	res := versionRegex.FindStringSubmatch(versionString)
 	if len(res) != 4 {
-		log.Printf("couldn't parse server version, regexp didn't match version: %s\n", versionString)
-		return audioserverinfo{servertype: servertype}, nil
+		if fallbackVersionRegex == nil {
+			log.Printf("couldn't parse server version, regexp didn't match version: %s\n", versionString)
+			return audioserverinfo{servertype: servertype}, nil
+		}
 	}
+
+	// the server version did not match the standard `major.minor.patch` regex
+	// now trying with fallback regex of style `major.minor`
+
+	res = fallbackVersionRegex.FindStringSubmatch(versionString)
+	if len(res) != 3 {
+		log.Printf("couldn't parse server version, fallback regexp didn't match version: %s\n", versionString)
+		return audioserverinfo{servertype: servertype}, nil
+	} else {
+		// set patch number as `0` by default if patch is not provided by the server version
+		res = append(res, "0")
+	}
+
 	major, err = strconv.Atoi(res[1])
 	if err != nil {
 		return audioserverinfo{servertype: servertype}, err
@@ -330,7 +346,7 @@ func getDefaultSinkID(client *pulseaudio.Client) (string, error) {
 	return server.DefaultSink, nil
 }
 
-//this is disgusting
+// this is disgusting
 func fixWindowClass() {
 	xu, err := xgbutil.NewConn()
 	defer xu.Conn().Close()
