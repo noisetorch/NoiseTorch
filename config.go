@@ -5,7 +5,6 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -78,7 +77,7 @@ func writeConfig(conf *config) {
 	if err := toml.NewEncoder(&buffer).Encode(&conf); err != nil {
 		log.Fatalf("Couldn't write config file: %v\n", err)
 	}
-	ioutil.WriteFile(f, buffer.Bytes(), 0644)
+	os.WriteFile(f, buffer.Bytes(), 0644)
 }
 
 func configDir() string {

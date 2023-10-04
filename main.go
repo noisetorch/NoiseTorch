@@ -6,7 +6,7 @@ package main
 import (
 	"fmt"
 	"image"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"regexp"
@@ -60,7 +60,7 @@ func main() {
 	if opt.doLog {
 		log.SetOutput(os.Stdout)
 	} else {
-		log.SetOutput(ioutil.Discard)
+		log.SetOutput(io.Discard)
 	}
 	log.Printf("Application starting. Version: %s (%s)\n", version, distribution)
 	log.Printf("CAP_SYS_RESOURCE: %t\n", hasCapSysResource(getCurrentCaps()))
@@ -106,7 +106,7 @@ func main() {
 }
 
 func dumpLib() string {
-	f, err := ioutil.TempFile("", "librnnoise-*.so")
+	f, err := os.CreateTemp("", "librnnoise-*.so")
 	if err != nil {
 		log.Fatalf("Couldn't open temp file for librnnoise\n")
 	}

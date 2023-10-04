@@ -4,8 +4,8 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"syscall"
@@ -21,7 +21,7 @@ func getPulsePid() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	pidbuf, err := ioutil.ReadFile(pulsepidfile)
+	pidbuf, err := os.ReadFile(pulsepidfile)
 	if err != nil {
 		return 0, err
 	}
