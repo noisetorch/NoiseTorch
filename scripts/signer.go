@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -46,7 +45,7 @@ func main() { //nolint
 	if doSign && artifactFile != "" {
 		_, priv := loadKeys()
 
-		file, err := ioutil.ReadFile(artifactFile)
+		file, err := os.ReadFile(artifactFile)
 		if err != nil {
 			panic(err)
 		}
@@ -56,7 +55,7 @@ func main() { //nolint
 			panic(err)
 		}
 
-		err = ioutil.WriteFile(signatureFile, sig, 0640)
+		err = os.WriteFile(signatureFile, sig, 0640)
 		if err != nil {
 			panic(err)
 		}
@@ -69,12 +68,12 @@ func main() { //nolint
 			panic(err)
 		}
 
-		file, err := ioutil.ReadFile(artifactFile)
+		file, err := os.ReadFile(artifactFile)
 		if err != nil {
 			panic(err)
 		}
 
-		sig, err := ioutil.ReadFile(signatureFile)
+		sig, err := os.ReadFile(signatureFile)
 		if err != nil {
 			panic(err)
 		}
@@ -86,7 +85,7 @@ func main() { //nolint
 }
 
 func loadKeys() (ed25519.PublicKey, ed25519.PrivateKey) {
-	seed, err := ioutil.ReadFile(filepath.Join(os.Getenv("HOME"), ".config/noisetorch/private.key"))
+	seed, err := os.ReadFile(filepath.Join(os.Getenv("HOME"), ".config/noisetorch/private.key"))
 	if err != nil {
 		panic(err)
 	}
@@ -103,7 +102,7 @@ func generateKeypair() {
 		panic(err)
 		os.Exit(1)
 	}
-	if err := ioutil.WriteFile(filepath.Join(os.Getenv("HOME"), ".config/noisetorch/private.key"), priv.Seed(), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(os.Getenv("HOME"), ".config/noisetorch/private.key"), priv.Seed(), 0600); err != nil {
 		panic(err)
 		os.Exit(2)
 	}

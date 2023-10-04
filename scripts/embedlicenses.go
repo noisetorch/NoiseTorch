@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,7 +27,7 @@ func main() { //nolint
 			}
 			dir := filepath.Dir(rel)
 			out.WriteString("FILES: " + dir + "\n")
-			c, err := ioutil.ReadFile(path)
+			c, err := os.ReadFile(path)
 			str := string(c)
 			str = strings.ReplaceAll(str, "`", "`"+" + \"`\" + `") // escape backticks in license text for go src
 			if err != nil {
