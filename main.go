@@ -254,7 +254,7 @@ func serverInfo(paClient *pulseaudio.Client) (audioserverinfo, error) {
 	} else {
 		servername = "PulseAudio"
 		servertype = servertype_pulse
-		versionRegex = regexp.MustCompile(`.*?(\d+)\.(\d+)\.(\d+).*?`)
+		versionRegex = regexp.MustCompile(`.*?(\d+)\.(\d+)\.?(\d+)?.*?`)
 		versionString = info.PackageVersion
 		log.Printf("Detected PulseAudio\n")
 	}
@@ -263,6 +263,11 @@ func serverInfo(paClient *pulseaudio.Client) (audioserverinfo, error) {
 	if len(res) != 4 {
 		log.Printf("couldn't parse server version, regexp didn't match version: %s\n", versionString)
 		return audioserverinfo{servertype: servertype}, nil
+	}
+	// the server version did not match the standard `major.minor.patch` pattern
+	// setting the patch version to default 0
+	if res[3] == "" {
+		res[3] = "0"
 	}
 	major, err = strconv.Atoi(res[1])
 	if err != nil {
@@ -330,7 +335,7 @@ func getDefaultSinkID(client *pulseaudio.Client) (string, error) {
 	return server.DefaultSink, nil
 }
 
-//this is disgusting
+// this is disgusting
 func fixWindowClass() {
 	xu, err := xgbutil.NewConn()
 	defer xu.Conn().Close()
