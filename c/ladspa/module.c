@@ -56,10 +56,6 @@ instantiateSimpleFilter(const LADSPA_Descriptor *Descriptor,
   return psFilter;
 }
 
-static void activateSimpleFilter(LADSPA_Handle Instance) {
-  
-}
-
 static void connectPortToSimpleFilter(LADSPA_Handle Instance,
                                       unsigned long Port,
                                       LADSPA_Data *DataLocation) {
@@ -194,7 +190,6 @@ ON_LOAD_ROUTINE {
     psPortRangeHints[SF_OUTPUT].HintDescriptor = 0;
     g_psDescriptor->instantiate = instantiateSimpleFilter;
     g_psDescriptor->connect_port = connectPortToSimpleFilter;
-    g_psDescriptor->activate = activateSimpleFilter;
     g_psDescriptor->run = runFilter;
     g_psDescriptor->run_adding = NULL;
     g_psDescriptor->set_run_adding_gain = NULL;
