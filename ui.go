@@ -176,7 +176,7 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 			}
 			w.Row(15).Static()
 			w.LayoutFitWidth(0, 0)
-			if w.CheckboxText("", &el.checked) {
+			if w.OptionText("", el.checked) {
 				ensureOnlyOneInputSelected(&ctx.inputList, el)
 			}
 
@@ -203,7 +203,7 @@ func mainView(ctx *ntcontext, w *nucular.Window) {
 			}
 			w.Row(15).Static()
 			w.LayoutFitWidth(0, 0)
-			if w.CheckboxText("", &el.checked) {
+			if w.OptionText("", el.checked) {
 				ensureOnlyOneInputSelected(&ctx.outputList, el)
 			}
 
@@ -311,9 +311,6 @@ func uiReloadFilters(ctx *ntcontext, inp, out device) {
 }
 
 func ensureOnlyOneInputSelected(inps *[]device, current *device) {
-	if !current.checked {
-		return
-	}
 	for i := range *inps {
 		el := &(*inps)[i]
 		el.checked = false
