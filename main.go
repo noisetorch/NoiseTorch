@@ -25,6 +25,8 @@ import (
 
 	"github.com/aarzilli/nucular"
 	"github.com/aarzilli/nucular/style"
+
+	"golang.org/x/mobile/event/key"
 )
 
 //go:generate go run scripts/embedlicenses.go
@@ -86,6 +88,12 @@ func main() {
 
 	wnd := nucular.NewMasterWindowSize(0, appName, image.Point{600, 400}, func(w *nucular.Window) {
 		updatefn(&ctx, w)
+		if keys := w.Input().Keyboard.Keys; len(keys) == 1 {
+			if keys[0].Code == key.CodeQ &&
+				keys[0].Modifiers == key.ModControl {
+				w.Master().Close()
+			}
+		}
 	})
 
 	ctx.masterWindow = &wnd
