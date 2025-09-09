@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/noisetorch/pulseaudio"
 )
@@ -26,6 +27,9 @@ func updateNoiseSupressorLoaded(ctx *ntcontext) {
 		fmt.Printf("Error listening for updates: %v\n", err)
 	}
 
+	var lastRefresh time.Time
+	refreshDebounce := 200 * time.Millisecond
+
 	for {
 		ctx.noiseSupressorState, ctx.virtualDeviceInUse = supressorState(ctx)
 		if !c.Connected() {
@@ -33,6 +37,12 @@ func updateNoiseSupressorLoaded(ctx *ntcontext) {
 		}
 
 		<-upd
+		
+		// Debounce device list refreshes to prevent excessive updates
+		if time.Since(lastRefresh) > refreshDebounce {
+			refreshDeviceLists(ctx)
+			lastRefresh = time.Now()
+		}
 	}
 }
 
