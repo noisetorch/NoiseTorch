@@ -188,6 +188,34 @@ func getSinks(ctx *ntcontext, client *pulseaudio.Client) []device {
 	return inputs
 }
 
+func refreshDeviceLists(ctx *ntcontext) {
+	if !ctx.paClient.Connected() {
+		return
+	}
+
+	currentInputSelection := ""
+	for _, device := range ctx.inputList {
+		if device.checked {
+			currentInputSelection = device.ID
+			break
+		}
+	}
+
+	currentOutputSelection := ""
+	for _, device := range ctx.outputList {
+		if device.checked {
+			currentOutputSelection = device.ID
+			break
+		}
+	}
+
+	ctx.inputList = preselectDevice(ctx, getSources(ctx, ctx.paClient), currentInputSelection, getDefaultSourceID)
+	ctx.outputList = preselectDevice(ctx, getSinks(ctx, ctx.paClient), currentOutputSelection, getDefaultSinkID)
+
+	(*ctx.masterWindow).Changed()
+	log.Printf("Device lists refreshed")
+}
+
 func paConnectionWatchdog(ctx *ntcontext) {
 	for {
 		if ctx.paClient.Connected() {
