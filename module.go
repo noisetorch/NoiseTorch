@@ -197,10 +197,13 @@ func loadModule(ctx *ntcontext, module, args string) (uint32, error) {
 
 func loadPipeWireInput(ctx *ntcontext, inp *device) error {
 	log.Printf("Loading supressor for pipewire\n")
+	// PipeWire 1.6+ filter-graph LADSPA backend searches LADSPA dirs
+	// (e.g. /usr/lib/ladspa) and does not accept arbitrary /tmp paths.
+	// Pass the plugin name only; the .so must be installed to a LADSPA dir.
 	idx, err := loadModule(ctx, "module-ladspa-source",
 		fmt.Sprintf("source_name='Filtered Microphone for %s' master=%s "+
 			"rate=48000 channels=1 "+
-			"label=nt-filter plugin=%s control=%d", inp.Name, inp.ID, ctx.librnnoise, ctx.config.Threshold))
+			"label=nt-filter plugin=rnnoise_ladspa control=%d", inp.Name, inp.ID, ctx.config.Threshold))
 
 	if err != nil {
 		return err
@@ -211,10 +214,13 @@ func loadPipeWireInput(ctx *ntcontext, inp *device) error {
 
 func loadPipeWireOutput(ctx *ntcontext, out *device) error {
 	log.Printf("Loading supressor for pipewire\n")
+	// PipeWire 1.6+ filter-graph LADSPA backend searches LADSPA dirs
+	// (e.g. /usr/lib/ladspa) and does not accept arbitrary /tmp paths.
+	// Pass the plugin name only; the .so must be installed to a LADSPA dir.
 	idx, err := loadModule(ctx, "module-ladspa-sink",
 		fmt.Sprintf("sink_name='Filtered Headphones' master=%s "+
 			"rate=48000 channels=1 "+
-			"label=nt-filter plugin=%s control=%d", out.ID, ctx.librnnoise, ctx.config.Threshold))
+			"label=nt-filter plugin=rnnoise_ladspa control=%d", out.ID, ctx.config.Threshold))
 
 	if err != nil {
 		return err
